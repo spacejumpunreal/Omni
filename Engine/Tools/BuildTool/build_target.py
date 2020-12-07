@@ -40,7 +40,7 @@ class BuildTarget(object):
                 if skip:
                     continue
 
-                ok = True
+                ok = False
                 for pat in self.source_suffixes:
                     if pat.match(fn):
                         source.append(full_path)
