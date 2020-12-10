@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 import os
 import uuid
+import shutil
 import _winreg
 from xml_utils import XmlNode
 
@@ -114,6 +115,9 @@ class VS2019Generator(object):
     def run(self):
         if not os.path.exists(self._build_dir):
             os.makedirs(self._build_dir)
+        intermediate_dir = os.path.join(self._build_dir, "Intermediate")
+        if os.path.exists(intermediate_dir):
+            shutil.rmtree(intermediate_dir, True)
         generated_vcxproj_files = []
         for _, target in self._targets.iteritems():
             vcxproj_file = os.path.join(self._build_dir, self._get_vcxproj_file_name(target))

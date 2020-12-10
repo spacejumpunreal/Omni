@@ -1,0 +1,55 @@
+# requirement
+## Cost
+- LowComplexityCost
+	- User
+		- ConsumerUserCost
+		- ProviderUserCost
+	- SystemComplexity
+		- ComplexityCost
+			- restriction on Start sequence
+			- make cleanup more complicated
+- PerformanceCost: negligible
+
+# JobDescription
+- a container of modules(query)
+- driver of initialization and finalization(sequence)
+
+# Procedures
+- register a module
+	- input: ModuleInfo(ctor, flags)
+	- store in a vector
+- initialization
+	- create modules according to order in ModuleRegistry.inl
+	- loop while not done
+		for all registered modules
+			- if running, drop
+			- if initializing, Call initializing function
+		- if no modules left, done
+	- MainThread join ConcurrencyModule
+
+- finalization
+	- someone trigger finalization, mark engine state as finalizing
+	- concurrency module wait for all worker threads to stop(all jobs to be done)
+	- concurrency module start engine single thread shutdown sequence
+	- for every module: call begin finalization
+	- loop while not done
+		for every module:
+			- if module is uninitialized, call dtor, drop
+			- if module is initializing, call finalizing function
+		- if no module, done
+
+
+# C++ design
+## API
+### InitializationAndFinalization
+- InitializeAndJoin(size_t argc, const char* argv[])
+- TriggerFinalizaiton(): trigger async finalization
+- WaitTillFinalized(): sync wait finalization
+### RegisterModule: Only support static registry, so no API
+### QueryModule
+
+## data
+- mModules
+- mId2Module
+- mName2Module
+- mModuleInfos

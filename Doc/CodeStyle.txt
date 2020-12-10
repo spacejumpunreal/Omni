@@ -1,0 +1,17 @@
+# global varible
+## eliminate use of static or non static global variable, even for singletons and static local variables
+### pros
+- performance(should be minimal)
+- easy to use
+### cons
+- make memory leak debug more difficult
+- means no need to cleanup
+
+# formating
+- sequence of things
+	- forward declarations
+	- typedefs
+	- definitions(they can be quite mixed)
+	- global variables
+	- local helper functions definitions
+	- class function definitions
