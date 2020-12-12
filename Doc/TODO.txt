@@ -1,0 +1,4 @@
+# BuildSystem-ios
+# UnitTest-investigate
+# MemroyModule
+- NonRelease mode use CDCDCD to fill memory to catch not initialized problem, add pattern on release, check pattern before returning from Allocate

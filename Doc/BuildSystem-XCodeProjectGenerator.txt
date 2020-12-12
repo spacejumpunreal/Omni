@@ -1,0 +1,53 @@
+# project.pbxproj
+## type of data
+### PBXBuildFile
+- fileRef: id
+### PBXFileReference
+- explicitFileType: EnumFileType
+- lastKnownFileType: EnumFileType
+- includeInIndex: Int
+- path: DotPath
+- sourceTree: SourceTree
+### PBXFrameworksBuildPhase
+- buildActionMask:Int ????
+- files: Tuple<???>
+- runOnlyForDeploymentPostprocessing: Int
+### PBXGroup
+- looks like directory definitions
+- children: Tuple<id>
+- sourceTree: SourceTree
+### PBXNativeTarget
+- buildConfigurationList: id
+- buildPhases: Tuple<id>
+- buildRules: Tuple<??>
+- dependencies: Tuple<??>
+- name: DotPath
+- productName: DotPath
+- productReference: id
+- productType: DotPath
+### PBXProject
+- attributes: Dict
+- buildConfigurationList: id
+- compatibilityVersion: String
+- developmentRegion: Text
+- hasScannedForEncodings: Int
+- knownRegions: Tuple<Text>
+- mainGroup: id
+- productRefGroup: id
+- projectDirPath: String
+- projectRoot: String
+- targets: Tuple<id>
+### PBXResourcesBuildPhase
+- buildActionMask: Int
+- files: Tuple<id>
+- runOnlyForDeploymentPostprocessing: Int
+### PBXSourcesBuildPhase
+- buildActionMask: Int
+- files: Tuple<id>
+- runOnlyForDeploymentPostprocessing: Int
+### PBXVariantGroup
+- children: Tuple<id>
+- name: DotPath
+- sourceTree: SourceTree
+### XCBuildConfiguration
+- buildSetting: Dict
