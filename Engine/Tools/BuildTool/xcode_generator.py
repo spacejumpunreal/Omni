@@ -139,6 +139,7 @@ class XcodeGenerator(base_generator.BaseGenerator):
                 file_refs, os.path.basename(app_dir),
                 sourceTree=pbxproj_utils.SOURCETREE_GROUP, path=prj2app)
             pbxproj_utils.add_to_PBXGRoup(main_group_ref, app_group)
+            pbx_objects.append(app_group)
 
         # Products
         product_type = pbxproj_utils.FILE_TYPE_ARCHIVE if target.is_library else pbxproj_utils.FILE_TYPE_APP
@@ -147,6 +148,8 @@ class XcodeGenerator(base_generator.BaseGenerator):
             product_type, product_name, pbxproj_utils.SOURCETREE_PRODUCTS)
         # add Products group
         products_group_ref = pbxproj_utils.build_PBXGroup([product_ref], "Products")
+        pbx_objects.append(product_ref)
+        pbx_objects.append(products_group_ref)
         pbxproj_utils.add_to_PBXGRoup(main_group_ref, products_group_ref)
 
         # Frameworks
@@ -166,6 +169,7 @@ class XcodeGenerator(base_generator.BaseGenerator):
                 pbx_objects.append(build_ref)
                 framework_refs.append(build_ref)
             framework_group_ref = pbxproj_utils.build_PBXGroup(file_refs, "Frameworks")
+            pbx_objects.append(framework_group_ref)
             pbxproj_utils.add_to_PBXGRoup(main_group_ref, framework_group_ref)
         return source_refs, resource_refs, framework_refs, product_ref, main_group_ref, products_group_ref
 

@@ -134,9 +134,11 @@ def build_PBXGroup(children, name, sourceTree=SOURCETREE_GROUP, path=None):
     d = collections.OrderedDict([
         ("isa", "PBXGroup"),
         ("children", map(ensure_ref, children)),
-        ("name", name),
         ("sourceTree", sourceTree),
     ])
+    name = name.strip()
+    if len(name) != 0:
+        d["name"] = name
     if path is not None and len(path) != 0:
         d["path"] = mac_format_path(path)
     return d
@@ -301,7 +303,7 @@ RELEASE_PROJECT_EXTRA_BUILD_SETTING = collections.OrderedDict([
 DEFAULT_TARGET_BUILD_SETTING = collections.OrderedDict([
     ('CODE_SIGN_STYLE', 'Automatic'),
     ('DEVELOPMENT_TEAM', '8K6L6A7M7P'),
-    ('GCC_ENABLE_CPP_EXCEPTIONS', 'NO;'),
+    ('GCC_ENABLE_CPP_EXCEPTIONS', 'NO'),
     ('HEADER_SEARCH_PATHS', []),
     ('PRODUCT_NAME', '$(TARGET_NAME)'),
     ('TARGETED_DEVICE_FAMILY', '"1,2"'),
@@ -312,7 +314,7 @@ LIBRARY_EXTRA_BUILD_SETTING = collections.OrderedDict([
     ('OTHER_LDFLAGS', '"-ObjC"'),
     ('PRODUCT_NAME', '"$(TARGET_NAME)"'),
     ('SKIP_INSTALL', 'YES'),
-    ('TARGETED_DEVICE_FAMILY', '"1,2'),
+    ('TARGETED_DEVICE_FAMILY', '"1,2"'),
 ])
 
 APP_EXTRA_BUILD_SETTING = collections.OrderedDict([
@@ -389,6 +391,7 @@ def dump_pbxproj(objects, str_seed, project_ref):
     ctx.frags.append("// !$*UTF8*$!\n")
     top_record = collections.OrderedDict([
         ("archiveVersion", 1),
+        ("classes", collections.OrderedDict()),
         ("objectVersion", 50),
         ("objects", collections.OrderedDict(map(lambda x: (ctx.format_ptr(x), x), objects))),
         ("rootObject", ensure_ref(project_ref))
