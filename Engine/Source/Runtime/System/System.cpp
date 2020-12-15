@@ -115,12 +115,12 @@ namespace Omni
 				self->mModules.push_back(m);
 				if (info.Key >= 0)
 				{
-					CheckAlways(self->mKey2Module.count(info.Key) == 0);
+					CheckAlways(self->mKey2Module.count(info.Key) == 0, "dumplicated module keys");
 					self->mKey2Module[info.Key] = m;
 				}
 				if (info.Name != nullptr)
 				{
-					CheckAlways(self->mName2Module.count(info.Name) == 0);
+					CheckAlways(self->mName2Module.count(info.Name) == 0, "duplicated module names");
 					self->mName2Module[info.Name] = m;
 				}
 					
