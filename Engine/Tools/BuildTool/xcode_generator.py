@@ -138,7 +138,7 @@ class XcodeGenerator(base_generator.BaseGenerator):
                 resource_refs.append(build_file)
             app_group = pbxproj_utils.build_PBXGroup(
                 file_refs, os.path.basename(app_dir),
-                sourceTree=pbxproj_utils.SOURCETREE_GROUP, path=prj2app)
+                sourceTree=pbxproj_utils.SOURCETREE_SOURCE_ROOT, path=prj2app)
             pbxproj_utils.add_to_PBXGRoup(main_group_ref, app_group)
             pbx_objects.append(app_group)
 
