@@ -255,11 +255,10 @@ class XcodeGenerator(base_generator.BaseGenerator):
         if not os.path.exists(self._solution_path):
             os.makedirs(self._solution_path, 0755)
             os.path.join(self._solution_path, "")
-
         root = ET.fromstring(self.WORKSPACE_CONTENT)
         root_path = os.path.dirname(self._solution_path)
         for target, prj_path in generated_target_pbxproj_pairs:
             group_string = "group:%s" % os.path.relpath(prj_path, root_path)
             ET.SubElement(root, "FileRef", attrib={"location": group_string})
-        with open("contents.xcworkspacedata", "wb") as wf:
+        with open(os.path.join(self._solution_path, "contents.xcworkspacedata"), "wb") as wf:
             wf.write(ET.tostring(root, encoding='UTF-8'))
