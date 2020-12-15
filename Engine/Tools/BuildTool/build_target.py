@@ -29,17 +29,17 @@ class BuildTarget(object):
     def collect_source_files(self):
         headers = []
         source = []
+        full_exclude_paths = map(lambda p: os.path.join(self.base_dir, p), self.excluded_paths)
         for root, _, files in os.walk(self.base_dir):
+            skip = False
+            for epath in full_exclude_paths:
+                if is_parent_of(epath, root):
+                    skip = True
+                    break
+            if skip:
+                continue
             for fn in files:
                 full_path = os.path.join(root, fn)
-                skip = False
-                for epath in self.excluded_paths:
-                    if is_parent_of(epath, full_path):
-                        skip = True
-                        break
-                if skip:
-                    continue
-
                 ok = False
                 for pat in self.source_suffixes:
                     if pat.match(fn):
