@@ -21,20 +21,27 @@ class XcodeGenerator(base_generator.BaseGenerator):
         if os.path.exists(self._build_dir):
             shutil.rmtree(self._build_dir)
         os.makedirs(self._build_dir)
-        generated_pbxproj_files = []
+        generated_target_pbxproj_pairs = []
         for _, target in self._targets.iteritems():
             pbxproj_file = self._get_pbxproj_file_path(target)
             self._ensure_parents_exists(pbxproj_file)
-            generated_pbxproj_files.append((target, pbxproj_file))
-            source, headers = target.collect_source_fiels()
+            generated_target_pbxproj_pairs.append((target, pbxproj_file))
+            source, headers = target.collect_source_files()
             if not target.is_library:
                 self._generate_app_folder(target)
             self._generate_pbxproj_files(target, source, headers, pbxproj_file)
-        self._generate_workspace(generated_pbxproj_files)
+        self._generate_workspace(generated_target_pbxproj_pairs)
+
+    @staticmethod
+    def _ensure_path_exists(p):
+        if not os.path.exists(p):
+            os.makedirs(p, mode=0755)
 
     @staticmethod
     def _ensure_parents_exists(file_path):
-        os.makedirs(os.path.dirname(file_path), mode=0755)
+        p = os.path.dirname(file_path)
+        if not os.path.exists(p):
+            os.makedirs(p, mode=0755)
 
     def _get_pbxproj_file_path(self, target):
         return os.path.join(self._build_dir, target.get_name() + self.EXT_XCODEPROJ, "project.pbxproj")
@@ -214,7 +221,7 @@ class XcodeGenerator(base_generator.BaseGenerator):
 
     def _generate_app_folder(self, target):
         app_dir = self._get_target_app_dir(target)
-        self._ensure_parents_exists(app_dir)
+        self._ensure_path_exists(app_dir)
         tree = plist_utils.load_ios_app_info_plist_template()
         plist_utils.dump_to_file(os.path.join(app_dir, self.INFO_PLIST), tree)
         for storyboard_file in self.app_storyboard_files:
@@ -225,21 +232,17 @@ class XcodeGenerator(base_generator.BaseGenerator):
 
     WORKSPACE_CONTENT = """<?xml version="1.0" encoding="UTF-8"?>
 <Workspace version = "1.0">
-   <FileRef
-      location = "group:build/AStaticLibrary.xcodeproj">
-   </FileRef>
 </Workspace>"""
 
-    def _generate_workspace(self, project_files):
+    def _generate_workspace(self, generated_target_pbxproj_pairs):
         if not os.path.exists(self._solution_path):
             os.makedirs(self._solution_path, 0755)
             os.path.join(self._solution_path, "")
 
-        tree = ET.parse(self.WORKSPACE_CONTENT)
-        root = tree.getroot()
+        root = ET.fromstring(self.WORKSPACE_CONTENT)
         root_path = os.path.dirname(self._solution_path)
-        for prj_path in project_files:
+        for target, prj_path in generated_target_pbxproj_pairs:
             group_string = "group:%s" % os.path.relpath(prj_path, root_path)
             ET.SubElement(root, "FileRef", attrib={"location": group_string})
         with open("contents.xcworkspacedata", "wb") as wf:
-            wf.write(ET.tostring(root))
+            wf.write(ET.tostring(root, encoding='UTF-8'))

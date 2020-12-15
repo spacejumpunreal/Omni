@@ -21,4 +21,4 @@ if __name__ == "__main__":
         build_tool.generate_vs_project(source_root, pwd, build_root, solution_path)
     elif target_platform == 'darwin':
         solution_path = os.path.join(pwd, "Omni.xcworkspace")
-        build_tool.generate_ios_project(source_root, pwd, build_root, solution_path)
+        build_tool.generate_xcode_project(source_root, pwd, build_root, solution_path)
