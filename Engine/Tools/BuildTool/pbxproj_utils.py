@@ -28,8 +28,13 @@ class DumpContext(object):
     def get_indent(self):
         return self.indent_str
 
-    def format_ptr(self, p):
-        return self.ptr_base % p
+    def format_ptr(self, obj):
+        name = obj.get("name", None)
+        s = self.ptr_base % id(obj)
+        if name is not None:
+            s = s + "/*%s*/" % name
+        return s
+
 
 
 def next_context(context):
@@ -102,20 +107,27 @@ def build_PBXFrameworksBuildPhase(buildActionMask=DEFAULT_BUILD_ACTION_MASK, fil
     return collections.OrderedDict([
         ("isa", "PBXFrameworksBuildPhase"),
         ("buildActionMask", buildActionMask),
-        ("files", files),
+        ("files", map(ensure_ref, files)),
         ("runOnlyForDeploymentPostprocessing", runOnlyForDeploymentPostprocessing),
     ])
 
 
+def mac_format_path(pth):
+    p = pth.replace('\\', '/')
+    return p.rstrip('/')
+
+
 def build_PBXGroup(children, name, sourceTree=SOURCETREE_GROUP, path=None):
+    if path is not None:
+        path = path.strip()
     d = collections.OrderedDict([
         ("isa", "PBXGroup"),
         ("children", map(ensure_ref, children)),
         ("name", name),
         ("sourceTree", sourceTree),
     ])
-    if path is not None:
-        d["path"] = path
+    if path is not None and len(path) != 0:
+        d["path"] = mac_format_path(path)
     return d
 
 
@@ -132,7 +144,7 @@ def build_PBXNativeTarget(buildConfigurationList, buildPhases, buildRules, depen
                             productName, productReference, productType):
     return collections.OrderedDict([
         ("isa", "PBXNativeTarget"),
-        ("buildConfigurationList", map(ensure_ref, buildConfigurationList)),
+        ("buildConfigurationList", ensure_ref(buildConfigurationList)),
         ("buildPhases", map(ensure_ref, buildPhases)),
         ("buildRules", map(ensure_ref, buildRules)),
         ("dependencies", map(ensure_ref, dependencies)),
@@ -156,7 +168,7 @@ def build_PBXProject(buildConfigurationList, mainGroup, productRefGroup, targets
             ("", 0),
             ("", 0),
         ])),
-        ("buildConfigurationList", map(ensure_ref, buildConfigurationList)),
+        ("buildConfigurationList", ensure_ref(buildConfigurationList)),
         ("compatibilityVersion", "Xcode 9.3"),
         ("developmentRegion", "en"),
         ("hasScannedForEncodings", 0),
@@ -173,7 +185,7 @@ def build_PBXResourcesBuildPhase(buildActionMask=DEFAULT_BUILD_ACTION_MASK, file
     return collections.OrderedDict([
         ("isa", "PBXResourcesBuildPhase"),
         ("buildActionMask", buildActionMask),
-        ("files", files),
+        ("files", map(ensure_ref, files)),
         ("runOnlyForDeploymentPostprocessing", runOnlyForDeploymentPostprocessing),
     ])
 
@@ -182,7 +194,7 @@ def build_PBXSourcesBuildPhase(buildActionMask=DEFAULT_BUILD_ACTION_MASK, files=
     return collections.OrderedDict([
         ("isa", "PBXSourcesBuildPhase"),
         ("buildActionMask", buildActionMask),
-        ("files", files),
+        ("files", map(ensure_ref, files)),
         ("runOnlyForDeploymentPostprocessing", runOnlyForDeploymentPostprocessing),
     ])
 
@@ -347,7 +359,7 @@ def do_dump(ctx, record):
         ctx.frags.append(ctx.indent_str)
         ctx.frags.append(')')
     elif record_type is ObjectRef:
-        ctx.frags.append(ctx.format_ptr(id(record)))
+        ctx.frags.append(ctx.format_ptr(record.object))
     elif record_type in atomic_types:
         ctx.frags.append(str(record))
     else:
@@ -357,8 +369,8 @@ def do_dump(ctx, record):
 def dump_pbxproj(objects, str_seed, project_ref):
     ctx = DumpContext()
     ctx.init_context(str_seed)  # we can just use python builtin id
+    objects.sort(cmp_struct)
     if project_ref is None:
-        objects.sort(cmp_struct)
         for obj in objects:
             if obj["isa"] == "PBXProject":
                 root_obj = obj
@@ -369,7 +381,7 @@ def dump_pbxproj(objects, str_seed, project_ref):
     top_record = collections.OrderedDict([
         ("archiveVersion", 1),
         ("objectVersion", 50),
-        ("objects", collections.OrderedDict(map(lambda x: (ctx.format_ptr(id(x)), x), objects))),
+        ("objects", collections.OrderedDict(map(lambda x: (ctx.format_ptr(x), x), objects))),
         ("rootObject", ensure_ref(project_ref))
     ])
     do_dump(ctx, top_record)

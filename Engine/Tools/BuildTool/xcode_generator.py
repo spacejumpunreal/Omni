@@ -51,7 +51,8 @@ class XcodeGenerator(base_generator.BaseGenerator):
 
     @staticmethod
     def _get_target_name(target):
-        return "lib%s.a" % target if target.is_library else "%s.app" % target
+        tn = target.get_name()
+        return "lib%s.a" % tn if target.is_library else "%s.app" % tn
 
     def _generate_pbxproj_files(self, target, source, headers, pbxproj_file):
         pbx_objects = []
@@ -79,6 +80,7 @@ class XcodeGenerator(base_generator.BaseGenerator):
                     my_children = path2children[cpath] = []
                     should_continue = True
                 my_children.append(last_child)
+                last_child = cpath
                 should_continue = should_continue and len(cpath) != 0
                 cpath = os.path.dirname(cpath)
                 if not should_continue:
@@ -91,7 +93,6 @@ class XcodeGenerator(base_generator.BaseGenerator):
 
         # generate PBXFileReference and PBXGroup and PBXBuildFile
         # build pbx object from the tree
-        pbx_objects = []
         prj2source = os.path.relpath(self._source_root_dir, prj_path)
         source_refs = []
 
@@ -184,20 +185,30 @@ class XcodeGenerator(base_generator.BaseGenerator):
                                    main_group_ref, products_group_ref):
         # XCBuildConfiguration
         is_app = not target.is_library
-        target_debug = pbxproj_utils.get_build_setting(True, is_app, False)
-        target_release = pbxproj_utils.get_build_setting(False, is_app, False)
-        project_debug = pbxproj_utils.get_build_setting(True, is_app, True)
-        project_release = pbxproj_utils.get_build_setting(False, is_app, True)
+        target_debug = pbxproj_utils.build_XCBuildConfiguration(
+            pbxproj_utils.get_build_setting(True, is_app, False),
+            "Debug")
+        target_release = pbxproj_utils.build_XCBuildConfiguration(
+            pbxproj_utils.get_build_setting(False, is_app, False),
+            "Release")
+        project_debug = pbxproj_utils.build_XCBuildConfiguration(
+            pbxproj_utils.get_build_setting(True, is_app, True),
+            "Debug")
+        project_release = pbxproj_utils.build_XCBuildConfiguration(
+            pbxproj_utils.get_build_setting(False, is_app, True),
+            "Release")
 
-        target_config = pbxproj_utils.build_XCConfigurationList([target_debug, target_release], "Release")
-        project_config = pbxproj_utils.build_XCConfigurationList([project_debug, project_release], "Release")
+        target_config_list = pbxproj_utils.build_XCConfigurationList([target_debug, target_release], "Release")
+        project_config_list = pbxproj_utils.build_XCConfigurationList([project_debug, project_release], "Release")
+        pbx_objects.append(target_config_list)
+        pbx_objects.append(project_config_list)
         pbx_objects += [target_debug, target_release, project_debug, project_release]
         # PBXNativeTarget
         target_name = target.get_name()
         product_type = pbxproj_utils.PRODUCT_TYPE_STATIC_LIBRARY \
             if target.is_library else pbxproj_utils.PRODUCT_TYPE_APP
         target_ref = pbxproj_utils.build_PBXNativeTarget(
-            buildConfigurationList=target_config,
+            buildConfigurationList=target_config_list,
             buildPhases=phase_refs,
             buildRules=(),
             dependencies=(),
@@ -206,11 +217,13 @@ class XcodeGenerator(base_generator.BaseGenerator):
             productReference=product_ref,
             productType=product_type)
         project_ref = pbxproj_utils.build_PBXProject(
-            buildConfigurationList=project_config,
+            buildConfigurationList=project_config_list,
             mainGroup=main_group_ref,
             productRefGroup=products_group_ref,
             targets=(target_ref,))
         # PBXProject
+        pbx_objects.append(target_ref)
+        pbx_objects.append(project_ref)
         return target_ref, project_ref
 
     @staticmethod

@@ -13,3 +13,4 @@ Engine/Build
 Engine/Binaries
 .idea
 contents.xcworkspacedata
+*.zip
