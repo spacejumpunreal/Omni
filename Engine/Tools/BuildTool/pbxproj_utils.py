@@ -304,7 +304,7 @@ DEFAULT_TARGET_BUILD_SETTING = collections.OrderedDict([
     ('CODE_SIGN_STYLE', 'Automatic'),
     ('DEVELOPMENT_TEAM', '8K6L6A7M7P'),
     ('GCC_ENABLE_CPP_EXCEPTIONS', 'NO'),
-    ('HEADER_SEARCH_PATHS', []),
+    ('USER_HEADER_SEARCH_PATHS', []),
     ('PRODUCT_NAME', '$(TARGET_NAME)'),
     ('TARGETED_DEVICE_FAMILY', '"1,2"'),
 ])

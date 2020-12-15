@@ -191,8 +191,8 @@ class XcodeGenerator(base_generator.BaseGenerator):
         # XCBuildConfiguration
         is_app = not target.is_library
         inc_paths = self.get_dependent_include_paths(target)
-        prj_dir = os.path.dirname(self._get_pbxproj_file_path(target))
-        fields2update = [("HEADER_SEARCH_PATHS", map(lambda x: os.path.relpath(x, prj_dir), inc_paths))]
+        prj_dir = os.path.dirname(os.path.dirname(self._get_pbxproj_file_path(target)))
+        fields2update = [("USER_HEADER_SEARCH_PATHS", map(lambda x: os.path.relpath(x, prj_dir), inc_paths))]
         target_debug = pbxproj_utils.build_XCBuildConfiguration(
             pbxproj_utils.get_build_setting(True, is_app, False, fields2update),
             "Debug")

@@ -1,6 +1,7 @@
 #pragma once
 
 #define NOMINMAX
+#include <cstddef>
 #include <cstdint>
 
 namespace Omni
