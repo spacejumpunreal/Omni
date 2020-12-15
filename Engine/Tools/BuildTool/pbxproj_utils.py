@@ -4,17 +4,20 @@ import os
 
 
 class DumpContext(object):
-    __slots__ = ["indent_level", "ptr_base", "frags", "indent_str", "indent_char"]
+    __slots__ = ["indent_level", "ptr_base", "frags", "indent_str", "indent_char", "id2index", "gindex"]
 
     def init_context(self, string_seed, indent_char="    ", init_level=0):
         self.indent_level = init_level
         state = 0
         for s in string_seed:
             state = ord(s) | (state << 8)
+        state = 0xffffffffffffffff & state
         self.ptr_base = "%08X" + ("%016X" % state)
         self.frags = []
         self.indent_str = init_level * indent_char
         self.indent_char = indent_char
+        self.id2index = {}
+        self.gindex = [0]
 
     def next(self):
         d = DumpContext()
@@ -23,14 +26,23 @@ class DumpContext(object):
         d.frags = self.frags
         d.indent_str = self.indent_str + self.indent_char
         d.indent_char = self.indent_char
+        d.id2index = self.id2index
+        d.gindex = self.gindex
         return d
 
     def get_indent(self):
         return self.indent_str
 
     def format_ptr(self, obj):
+        assert type(obj) is collections.OrderedDict
         name = obj.get("name", None)
-        s = self.ptr_base % id(obj)
+        id_obj = id(obj)
+        idx = self.id2index.get(id_obj, None)
+        if idx is None:
+            idx = self.gindex[0]
+            self.gindex[0] = idx + 1
+            self.id2index[id_obj] = idx
+        s = self.ptr_base % idx
         if name is not None:
             s = s + "/*%s*/" % name
         return s
@@ -173,7 +185,7 @@ def build_PBXProject(buildConfigurationList, mainGroup, productRefGroup, targets
         ("hasScannedForEncodings", 0),
         ("knownRegions", ["en", "Base"]),
         ("mainGroup", ensure_ref(mainGroup)),
-        ("productRefGroup", productRefGroup),
+        ("productRefGroup", ensure_ref(productRefGroup)),
         ("projectDirPath", quote_string("")),
         ("projectRoot", quote_string("")),
         ("targets", map(ensure_ref, targets)),
