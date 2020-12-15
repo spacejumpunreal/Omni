@@ -29,6 +29,8 @@ class BaseGenerator(object):
         paths = []
         for p in target.dependencies:
             paths += self._targets[p].exported_dirs
+        if target.include_source_dir:
+            paths.append(self._source_root_dir)
         return paths
 
     @staticmethod

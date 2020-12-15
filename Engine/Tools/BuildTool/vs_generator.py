@@ -176,12 +176,8 @@ class VS2019Generator(base_generator.BaseGenerator):
                 if p == "Win32":
                     macros.append("WIN32")
                 macros.append("%(PreprocessorDefinitions)")
-                if target.include_source_dir:
-                    additional_include_directories = [self._source_root_dir]
-                else:
-                    additional_include_directories = []
-                additional_include_directories += [
-                    os.path.relpath(d, self._build_dir) for d in self.get_dependent_include_paths(target)]
+                abs_inc_dirs = self.get_dependent_include_paths(target)
+                additional_include_directories = [os.path.relpath(d, self._build_dir) for d in abs_inc_dirs]
                 additional_include_directories.append("%(AdditionalIncludeDirectories)")
                 additional_link_libs = ["d3d12.lib", "dxgi.lib", "d3dcompiler.lib", "%(AdditionalDependencies)"]
                 clcompile = XmlNode("ClCompile", (

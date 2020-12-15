@@ -86,7 +86,7 @@ class XcodeGenerator(base_generator.BaseGenerator):
                 if not should_continue:
                     break
         all_code_files = source + headers
-        prj_path = os.path.dirname(pbxproj_file)
+        prj_path = os.path.dirname(os.path.dirname(pbxproj_file))
         for pth in all_code_files:
             path_rel2source = os.path.relpath(pth, self._source_root_dir)
             add_all_parents_for_path(path_rel2source)

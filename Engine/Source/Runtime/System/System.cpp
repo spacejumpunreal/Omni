@@ -1,5 +1,3 @@
-#pragma once
-
 #include "Runtime/Omni.h"
 #include "Runtime/System/System.h"
 #include "Runtime/System/Module.h"
