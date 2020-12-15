@@ -305,7 +305,7 @@ DEFAULT_TARGET_BUILD_SETTING = collections.OrderedDict([
     ('DEVELOPMENT_TEAM', '8K6L6A7M7P'),
     ('GCC_ENABLE_CPP_EXCEPTIONS', 'NO'),
     ('USER_HEADER_SEARCH_PATHS', []),
-    ('PRODUCT_NAME', '$(TARGET_NAME)'),
+    ('PRODUCT_NAME', '"$(TARGET_NAME)"'),
     ('TARGETED_DEVICE_FAMILY', '"1,2"'),
 ])
 
@@ -319,7 +319,7 @@ LIBRARY_EXTRA_BUILD_SETTING = collections.OrderedDict([
 
 APP_EXTRA_BUILD_SETTING = collections.OrderedDict([
     ("ASSETCATALOG_COMPILER_APPICON_NAME", "AppIcon"),
-    ("CLANG_CXX_LANGUAGE_STANDARD", "c++17"),
+    ("CLANG_CXX_LANGUAGE_STANDARD", ''"c++17"''),
     ('INFOPLIST_FILE', '""'),
     ('LD_RUNPATH_SEARCH_PATHS', [
         '"$(inherited)"',
