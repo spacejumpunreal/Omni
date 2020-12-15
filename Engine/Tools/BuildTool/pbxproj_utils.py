@@ -180,7 +180,7 @@ def build_PBXProject(buildConfigurationList, mainGroup, productRefGroup, targets
             ("TargetAttributes", target_attributes),
         ])),
         ("buildConfigurationList", ensure_ref(buildConfigurationList)),
-        ("compatibilityVersion", "Xcode 9.3"),
+        ("compatibilityVersion", '"Xcode 9.3"'),
         ("developmentRegion", "en"),
         ("hasScannedForEncodings", 0),
         ("knownRegions", ["en", "Base"]),
