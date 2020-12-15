@@ -44,7 +44,7 @@ class DumpContext(object):
             self.id2index[id_obj] = idx
         s = self.ptr_base % idx
         if name is not None:
-            s = s + "/*%s*/" % name
+            s = s + " /* %s */" % name
         return s
 
 
