@@ -173,11 +173,9 @@ def build_PBXProject(buildConfigurationList, mainGroup, productRefGroup, targets
     return collections.OrderedDict([
         ("isa", "PBXProject"),
         ("attributes", collections.OrderedDict([
-            ("LastUpdateCheck", 1130),
+            ("LastUpgradeCheck", 1130),
             ("ORGANIZATIONNAME", "qsmdev"),
             ("TargetAttributes", target_attributes),
-            ("", 0),
-            ("", 0),
         ])),
         ("buildConfigurationList", ensure_ref(buildConfigurationList)),
         ("compatibilityVersion", "Xcode 9.3"),
