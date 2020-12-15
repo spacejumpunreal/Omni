@@ -36,7 +36,6 @@ class DumpContext(object):
         return s
 
 
-
 def next_context(context):
     return context[0] + 1, context[1], context[2]  # (indent_level, string_fragments, obj2id)
 
@@ -388,7 +387,7 @@ def dump_pbxproj(objects, str_seed, project_ref):
     return "".join(ctx.frags)
 
 
-def get_build_setting(is_debug, is_app, is_project):
+def get_build_setting(is_debug, is_app, is_project, update_kvs=None):
     if is_project:
         ret = DEFAULT_PROJECT_BUILD_SETTING.copy()
         update_dict = DEBUG_PROJECT_EXTRA_BUILD_SETTING if is_debug else RELEASE_PROJECT_EXTRA_BUILD_SETTING
@@ -397,6 +396,9 @@ def get_build_setting(is_debug, is_app, is_project):
         update_dict = APP_EXTRA_BUILD_SETTING if is_app else LIBRARY_EXTRA_BUILD_SETTING
     for k, v in update_dict.iteritems():
         ret[k] = v
+    if update_kvs is not None:
+        for k, v in update_kvs:
+            ret[k] = v
     return ret
 
 
