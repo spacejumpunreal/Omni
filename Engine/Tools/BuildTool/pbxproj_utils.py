@@ -321,7 +321,10 @@ APP_EXTRA_BUILD_SETTING = collections.OrderedDict([
     ("ASSETCATALOG_COMPILER_APPICON_NAME", "AppIcon"),
     ("CLANG_CXX_LANGUAGE_STANDARD", "c++17"),
     ('INFOPLIST_FILE', '""'),
-    ('LD_RUNPATH_SEARCH_PATHS', []),
+    ('LD_RUNPATH_SEARCH_PATHS', [
+        '"$(inherited)"',
+        '"@executable_path/Frameworks"',
+    ]),
     ('PRODUCT_BUNDLE_IDENTIFIER', ""),
 ])
 

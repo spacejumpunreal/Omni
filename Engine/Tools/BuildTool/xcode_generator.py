@@ -27,9 +27,10 @@ class XcodeGenerator(base_generator.BaseGenerator):
             self._ensure_parents_exists(pbxproj_file)
             generated_target_pbxproj_pairs.append((target, pbxproj_file))
             source, headers = target.collect_source_files()
+            info_plist_path = None
             if not target.is_library:
-                self._generate_app_folder(target)
-            self._generate_pbxproj_files(target, source, headers, pbxproj_file)
+                info_plist_path = self._generate_app_folder(target)
+            self._generate_pbxproj_files(target, source, headers, pbxproj_file, info_plist_path)
         self._generate_workspace(generated_target_pbxproj_pairs)
 
     @staticmethod
@@ -54,14 +55,14 @@ class XcodeGenerator(base_generator.BaseGenerator):
         tn = target.get_name()
         return "lib%s.a" % tn if target.is_library else "%s.app" % tn
 
-    def _generate_pbxproj_files(self, target, source, headers, pbxproj_file):
+    def _generate_pbxproj_files(self, target, source, headers, pbxproj_file, info_plist_path):
         pbx_objects = []
         source_refs, resource_refs, framework_refs, product_ref, main_group_ref, products_group_ref = \
             self._handle_pbx_file_and_group(pbx_objects, target, source, headers, pbxproj_file)
 
         phase_refs = self._handle_pbx_build_phases(pbx_objects, source_refs, resource_refs, framework_refs)
         target_ref, project_ref = self._handle_pbx_target_project(
-            target, pbx_objects, product_ref, phase_refs, main_group_ref, products_group_ref)
+            target, pbx_objects, product_ref, phase_refs, main_group_ref, products_group_ref, info_plist_path)
         self._handle_pbxproj(target, pbx_objects, project_ref, pbxproj_file)
 
     def _handle_pbx_file_and_group(self, pbx_objects, target, source, headers, pbxproj_file):
@@ -143,7 +144,7 @@ class XcodeGenerator(base_generator.BaseGenerator):
 
         # Products
         product_type = pbxproj_utils.FILE_TYPE_ARCHIVE if target.is_library else pbxproj_utils.FILE_TYPE_APP
-        product_name = target.get_name() + ".a" if target.is_library else ".app"
+        product_name = self._get_target_name(target)
         product_ref = pbxproj_utils.build_PBXFileReference(
             product_type, product_name, pbxproj_utils.SOURCETREE_PRODUCTS)
         # add Products group
@@ -187,18 +188,27 @@ class XcodeGenerator(base_generator.BaseGenerator):
         return phase_refs
 
     def _handle_pbx_target_project(self, target, pbx_objects, product_ref, phase_refs,
-                                   main_group_ref, products_group_ref):
+                                   main_group_ref, products_group_ref, info_plist_path):
         # XCBuildConfiguration
         is_app = not target.is_library
         inc_paths = self.get_dependent_include_paths(target)
         prj_dir = os.path.dirname(os.path.dirname(self._get_pbxproj_file_path(target)))
-        fields2update = [("USER_HEADER_SEARCH_PATHS", map(lambda x: os.path.relpath(x, prj_dir), inc_paths))]
+        fields2update = [
+            ("USER_HEADER_SEARCH_PATHS", map(lambda x: os.path.relpath(x, prj_dir), inc_paths)),
+        ]
+        if not target.is_library:
+            fields2update.append(("INFOPLIST_FILE", os.path.relpath(info_plist_path, prj_dir)))
+        target_debug_cfg = pbxproj_utils.get_build_setting(True, is_app, False, fields2update)
         target_debug = pbxproj_utils.build_XCBuildConfiguration(
-            pbxproj_utils.get_build_setting(True, is_app, False, fields2update),
+            target_debug_cfg,
             "Debug")
+        target_release_cfg = pbxproj_utils.get_build_setting(False, is_app, False, fields2update)
         target_release = pbxproj_utils.build_XCBuildConfiguration(
-            pbxproj_utils.get_build_setting(False, is_app, False, fields2update),
+            target_release_cfg,
             "Release")
+        if is_app:
+            bundle_id = "edu.self." + target.get_name()
+            target_debug_cfg["PRODUCT_BUNDLE_IDENTIFIER"] = target_release_cfg["PRODUCT_BUNDLE_IDENTIFIER"] = bundle_id
         project_debug = pbxproj_utils.build_XCBuildConfiguration(
             pbxproj_utils.get_build_setting(True, is_app, True),
             "Debug")
@@ -244,11 +254,13 @@ class XcodeGenerator(base_generator.BaseGenerator):
         app_dir = self._get_target_app_dir(target)
         self._ensure_path_exists(app_dir)
         tree = plist_utils.load_ios_app_info_plist_template()
-        plist_utils.dump_to_file(os.path.join(app_dir, self.INFO_PLIST), tree)
+        info_plist_path = os.path.join(app_dir, self.INFO_PLIST)
+        plist_utils.dump_to_file(info_plist_path, tree)
         for storyboard_file in self.app_storyboard_files:
             dst_path = os.path.join(app_dir, storyboard_file)
             src_path = os.path.join(self._ios_resource_dir, storyboard_file)
             shutil.copyfile(src_path, dst_path)
+        return info_plist_path
 
 
     WORKSPACE_CONTENT = """<?xml version="1.0" encoding="UTF-8"?>
