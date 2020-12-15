@@ -1,0 +1,9 @@
+# Should engine contain message loop code?
+## why this is talked about
+- because thay effects a choice: whether engine need the Process main thread to join it or not
+## reality
+- Windows do not require UI to be called on MainThread
+- iOS do require UI to be called on MainThread
+## decision
+- After handling initialization, MainThread will be dedicated to UI, act as cycle trigger, window message handler executor
+- put most of UI logic code in engine, main program should be cross platform, conditional code is better than seperate build targets since sperate build targets means more files

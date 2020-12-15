@@ -3,6 +3,7 @@ import os
 import uuid
 import shutil
 import _winreg
+import base_generator
 from xml_utils import XmlNode
 
 
@@ -104,17 +105,12 @@ def get_latest_windows_sdk_version():
     return sorted(subs, cmp=cmp_version)[-1]
 
 
-class VS2019Generator(object):
-    def __init__(self, collector, launch_dir, build_dir, solution_path):
-        self._targets = collector.targets
-        self._source_root_dir = collector.root_dir
-        self._launch_dir = launch_dir
-        self._build_dir = build_dir
-        self._solution_path = solution_path
-
+class VS2019Generator(base_generator.BaseGenerator):
     def run(self):
         if not os.path.exists(self._build_dir):
             os.makedirs(self._build_dir)
+        # this is where VS place all intermediate binary files, clean them to avoid warning
+        # since we create random GUIDs on every run
         intermediate_dir = os.path.join(self._build_dir, "Intermediate")
         if os.path.exists(intermediate_dir):
             shutil.rmtree(intermediate_dir, True)
@@ -185,7 +181,7 @@ class VS2019Generator(object):
                 else:
                     additional_include_directories = []
                 additional_include_directories += [
-                    os.path.relpath(d, self._build_dir) for t in all_deps for d in t.exported_dirs]
+                    os.path.relpath(d, self._build_dir) for d in self.get_dependent_include_paths(target)]
                 additional_include_directories.append("%(AdditionalIncludeDirectories)")
                 additional_link_libs = ["d3d12.lib", "dxgi.lib", "d3dcompiler.lib", "%(AdditionalDependencies)"]
                 clcompile = XmlNode("ClCompile", (
@@ -374,19 +370,7 @@ class VS2019Generator(object):
         with open(self._solution_path, "wb") as wf:
             wf.write(content)
 
-    def get_all_dependencies(self, target):
-        q = [target]
-        all_deps = set()
-        while q:
-            x = q.pop()
-            if x in all_deps:
-                continue
-            all_deps.add(x)
-            for d in x.dependencies:
-                dd = self._targets[d]
-                if dd not in all_deps:
-                    q.append(dd)
-        return all_deps
+
 
     @staticmethod
     def _get_vcxproj_file_name(target):
@@ -403,10 +387,6 @@ class VS2019Generator(object):
     @staticmethod
     def _get_target_name(target):
         return target.get_name() + ".vs2019"
-
-    @staticmethod
-    def format_guid(guid):
-        return "{%s}" % guid
 
     @staticmethod
     def get_target_name(target):
