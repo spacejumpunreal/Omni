@@ -128,7 +128,7 @@ class XcodeGenerator(base_generator.BaseGenerator):
             app_dir = self._get_target_app_dir(target)
             prj2app = os.path.relpath(app_dir, prj_path)
             for storyboard_file in storyboard_files:
-                file_ref = pbxproj_utils.build_PBXFileReference(pbxproj_utils.FILE_TYPE_STORYBOARD, storyboard_file)
+                file_ref = pbxproj_utils.build_PBXFileReference(pbxproj_utils.FILE_TYPE_STORYBOARD, storyboard_file, is_explicit=False)
                 variant_group = pbxproj_utils.build_PBXVariantGroup([file_ref], storyboard_file)
                 file_refs.append(variant_group)
                 build_file = pbxproj_utils.build_PBXBuildFile(variant_group)

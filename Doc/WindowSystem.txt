@@ -1,9 +1,16 @@
 # Should engine contain message loop code?
 ## why this is talked about
+- game may not be the only things, a wrapper may be needed and is actually first run by the Game program.
+    - iOS
+        - main() call UIApplicationMain, which creates AppDelegate and load Main.storyboard
+        - Main.storyboard instantiates Views(ui elements) and ViewController classes that control them
+        - choice0: main program run the ui loop, engine exposes callbacks, run engine in those callbacks, but what about frame timing?
+        - choice1: engine run the ui loop(main thread call UIApplicationMain)
+        - does it really matters? Once you call UIApplicationMain you loose control of the MainThread
 - because thay effects a choice: whether engine need the Process main thread to join it or not
 ## reality
 - Windows do not require UI to be called on MainThread
 - iOS do require UI to be called on MainThread
 ## decision
-- After handling initialization, MainThread will be dedicated to UI, act as cycle trigger, window message handler executor
+- After handling initialization, MainThread will be dedicated to UI module, act as cycle trigger, window message handler executor
 - put most of UI logic code in engine, main program should be cross platform, conditional code is better than seperate build targets since sperate build targets means more files

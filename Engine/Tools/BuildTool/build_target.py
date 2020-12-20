@@ -5,8 +5,9 @@ import uuid
 
 
 BUILD_RULE_SUFFIX = ".Build.py"
-DEFAULT_SOURCE_SUFFIXES = re.compile(r".*\.cpp"),
+DEFAULT_SOURCE_SUFFIXES = re.compile(r".*\.(c|(cpp))$"),
 DEFAULT_HEADER_SUFFIXES = re.compile(r".*\.h"),
+OBJC_SOURCE_SUFFIXES = re.compile(r".*\.((mm)|m)$")
 
 
 def is_parent_of(directory, path):

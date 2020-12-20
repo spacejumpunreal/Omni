@@ -105,10 +105,10 @@ FILE_TYPE_C = 'sourcecode.c.c'
 FILE_TYPE_STORYBOARD = 'file.storyboard'
 
 
-def build_PBXFileReference(explicitFileType, path, sourceTree=SOURCETREE_GROUP):
+def build_PBXFileReference(fileType, path, sourceTree=SOURCETREE_GROUP, is_explicit=True):
     return collections.OrderedDict([
         ("isa", "PBXFileReference"),
-        ("explicitFileType", explicitFileType),
+        ("explicitFileType" if is_explicit else "lastKnownFileType", fileType),
         ("path", path),
         ("sourceTree", sourceTree),
     ])

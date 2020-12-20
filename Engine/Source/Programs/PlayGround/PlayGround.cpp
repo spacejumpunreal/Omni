@@ -2,16 +2,23 @@
 #include "Runtime/Misc/ArrayUtils.h"
 #include <array>
 
-int main(int, const char**)
+extern "C"
+{
+    int IOSMain(int argc, const char** argv);
+}
+
+int main(int argc, const char** argv)
 {
 	Omni::System::CreateSystem();
 	Omni::System& system = Omni::System::GetSystem();
-	const char* argv[] = 
+	const char* engineArgv[] =
 	{
 		"",
 	};
-	system.InitializeAndJoin(ARRAY_LENGTH(argv), argv);
+	system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv);
 	system.TriggerFinalization();
 	system.WaitTillFinalized();
 	system.DestroySystem();
+    
+    return IOSMain(argc, argv);
 }
