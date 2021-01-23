@@ -36,7 +36,7 @@ class XcodeGenerator(base_generator.BaseGenerator):
     @staticmethod
     def _ensure_path_exists(p):
         if not os.path.exists(p):
-            os.makedirs(p, mode=0755)
+            os.makedirs(p, mode=0o755)
 
     @staticmethod
     def _ensure_parents_exists(file_path):
