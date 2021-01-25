@@ -1,0 +1,22 @@
+# Queue
+## API
+- ctorSerial(targetQueue)
+- ctorConcurrent(numberOfThreads)
+- async(WorkItem)
+- 
+## question
+- must serial queue be tied to 1 core? Seems the sync before taking a job is always necessary, so multiple threads serve a serial queue at different time?
+## detail
+- every concurrent queue has some private threads for itself, no for serial queue(use some thread on the global queue?)
+- or the model should be：DispatchObjects are just frontends, they insert items on to thread specific queues
+
+# WorkItem
+## API
+- ctor()
+- perform(): execute on current thread immediately
+- wait(): wait on current thread synchronously
+
+
+# Group
+## detail
+- ctor(queue, count)

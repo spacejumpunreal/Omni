@@ -7,7 +7,7 @@ extern "C"
     int IOSMain(int argc, const char** argv);
 }
 
-int main(int argc, const char** argv)
+int main(int, const char** )
 {
 	Omni::System::CreateSystem();
 	Omni::System& system = Omni::System::GetSystem();
@@ -19,6 +19,6 @@ int main(int argc, const char** argv)
 	system.TriggerFinalization();
 	system.WaitTillFinalized();
 	system.DestroySystem();
-    
-    return IOSMain(argc, argv);
+ 
+	return 0;
 }
