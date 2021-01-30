@@ -76,7 +76,7 @@ EndGlobal
 """
 
 Configurations = ("Debug", "Release")
-Platforms = ("x64", "Win32")
+Platforms = ("x64",)
 PlatformToolset = "v142"
 Indent = "  "
 
@@ -173,8 +173,6 @@ class VS2019Generator(base_generator.BaseGenerator):
                 is_debug = c == "Debug"
                 cp = {"Condition": "'$(Configuration)|$(Platform)'=='%s|%s'" % (c, p)}
                 macros = ["_DEBUG" if is_debug else "NDEBUG"]
-                if p == "Win32":
-                    macros.append("WIN32")
                 macros.append("%(PreprocessorDefinitions)")
                 abs_inc_dirs = self.get_dependent_include_paths(target)
                 additional_include_directories = [os.path.relpath(d, self._build_dir) for d in abs_inc_dirs]
