@@ -1,4 +1,7 @@
-# BuildSystem-ios
-# UnitTest-investigate
+# BuildSystem-ios(done)
+# External module target: snmalloc, export functions, break include dependencies
 # MemroyModule
-- NonRelease mode use CDCDCD to fill memory to catch not initialized problem, add pattern on release, check pattern before returning from Allocate
+	- NonRelease mode use CDCDCD to fill memory to catch not initialized problem, add pattern on release, check pattern before returning from Allocate
+# UnitTest-investigate
+
+

@@ -108,7 +108,7 @@ namespace Omni
 		}
 		for (usize i = 0; i < self->mExternalModuleInfo.size(); ++i)
 		{
-			auto info = self->mExternalModuleInfo[i];
+			const ModuleExportInfo& info = self->mExternalModuleInfo[i];
 			if (info.IsAlwaysLoad || loadModuleNames.count(InternalModuleInfo[i]->Name) != 0)
 			{
 				Module* m = info.Ctor(argMap);

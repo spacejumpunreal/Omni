@@ -1,8 +1,9 @@
 #include "Runtime/Memory/MemoryModule.h"
-#include "Runtime/System/ModuleExport.h"
-#include "Runtime/System/Module.h"
 
+#include "Runtime/Memory/SNMallocWrapper.h"
 #include "Runtime/Misc/PImplUtils.h"
+#include "Runtime/System/Module.h"
+#include "Runtime/System/ModuleExport.h"
 
 namespace Omni
 {

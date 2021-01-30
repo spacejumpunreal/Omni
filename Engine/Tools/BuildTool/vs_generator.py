@@ -179,7 +179,7 @@ class VS2019Generator(base_generator.BaseGenerator):
                 abs_inc_dirs = self.get_dependent_include_paths(target)
                 additional_include_directories = [os.path.relpath(d, self._build_dir) for d in abs_inc_dirs]
                 additional_include_directories.append("%(AdditionalIncludeDirectories)")
-                additional_link_libs = ["d3d12.lib", "dxgi.lib", "d3dcompiler.lib", "%(AdditionalDependencies)"]
+                additional_link_libs = ["mincore.lib", "d3d12.lib", "dxgi.lib", "d3dcompiler.lib", "%(AdditionalDependencies)"]
                 clcompile = XmlNode("ClCompile", (
                     XmlNode("WarningLevel", "Level4"),
                     XmlNode("Optimization", "Disabled" if is_debug else "MaxSpeed"),

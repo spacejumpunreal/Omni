@@ -1,11 +1,6 @@
 #include "Runtime/System/System.h"
 #include "Runtime/Misc/ArrayUtils.h"
-#include <array>
 
-extern "C"
-{
-    int IOSMain(int argc, const char** argv);
-}
 
 int main(int, const char** )
 {

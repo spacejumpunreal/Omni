@@ -1,0 +1,35 @@
+# function
+- profiling/debug leak: not needed on xcode, may not be needed on windows(slow), can be needed on android
+- debug: fill all allocated memory/deallocated with CDCDC to match initialization bug
+# requirement
+- track/trace every allocation, at least in my code
+- hook global new/delete oeprator
+- hook malloc/free?
+- can be bypassed to use system tracing(xcode/vs) on per allocator basis
+
+# usage
+- scoped allocator: 在container中的类自动会被传给allocator
+- create pmr allocator: easy, override/implement do_allocate/do_is_equal/do_deallocate
+- create type using pmr allocator:
+	- ctor: default ctor, copy ctor, move ctor, extended ctor
+	- allocator member objects: 
+		- auto* new_node = allocator.resource()->Allocate(sizeof(node->value), alignof(node->value))
+		- allocator.construct(std::addressof(new_node), std::forward<Args>(args)...)
+		- construct会处理scoped allocator中要把allocator传下去的问题
+	- deallocate member objects:
+		- allocator.destroy(std::addressof(node->value));
+		- allocator.resource()->deallocate(node, sizeof(node), alignof(node));
+	- move
+		- never change allocator after construction
+		- allocator member variable的type应该是polymorphic_allocator<byte>
+		- 如果要传参的话传成第一个(有variadict template argument的情况)
+		- assignment operator: copy assign没什么可说的, move assign的话same allocator的话可以真move,否则copy assign
+		- extended copy constructor(allocator有默认值): 先default construct(用给的allocator),再assign
+		- move operator: 先default construct(用other的allocator), 再assign move
+		- extended move constructor(allocator没有默认值, 必须用户指定): 先default construct(用给的allocator), 再assign move
+		- move constructor
+# pmr
+
+# API
+## std::pmr::polymorphic_allocator GetAllocator()
+## std::pmr::string Stats()
