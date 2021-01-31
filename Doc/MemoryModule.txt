@@ -28,8 +28,30 @@
 		- move operator: 先default construct(用other的allocator), 再assign move
 		- extended move constructor(allocator没有默认值, 必须用户指定): 先default construct(用给的allocator), 再assign move
 		- move constructor
-# pmr
+
+# ideas
+- memKind are only for debug/profile/orgnization, piece of skin on top of real allocators
+- at maximum speed, memKinds should be ignored
+
 
 # API
-## std::pmr::polymorphic_allocator GetAllocator()
-## std::pmr::string Stats()
+## module
+- GetAllocator(MemoryKind) -> std::pmr::polymorphic_allocator<byte>
+- GetThreadArena() -> MemoryArena
+- GetStats(std::vector<AllocatorStats>&)
+- Shrink()
+- data
+	- mType2Allocator
+	- mAllocators
+
+## IAllocator
+- GetPMRAllocator() -> std::pmr::polymorphic_allocator<byte>
+- GetStats() -> AllocatorStats
+- GetName() -> const char*
+- Shrink()
+
+## MemArena
+- GetPMRAllocator() -> std::pmr::polymorphic_allocator<byte>
+- GetStats() -> AllocatorStats
+- Push()
+- Pop()

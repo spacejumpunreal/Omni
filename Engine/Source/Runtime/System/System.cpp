@@ -1,4 +1,3 @@
-#include "Runtime/Omni.h"
 #include "Runtime/System/System.h"
 #include "Runtime/System/Module.h"
 #include "Runtime/System/ModuleExport.h"
@@ -51,8 +50,11 @@ namespace Omni
 
 	//globals
 	static SystemImpl* GSystem;
+
+	//functions
 	void System::CreateSystem()
 	{
+		CheckAlways(GSystem == nullptr, "double create");
 		GSystem = new SystemImpl();
 	}
 	System& System::GetSystem()
@@ -61,6 +63,7 @@ namespace Omni
 	}
 	void System::DestroySystem()
 	{
+		CheckAlways(GSystem != nullptr, "double destroy");
 		delete GSystem;
 		GSystem = nullptr;
 	}
@@ -128,32 +131,35 @@ namespace Omni
 		}
 		usize nModules = self->mModules.size();
 		usize todo = 0;
-		for (usize i = 0; i < nModules; ++i)
-		{
-			Module* mod = self->mModules[i];
-			mod->Initialize();
-			if (mod->GetState() == ModuleStatus::Initializing)
-				++todo;
-		}
+		bool firstRound = true;
 		while (todo > 0)
 		{
 			todo = 0;
 			for (usize i = 0; i < nModules; ++i)
 			{
 				Module* mod = self->mModules[i];
-				if (mod->GetState() == ModuleStatus::Initializing)
+				if (firstRound || mod->GetStatus() == ModuleStatus::Initializing)
+					mod->Initialize();
+				ModuleStatus ms = mod->GetStatus();
+				switch (ms)
 				{
-					mod->Initializing();
-					if (mod->GetState() == ModuleStatus::Initializing)
-						++todo;
+				case ModuleStatus::Initializing:
+					++todo;
+					break;
+				case ModuleStatus::Ready:
+					break;
+				default:
+					CheckAlways(false, "unexpected init status");
+					break;
 				}
 			}
+			firstRound = false;
 		}
 		self->mStatus = SystemStatus::Ready;
 		//join concurrency module
 	}
 
-	SystemStatus System::GetState()
+	SystemStatus System::GetStatus()
 	{
 		const SystemImpl* self = SystemImpl::GetCombinePtr(this);
 		return self->mStatus;
@@ -162,8 +168,8 @@ namespace Omni
 	void System::TriggerFinalization()
 	{
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);
-		if (self->mStatus == SystemStatus::Ready)
-			self->mStatus = SystemStatus::ToBeFinalized;
+		SystemStatus v = SystemStatus::Ready;
+		self->mStatus.compare_exchange_strong(v, SystemStatus::ToBeFinalized);
 	}
 
 	void System::WaitTillFinalized()

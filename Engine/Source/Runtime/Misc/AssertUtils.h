@@ -1,6 +1,7 @@
 #pragma once
 #include <cassert>
 #include <cstdarg>
+#include <cstdio>
 
 namespace Omni
 {

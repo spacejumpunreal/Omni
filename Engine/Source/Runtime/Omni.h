@@ -24,3 +24,15 @@ namespace Omni
 #else
 #define OMNI_DEBUG 1
 #endif
+
+#define OMNI_WINDOWS _WIN64
+#define OMNI_IOS __APPLE__
+#define OMNI_ANDROID __ANDROID__
+
+#define FORCEINLINE __forceinline
+
+#if OMNI_IOS
+#elif OMNI_ANDROID
+#else//OMNI_WINDOWS and others
+	#define OMNI_DEFAULT_ALIGNMENT 8
+#endif

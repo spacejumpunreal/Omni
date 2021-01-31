@@ -18,14 +18,13 @@ namespace Omni
 	class Module
 	{
 	public:
-		virtual void Initialize() {};
-		virtual void Initializing() {};
-		virtual void Finalize() {};
-		virtual void Finalizing() {};
-		virtual void Destroy() = 0;
-		virtual ModuleStatus GetState() //supposed to be called on MainThread during Initialization and Finalization
-		{
-			return ModuleStatus::Ready;
-		}
+		virtual void Initialize();
+		virtual void Initializing();
+		virtual void Finalize();
+		virtual void Finalizing();
+		ModuleStatus GetStatus(); //supposed to be called on MainThread during Initialization and Finalization
+		virtual ~Module();
+	private:
+		ModuleStatus mStatus;
 	};
 }

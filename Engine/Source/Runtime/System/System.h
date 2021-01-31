@@ -25,7 +25,7 @@ namespace Omni
 		void InitializeAndJoin(u32 argc, const char** argv); //whoever called this became MainThread
 
 		//API for Engine users
-		SystemStatus GetState();
+		SystemStatus GetStatus();
 		void TriggerFinalization();
 		void WaitTillFinalized();
 

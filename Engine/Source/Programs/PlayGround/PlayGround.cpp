@@ -1,6 +1,7 @@
 #include "Runtime/System/System.h"
 #include "Runtime/Misc/ArrayUtils.h"
 
+#include "Runtime/Memory/SNAllocator.h"
 
 int main(int, const char** )
 {
