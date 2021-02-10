@@ -1,7 +1,6 @@
 #include "Runtime/System/System.h"
 #include "Runtime/Misc/ArrayUtils.h"
-
-#include "Runtime/Memory/SNAllocator.h"
+#include "Runtime/Memory/MemoryModule.h"
 
 int main(int, const char** )
 {
@@ -12,8 +11,15 @@ int main(int, const char** )
 		"",
 	};
 	system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv);
+
+	Omni::PMRAllocator alloc = Omni::MemoryModule::Get().GetPMRAllocator(Omni::MemoryKind::UserDefault);
+	size_t testSize = 1024;
+	std::byte* p = alloc.allocate(testSize);
+	memset(p, 0, testSize);
+	alloc.deallocate(p, testSize);
+
 	system.TriggerFinalization();
-	system.WaitTillFinalized();
+	system.Finalize();
 	system.DestroySystem();
  
 	return 0;

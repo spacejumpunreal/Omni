@@ -22,7 +22,10 @@ namespace Omni
 		static void CreateSystem();
 		static System& GetSystem();
 		void DestroySystem();
+
+		//EngineModule MainThread
 		void InitializeAndJoin(u32 argc, const char** argv); //whoever called this became MainThread
+		void Finalize();
 
 		//API for Engine users
 		SystemStatus GetStatus();

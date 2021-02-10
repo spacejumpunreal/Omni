@@ -14,31 +14,27 @@ namespace Omni
 	//definitions
 	using ConcurrencyModuleImpl = PImplCombine<ConcurrencyModule, ConcurrencyModulePrivateData>;
 
+	//global variables
+	ConcurrencyModule* gConcurrencyModule;
+
 	void ConcurrencyModule::Initialize()
 	{
+		gConcurrencyModule = this;
+		Module::Initialize();
 	}
-
-	void ConcurrencyModule::Initializing()
-	{
-	}
-
 	void ConcurrencyModule::Finalize()
 	{
-	}
+		Module::Finalizing();
+		if (GetUserCount() > 0)
+			return;
 
-	void ConcurrencyModule::Finalizing()
+		gConcurrencyModule = nullptr;
+		Module::Finalize();
+	}
+	ConcurrencyModule& ConcurrencyModule::Get()
 	{
+		return *gConcurrencyModule;
 	}
-
-	void ConcurrencyModule::Destroy()
-	{
-	}
-
-	ModuleStatus ConcurrencyModule::GetState()
-	{
-		return ModuleStatus();
-	}
-
 	Module* ConcurrencyModuleCtor(const EngineInitArgMap&)
 	{
 		return new ConcurrencyModuleImpl();

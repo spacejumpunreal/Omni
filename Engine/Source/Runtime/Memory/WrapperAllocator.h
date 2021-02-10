@@ -8,15 +8,14 @@ namespace Omni
 {
 	class WrapperAllocator : public IAllocator
 	{
-		static constexpr size_t PrivateDataSize = 40;
 	public:
 		WrapperAllocator(std::pmr::memory_resource& memResource, const char* name);
-		PMRAllocator GetPMRAllocator() override;
+		~WrapperAllocator();
+		PMRResource* GetResource() override;
 		MemoryStats GetStats() override;
 		const char* GetName() override;
-		void Shrink() override
-		{}
+		void Shrink() override;
 	private:
-		PrivateData<PrivateDataSize>	mData;
+		PrivateData<56>	mData;
 	};
 }

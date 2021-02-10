@@ -25,7 +25,7 @@ namespace Omni
 	u8* MemoryArena::Allocate(u32 size)
 	{
 		u8* ret = mPtr + mUsedBytes;
-		mUsedBytes += RoundUpSize(size, Alignment);
+		mUsedBytes += AlignUpSize(size, Alignment);
 		CheckDebug(mUsedBytes <= mTotalBytes);
 		return ret;
 	}

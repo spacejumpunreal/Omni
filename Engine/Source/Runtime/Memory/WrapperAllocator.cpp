@@ -1,6 +1,8 @@
 #include "Runtime/Memory/WrapperAllocator.h"
 #include "Runtime/Memory/IAllocator.h"
+#include "Runtime/Memory/MemoryWatch.h"
 #include "Runtime/Misc/PrivateData.h"
+#include "Runtime/Misc/ArrayUtils.h"
 #include <atomic>
 
 namespace Omni
@@ -14,13 +16,12 @@ namespace Omni
 		{}
 		void* do_allocate(std::size_t bytes, std::size_t alignment) override
 		{
-			mTotal.fetch_add(bytes, std::memory_order_relaxed);
-			mUsed.fetch_add(bytes, std::memory_order_relaxed);
+			mWatch.Add(AlignUpSize(bytes, alignment));
 			return mFallback.allocate(bytes, alignment);
 		}
 		void do_deallocate(void* p, std::size_t bytes, std::size_t alignment) override
 		{
-			mUsed.fetch_sub(bytes, std::memory_order_relaxed);
+			mWatch.Sub(AlignUpSize(bytes, alignment));
 			mFallback.deallocate(p, bytes, alignment);
 		}
 		bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override
@@ -28,33 +29,34 @@ namespace Omni
 			return this == &other;
 		}
 	public:
-		std::atomic<size_t>				mUsed;
-		std::atomic<size_t>				mTotal;
+		MemoryWatch						mWatch;
 		std::pmr::memory_resource&		mFallback;
 		const char*						mName;
 	};
-
-
 	WrapperAllocator::WrapperAllocator(std::pmr::memory_resource& memResource, const char* name)
 		: mData(PrivateDataType<WrapperAllocatorImpl>{}, memResource, name)
 	{
 	}
-	PMRAllocator WrapperAllocator::GetPMRAllocator()
+	WrapperAllocator::~WrapperAllocator()
 	{
-		return PMRAllocator(mData.Ptr<WrapperAllocatorImpl>());
+		mData.DestroyAs<WrapperAllocatorImpl>();
+	}
+	PMRResource* WrapperAllocator::GetResource()
+	{
+		return mData.Ptr<WrapperAllocatorImpl>();
 	}
 	MemoryStats WrapperAllocator::GetStats()
 	{
 		WrapperAllocatorImpl& self = mData.Ref<WrapperAllocatorImpl>();
-		return MemoryStats
-		{
-			.Used = self.mUsed,
-			.Reserved = self.mTotal,
-			.Name = self.mName,
-		};
+		MemoryStats ret;
+		ret.Name = self.mName;
+		self.mWatch.Dump(ret);
+		return ret;
 	}
 	const char* WrapperAllocator::GetName()
 	{
 		return mData.Ref<WrapperAllocatorImpl>().mName;
 	}
+	void WrapperAllocator::Shrink()
+	{}
 }

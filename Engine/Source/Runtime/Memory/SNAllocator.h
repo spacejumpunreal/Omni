@@ -9,11 +9,12 @@ namespace Omni
 	{
 	public:
 		SNAllocator();
-		virtual PMRAllocator GetPMRAllocator();
-		virtual MemoryStats GetStats();
-		virtual const char* GetName();
-		virtual void Shrink();
+		~SNAllocator();
+		PMRResource* GetResource() override;
+		MemoryStats GetStats() override;
+		const char* GetName() override;
+		void Shrink() override;
 	private:
-		PrivateData<32> mData;
+		PrivateData<48> mData;
 	};
 }

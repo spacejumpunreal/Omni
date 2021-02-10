@@ -16,6 +16,7 @@ namespace Omni
 		FORCEINLINE void Push();
 		FORCEINLINE void Pop();
 		u32 GetUsedBytes() { return mUsedBytes; }
+		u8* GetPtr() { return mPtr; }
 	private:
 		u8* mPtr;
 		u32 mUsedBytes;

@@ -63,13 +63,14 @@ namespace Omni
 	}
 	void System::DestroySystem()
 	{
+		SystemImpl* self = SystemImpl::GetCombinePtr(this);
+		CheckAlways(self->mModules.size() == 0);
 		CheckAlways(GSystem != nullptr, "double destroy");
 		delete GSystem;
 		GSystem = nullptr;
 	}
 	void System::InitializeAndJoin(u32 argc, const char** argv)
 	{
-		
 		//parse args
 		EngineInitArgMap argMap;
 		for (u32 i = 0; i < argc; ++i)
@@ -90,6 +91,7 @@ namespace Omni
 			}
 			argMap.insert(std::make_pair(k, v));
 		}
+		//loadModuleNames
 		auto tup = argMap.equal_range(LoadModuleText);
 		std::unordered_set<std::string> loadModuleNames;
 		for (auto it = tup.first; it != tup.second; ++it)
@@ -109,6 +111,7 @@ namespace Omni
 					self->mName2Module[info->Name] = m;
 			}
 		}
+		//create external modules
 		for (usize i = 0; i < self->mExternalModuleInfo.size(); ++i)
 		{
 			const ModuleExportInfo& info = self->mExternalModuleInfo[i];
@@ -126,11 +129,10 @@ namespace Omni
 					CheckAlways(self->mName2Module.count(info.Name) == 0, "duplicated module names");
 					self->mName2Module[info.Name] = m;
 				}
-					
 			}
 		}
 		usize nModules = self->mModules.size();
-		usize todo = 0;
+		usize todo = 1;//make sure we enter the first round
 		bool firstRound = true;
 		while (todo > 0)
 		{
@@ -139,7 +141,9 @@ namespace Omni
 			{
 				Module* mod = self->mModules[i];
 				if (firstRound || mod->GetStatus() == ModuleStatus::Initializing)
+				{
 					mod->Initialize();
+				}
 				ModuleStatus ms = mod->GetStatus();
 				switch (ms)
 				{
@@ -158,24 +162,63 @@ namespace Omni
 		self->mStatus = SystemStatus::Ready;
 		//join concurrency module
 	}
-
+	void System::Finalize()
+	{
+		SystemImpl* self = SystemImpl::GetCombinePtr(this);
+		CheckAlways(self->mStatus == SystemStatus::ToBeFinalized);
+		self->mStatus = SystemStatus::Finalizing;
+		bool firstRound = true;
+		usize nModules = self->mModules.size();
+		usize todo = 1;
+		while (todo > 0)
+		{
+			todo = 0;
+			for (usize i = 0; i < nModules; ++i)
+			{
+				Module* mod = self->mModules[i];
+				if (firstRound || mod->GetStatus() == ModuleStatus::Finalizing)
+				{
+					mod->Finalize();
+				}
+				ModuleStatus ms = mod->GetStatus();
+				switch (ms)
+				{
+				case ModuleStatus::Finalizing:
+					++todo;
+					break;
+				case ModuleStatus::Uninitialized:
+					break;
+				default:
+					CheckAlways(false, "unexpected init status");
+					break;
+				}
+			}
+			firstRound = false;
+		}
+		for (Module* mod : self->mModules)
+		{
+			delete mod;
+		}
+		self->mStatus = SystemStatus::Uninitialized;
+		self->mModules.clear();
+		self->mKey2Module.clear();
+		self->mName2Module.clear();
+		self->mExternalModuleInfo.clear();
+	}
 	SystemStatus System::GetStatus()
 	{
 		const SystemImpl* self = SystemImpl::GetCombinePtr(this);
 		return self->mStatus;
 	}
-
 	void System::TriggerFinalization()
 	{
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);
 		SystemStatus v = SystemStatus::Ready;
 		self->mStatus.compare_exchange_strong(v, SystemStatus::ToBeFinalized);
 	}
-
 	void System::WaitTillFinalized()
 	{
 	}
-
 	Module* System::GetModule(ModuleKey key) const
 	{
 		const SystemImpl* self = SystemImpl::GetCombinePtr(this);
@@ -184,7 +227,6 @@ namespace Omni
 			return nullptr;
 		return it->second;
 	}
-
 	Module* System::GetModule(const char* s) const
 	{
 		const SystemImpl* self = SystemImpl::GetCombinePtr(this);
