@@ -6,26 +6,26 @@
 
 namespace Omni
 {
-	class MemoryArena;
+	class ScratchStack;
 
 	class MemoryArenaScope
 	{
 	private:
-		FORCEINLINE MemoryArenaScope(MemoryArena& arena, u32 depth);
+		FORCEINLINE MemoryArenaScope(ScratchStack& arena, u32 depth);
 	public:
 		FORCEINLINE ~MemoryArenaScope();
 	private:
-		MemoryArena& mArena;
+		ScratchStack& mArena;
 		u32 mDepth;
-		friend class MemoryArena;
+		friend class ScratchStack;
 	};
-	class MemoryArena
+	class ScratchStack
 	{
 	public:
 		static const u32 MaxDepth = 16;
 		static const u32 Alignment = OMNI_DEFAULT_ALIGNMENT;
 	public:
-		MemoryArena();
+		ScratchStack();
 		void Reset(u8* ptr, u32 size);
 		FORCEINLINE u8* Allocate(u32 size);
 		FORCEINLINE void Push();
@@ -42,7 +42,7 @@ namespace Omni
 		friend class MemoryArenaScope;
 	};
 
-	MemoryArenaScope::MemoryArenaScope(MemoryArena& arena, u32 depth)
+	MemoryArenaScope::MemoryArenaScope(ScratchStack& arena, u32 depth)
 		: mArena(arena)
 		, mDepth(depth)
 	{}
@@ -52,24 +52,24 @@ namespace Omni
 		mArena.mUsedBytes = mArena.mOffsets[mDepth];
 	}
 
-	u8* MemoryArena::Allocate(u32 size)
+	u8* ScratchStack::Allocate(u32 size)
 	{
 		u8* ret = mPtr + mUsedBytes;
 		mUsedBytes += AlignUpSize(size, Alignment);
 		CheckDebug(mUsedBytes <= mTotalBytes);
 		return ret;
 	}
-	void MemoryArena::Push()
+	void ScratchStack::Push()
 	{
 		CheckDebug(mDepth < MaxDepth);
 		mOffsets[mDepth++] = mUsedBytes;
 	}
-	void MemoryArena::Pop()
+	void ScratchStack::Pop()
 	{
 		CheckDebug(mDepth > 0);
 		mUsedBytes = mOffsets[--mDepth];
 	}
-	MemoryArenaScope MemoryArena::PushScope()
+	MemoryArenaScope ScratchStack::PushScope()
 	{
 		Push();
 		return MemoryArenaScope(*this, mDepth - 1);

@@ -15,35 +15,35 @@ namespace Omni
 		memset(p, 0, testSize);
 		alloc.deallocate(p, testSize);
 
-		MemoryArena& arena = MemoryModule::Get().GetThreadArena();
-		arena.Push();
+		ScratchStack& stack = MemoryModule::Get().GetThreadScratchStack();
+		stack.Push();
 		{
-			MemoryArenaScope s0 = arena.PushScope();
+			MemoryArenaScope s0 = stack.PushScope();
 			void* f = nullptr;
 			{
-				MemoryArenaScope s1 = arena.PushScope();
-				f = arena.Allocate(3);
+				MemoryArenaScope s1 = stack.PushScope();
+				f = stack.Allocate(3);
 				constexpr u32 allocSizes[] = { 1, 2, 4, 8, 12, 17, 19, 354 };
 				for (u32 sz : allocSizes)
 				{
-					arena.Allocate(sz);
+					stack.Allocate(sz);
 				}
 				void* m = nullptr;
 				{
-					MemoryArenaScope s2 = arena.PushScope();
-					m = arena.Allocate(1);
+					MemoryArenaScope s2 = stack.PushScope();
+					m = stack.Allocate(1);
 					for (u32 sz : allocSizes)
 					{
-						arena.Allocate(sz);
+						stack.Allocate(sz);
 					}
 				}
-				void* m1 = arena.Allocate(2);
+				void* m1 = stack.Allocate(2);
 				CheckAlways(m1 == m);
 			}
-			void* f1 = arena.Allocate(1);
+			void* f1 = stack.Allocate(1);
 			CheckAlways(f1 == f);
 		}
-		arena.Pop();
+		stack.Pop();
 	}
 }
 

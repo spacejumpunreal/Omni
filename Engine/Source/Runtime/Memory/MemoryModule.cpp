@@ -37,7 +37,7 @@ namespace Omni
 
 	//globals
 	MemoryModule*						gMemoryModule;
-	thread_local static MemoryArena		gThreadArena;
+	thread_local static ScratchStack		gThreadArena;
 	//methods
 	void MemoryModule::Initialize()
 	{
@@ -105,7 +105,7 @@ namespace Omni
 		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
 		return self->mKind2PMRResources[(u32)kind];
 	}
-	MemoryArena& MemoryModule::GetThreadArena()
+	ScratchStack& MemoryModule::GetThreadScratchStack()
 	{
 		return gThreadArena;
 	}

@@ -7,7 +7,7 @@
 namespace Omni
 {
 
-	class MemoryArena;
+	class ScratchStack;
 	class MemoryModule : public Module
 	{
 	public:
@@ -17,7 +17,7 @@ namespace Omni
 
 		static MemoryModule& Get();
 		PMRAllocator GetPMRAllocator(MemoryKind kind);
-		static MemoryArena& GetThreadArena();
+		static ScratchStack& GetThreadScratchStack();
 		static void ThreadInitialize();
 		static void ThreadFinalize();
 		void GetStats(std::pmr::vector<MemoryStats>& stats);

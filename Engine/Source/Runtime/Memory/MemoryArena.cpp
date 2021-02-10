@@ -5,7 +5,7 @@
 
 namespace Omni
 {
-	MemoryArena::MemoryArena()
+	ScratchStack::ScratchStack()
 		: mPtr(nullptr)
 		, mUsedBytes(0)
 		, mTotalBytes(0)
@@ -13,7 +13,7 @@ namespace Omni
 	{
 		memset(mOffsets, 0, sizeof(mOffsets));
 	}
-	void MemoryArena::Reset(u8* ptr, u32 bytes)
+	void ScratchStack::Reset(u8* ptr, u32 bytes)
 	{
 		CheckAlways(IsAligned(ptr, Alignment));
 		CheckAlways(mUsedBytes == 0 && mDepth == 0);
