@@ -1,8 +1,8 @@
 #include "Runtime/Memory/MemoryModule.h"
-
 #include "Runtime/Misc/AssertUtils.h"
 #include "Runtime/Misc/PImplUtils.h"
 #include "Runtime/Misc/ThreadLocalData.h"
+#include "Runtime/Memory/MemoryArena.h"
 #include "Runtime/Memory/SNAllocator.h"
 #include "Runtime/Memory/WrapperAllocator.h"
 #include "Runtime/System/Module.h"
@@ -105,23 +105,23 @@ namespace Omni
 		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
 		return self->mKind2PMRResources[(u32)kind];
 	}
-	FORCEINLINE MemoryArena& MemoryModule::GetThreadArena()
+	MemoryArena& MemoryModule::GetThreadArena()
 	{
 		return gThreadArena;
 	}
 	void MemoryModule::ThreadInitialize()
 	{
 		CheckAlways(gThreadArena.GetPtr() == nullptr);
-		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
-		void* p = GetPMRAllocator(MemoryKind::ThreadArena).resource()->allocate(self->mThreadArenaSize, OMNI_DEFAULT_ALIGNMENT);
+		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(gMemoryModule);
+		void* p = gMemoryModule->GetPMRAllocator(MemoryKind::ThreadArena).resource()->allocate(self->mThreadArenaSize, OMNI_DEFAULT_ALIGNMENT);
 		gThreadArena.Reset((u8*)p, self->mThreadArenaSize);
 	}
 	void MemoryModule::ThreadFinalize()
 	{
 		CheckAlways(gThreadArena.GetPtr() != nullptr);
-		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
+		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(gMemoryModule);
 		void* p = gThreadArena.GetPtr();
-		GetPMRAllocator(MemoryKind::ThreadArena).resource()->deallocate(p, self->mThreadArenaSize, OMNI_DEFAULT_ALIGNMENT);
+		gMemoryModule->GetPMRAllocator(MemoryKind::ThreadArena).resource()->deallocate(p, self->mThreadArenaSize, OMNI_DEFAULT_ALIGNMENT);
 		gThreadArena.Reset(nullptr, 0);
 	}
 	void MemoryModule::GetStats(std::pmr::vector<MemoryStats>& ret)

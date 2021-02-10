@@ -5,6 +5,7 @@
 #include "Runtime/Misc/PImplUtils.h"
 #include "Runtime/Misc/ArrayUtils.h"
 #include "Runtime/Misc/AssertUtils.h"
+#include "Runtime/Memory/MemoryModule.h"
 
 
 #include <array>
@@ -161,9 +162,14 @@ namespace Omni
 		}
 		self->mStatus = SystemStatus::Ready;
 		//join concurrency module
+
+		//TODO:remove this after concurrency module is done
+		MemoryModule::ThreadInitialize();
 	}
 	void System::Finalize()
 	{
+		//TODO:remove this after concurrency module is done
+		MemoryModule::ThreadFinalize();
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);
 		CheckAlways(self->mStatus == SystemStatus::ToBeFinalized);
 		self->mStatus = SystemStatus::Finalizing;

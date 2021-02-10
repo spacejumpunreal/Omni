@@ -22,15 +22,16 @@ namespace Omni
 		u32* alignedPtr = (u32*)AlignUpSize(u64Ptr, 4ull);
 		
 		u32 offset = ((u64)ptr) & 0x3;
-		for (u32 i = 0; 0 < sizeof(u32) - offset && i < size; ++i)
+		u32 unAlignedBytes = sizeof(u32) - offset;
+		for (u32 i = 0; i < unAlignedBytes && i < size; ++i)
 		{
 			bp[i] = (u8)(pattern >> (offset + i));
 		}
-		size -= (sizeof(32) - offset);
-		while (size > 4)
+		size -= unAlignedBytes;
+		while (size > sizeof(int))
 		{
 			*alignedPtr++ = pattern;
-			--size;
+			size -= 4;
 		}
 		u8* unalignedPtr = (u8*)alignedPtr;
 		for (u32 i = 0; i < size; ++i)

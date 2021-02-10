@@ -1,14 +1,13 @@
 #pragma once
 #include "Runtime/Omni.h"
-#include "Runtime/Memory/MemoryArena.h"
 #include "Runtime/Memory/MemoryDefs.h"
 #include "Runtime/Memory/MemoryWatch.h"
 #include "Runtime/System/Module.h"
 
 namespace Omni
 {
-	class MemoryArena;
 
+	class MemoryArena;
 	class MemoryModule : public Module
 	{
 	public:
@@ -18,9 +17,9 @@ namespace Omni
 
 		static MemoryModule& Get();
 		PMRAllocator GetPMRAllocator(MemoryKind kind);
-		static FORCEINLINE MemoryArena& GetThreadArena();
-		void ThreadInitialize();
-		void ThreadFinalize();
+		static MemoryArena& GetThreadArena();
+		static void ThreadInitialize();
+		static void ThreadFinalize();
 		void GetStats(std::pmr::vector<MemoryStats>& stats);
 		void Shrink();
 	};

@@ -11,7 +11,7 @@
 namespace Omni
 {
 	static constexpr bool TrashAllocatedMemory = true;
-	static constexpr u32 FillPattern = 0xDEAD;
+	static constexpr u32 FillPattern = 0xDEADBEEF;
 	struct SNAllocatorPrivate final : public std::pmr::memory_resource
 	{
 	public:
