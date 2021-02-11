@@ -2,11 +2,13 @@
 #include "Runtime/Misc/AssertUtils.h"
 #include "Runtime/Misc/PImplUtils.h"
 #include "Runtime/Misc/ThreadLocalData.h"
+#include "Runtime/Memory/CacheLineAllocator.h"
 #include "Runtime/Memory/MemoryArena.h"
 #include "Runtime/Memory/SNAllocator.h"
 #include "Runtime/Memory/WrapperAllocator.h"
 #include "Runtime/System/Module.h"
 #include "Runtime/System/ModuleExport.h"
+
 
 
 namespace Omni
@@ -36,7 +38,7 @@ namespace Omni
 	using MemoryModuleImpl = PImplCombine<MemoryModule, MemoryModulePrivateData>;
 
 	//globals
-	MemoryModule*						gMemoryModule;
+	MemoryModule*							gMemoryModule;
 	thread_local static ScratchStack		gThreadArena;
 	//methods
 	void MemoryModule::Initialize()
@@ -48,6 +50,9 @@ namespace Omni
 		IAllocator* primary = new SNAllocator();
 		self->mAllocators[usedAllocators++] = primary;
 		self->mKind2PMRResources[(u32)MemoryKind::SystemInit] = primary->GetResource();
+		IAllocator* cacheline = new CacheLineAllocator();
+		self->mAllocators[usedAllocators++] = cacheline;
+		self->mKind2PMRResources[(u32)MemoryKind::CacheLine] = cacheline->GetResource();
 
 		if constexpr (StatsMemoryKinds)
 		{
@@ -57,17 +62,26 @@ namespace Omni
 #include "Runtime/Memory/MemoryKind.inl"
 #undef MEMORY_KIND
 			};
-			for (u32 iKind = (u32)MemoryKind::SystemInit + 1; iKind < (u32)MemoryKind::Max; ++iKind)
+			for (u32 iKind = 0; iKind < (u32)MemoryKind::Max; ++iKind)
 			{
-				IAllocator* alloc = self->mAllocators[usedAllocators++] = new WrapperAllocator(*primary->GetResource(), MemoryKindNames[iKind]);
-				self->mKind2PMRResources[iKind] = alloc->GetResource();
+				PMRResource*& res = self->mKind2PMRResources[iKind];
+				if (res == nullptr)
+				{
+					IAllocator* alloc = self->mAllocators[usedAllocators++] = new WrapperAllocator(*primary->GetResource(), MemoryKindNames[iKind]);
+					res = alloc->GetResource();
+				}
 			}
 		}
 		else
 		{
-			for (u32 iKind = (u32)MemoryKind::SystemInit + 1; iKind < (u32)MemoryKind::Max; ++iKind)
+			for (u32 iKind = 0; iKind < (u32)MemoryKind::Max; ++iKind)
 			{
-				self->mKind2PMRResources[iKind] = primary->GetResource();
+				PMRResource*& res = self->mKind2PMRResources[iKind];
+				if (res == nullptr)
+				{
+					res = primary->GetResource();
+				}
+				
 			}
 		}
 
@@ -113,7 +127,7 @@ namespace Omni
 	{
 		CheckAlways(gThreadArena.GetPtr() == nullptr);
 		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(gMemoryModule);
-		void* p = gMemoryModule->GetPMRAllocator(MemoryKind::ThreadArena).resource()->allocate(self->mThreadArenaSize, OMNI_DEFAULT_ALIGNMENT);
+		void* p = gMemoryModule->GetPMRAllocator(MemoryKind::ThreadScratchStack).resource()->allocate(self->mThreadArenaSize, OMNI_DEFAULT_ALIGNMENT);
 		gThreadArena.Reset((u8*)p, self->mThreadArenaSize);
 	}
 	void MemoryModule::ThreadFinalize()
@@ -121,7 +135,7 @@ namespace Omni
 		CheckAlways(gThreadArena.GetPtr() != nullptr);
 		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(gMemoryModule);
 		void* p = gThreadArena.GetPtr();
-		gMemoryModule->GetPMRAllocator(MemoryKind::ThreadArena).resource()->deallocate(p, self->mThreadArenaSize, OMNI_DEFAULT_ALIGNMENT);
+		gMemoryModule->GetPMRAllocator(MemoryKind::ThreadScratchStack).resource()->deallocate(p, self->mThreadArenaSize, OMNI_DEFAULT_ALIGNMENT);
 		gThreadArena.Reset(nullptr, 0);
 	}
 	void MemoryModule::GetStats(std::pmr::vector<MemoryStats>& ret)

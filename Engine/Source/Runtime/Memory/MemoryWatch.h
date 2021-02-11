@@ -5,7 +5,7 @@
 
 namespace Omni
 {
-	constexpr static bool WatchMemoryUsed = true;
+	constexpr static bool WatchMemoryUsed = true || OMNI_DEBUG; //some allocator need this to check leak
 	constexpr static bool WatchMemoryPeek = true;
 	constexpr static bool WatchMemoryThroughput = true;
 

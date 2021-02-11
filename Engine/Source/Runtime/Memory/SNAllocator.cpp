@@ -15,10 +15,6 @@ namespace Omni
 	struct SNAllocatorPrivate final : public std::pmr::memory_resource
 	{
 	public:
-		SNAllocatorPrivate()
-		{}
-		~SNAllocatorPrivate()
-		{}
 		void* do_allocate(std::size_t bytes, std::size_t alignment) override
 		{
 			size_t alignedSize = AlignUpSize(bytes, alignment);
