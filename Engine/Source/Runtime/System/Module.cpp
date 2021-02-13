@@ -26,7 +26,7 @@ namespace Omni
 	{
 		return mStatus;
 	}
-	void Module::Acquire()
+	void Module::Retain()
 	{
 		++mUserCount;
 	}

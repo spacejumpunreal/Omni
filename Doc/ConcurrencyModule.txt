@@ -1,11 +1,10 @@
 # Queue
 ## API
-- ctorSerial(targetQueue)
-- ctorConcurrent(numberOfThreads)
+- ctorSerial: do not support chaining queues as in libdispatch
 - async(WorkItem)
 - 
 ## question
-- must serial queue be tied to 1 core? Seems the sync before taking a job is always necessary, so multiple threads serve a serial queue at different time?
+- must serial queue be tied to 1 core? No. And the sync before taking a job is always necessary, so multiple threads serve a serial queue at different time?
 ## detail
 - every concurrent queue has some private threads for itself, no for serial queue(use some thread on the global queue?)
 - or the model should be：DispatchObjects are just frontends, they insert items on to thread specific queues
@@ -14,7 +13,10 @@
 ## API
 - ctor()
 - perform(): execute on current thread immediately
-- wait(): wait on current thread synchronously
+- wait(): //not necessary
+- storage
+    - use std::function directly: too large(64bytes on MVSC), will use dynmaic allocation when too large
+    - function ptr + POD args: can't use lambda(can be good: explicit), no ctor/dtor for args
 
 
 # Group

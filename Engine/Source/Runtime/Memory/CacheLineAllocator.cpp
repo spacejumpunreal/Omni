@@ -51,7 +51,7 @@ namespace Omni
 	struct CacheLineAllocatorPrivate final : public std::pmr::memory_resource
 	{
 	public:
-		static constexpr u32 PageSize = 512 * 1024;
+		static constexpr u32 PageSize = CPU_CACHE_LINE_SIZE * 1024;
 		static constexpr u32 CacheLinesPerPage = PageSize / CPU_CACHE_LINE_SIZE;
 		static constexpr u32 CacheLineSizeShift = (u32)CompileTimeLog2(CPU_CACHE_LINE_SIZE);
 		static constexpr u32 HeaderCacheLines = sizeof(CacheLinePageHeader) / CPU_CACHE_LINE_SIZE;
@@ -80,7 +80,7 @@ namespace Omni
 	CacheLinePageHeader& CacheLinePageHeader::GetHeader(void* addr)
 	{
 		u64 addr64 = (u64)addr;
-		u64 p64 = addr64 & ~(CacheLineAllocatorPrivate::PageSize - 1);
+		u64 p64 = addr64 & ~(u64)(CacheLineAllocatorPrivate::PageSize - 1);
 		return *(CacheLinePageHeader*)p64;
 	}
 	CacheLineAllocatorPrivate::~CacheLineAllocatorPrivate()
@@ -89,7 +89,7 @@ namespace Omni
 
 	u32 CacheLineAllocatorPrivate::Size2Cachelines(size_t sz)
 	{
-		return AlignUpSize(sz, CPU_CACHE_LINE_SIZE) >> CacheLineSizeShift;
+		return ((u32)AlignUpSize(sz, CPU_CACHE_LINE_SIZE)) >> CacheLineSizeShift;
 	}
 	void CacheLineAllocatorPrivate::Shrink()
 	{
@@ -112,10 +112,9 @@ namespace Omni
 		mLock.unlock();
 	}
 
-	void* CacheLineAllocatorPrivate::do_allocate(std::size_t bytes, std::size_t alignment)
+	void* CacheLineAllocatorPrivate::do_allocate(std::size_t bytes, std::size_t)
 	{
-		size_t alignedSize = AlignUpSize(bytes, alignment);
-		u32 lines = Size2Cachelines(alignedSize);
+		u32 lines = Size2Cachelines(bytes);
 		CheckDebug(lines + HeaderCacheLines <= CacheLinesPerPage);
 		if (gCacheLinePerThreadData.Page != nullptr && gCacheLinePerThreadData.UsedCachelines + lines <= CacheLinesPerPage)
 		{
@@ -173,7 +172,7 @@ namespace Omni
 			mWatch.Data.Add(PageSize);
 		}
 		avail->Top.Data.AcquireCount.store(1, std::memory_order::relaxed);
-		avail->Top.Data.AcquireCount.store(1, std::memory_order::relaxed); //these will complete before put on pending list(after enter lock)
+		avail->ReleaseCount.Data.store(0, std::memory_order::relaxed); //these will complete before put on pending list(after enter lock)
 		gCacheLinePerThreadData.Page = avail;
 		gCacheLinePerThreadData.UsedCachelines = HeaderCacheLines + lines;
 		return (u8*)(&gCacheLinePerThreadData.Page[1]);
@@ -181,7 +180,8 @@ namespace Omni
 	void CacheLineAllocatorPrivate::do_deallocate(void* p, std::size_t, std::size_t)
 	{
 		//finish operation on mem before release(already on the list)
-		CacheLinePageHeader::GetHeader(p).ReleaseCount.Data.fetch_add(1, std::memory_order::release);
+		CacheLinePageHeader& hdr = CacheLinePageHeader::GetHeader(p);
+		hdr.ReleaseCount.Data.fetch_add(1, std::memory_order::acq_rel);
 	}
 	bool CacheLineAllocatorPrivate::do_is_equal(const std::pmr::memory_resource& other) const noexcept
 	{

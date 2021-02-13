@@ -5,4 +5,6 @@ namespace Omni
 {
 	void* AllocPages(size_t size);
 	void FreePages(void* mem, size_t size);
+
+	void Pause();
 }

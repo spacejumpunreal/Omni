@@ -25,4 +25,13 @@ namespace Omni
 #endif
 	}
 
+	void Pause()
+	{
+#if OMNI_WINDOWS
+		YieldProcessor();
+#else
+		__asm__ __volatile__("yield")
+#endif
+	}
+
 }

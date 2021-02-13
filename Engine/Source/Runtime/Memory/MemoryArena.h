@@ -30,7 +30,7 @@ namespace Omni
 		FORCEINLINE u8* Allocate(u32 size);
 		FORCEINLINE void Push();
 		FORCEINLINE void Pop();
-		FORCEINLINE MemoryArenaScope PushScope();
+		[[nodiscard]] FORCEINLINE MemoryArenaScope PushScope();
 		u32 GetUsedBytes() { return mUsedBytes; }
 		u8* GetPtr() { return mPtr; }
 	private:

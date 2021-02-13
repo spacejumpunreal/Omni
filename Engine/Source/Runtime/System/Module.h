@@ -26,7 +26,7 @@ namespace Omni
 		virtual ~Module();
 
 		ModuleStatus GetStatus(); //supposed to be called on MainThread during Initialization and Finalization
-		void Acquire();
+		void Retain();
 		void Release();
 	protected:
 		u32 GetUserCount();
