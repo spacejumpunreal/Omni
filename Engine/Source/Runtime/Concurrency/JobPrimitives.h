@@ -1,6 +1,7 @@
 #pragma once
 #include "Runtime/Omni.h"
 #include "Runtime/Concurrency/IShared.h"
+#include "Runtime/Misc/LinkedListUtils.h"
 #include "Runtime/Platform/PlatformDefs.h"
 
 namespace Omni
@@ -8,9 +9,8 @@ namespace Omni
 	class DispatchQueue
 	{
 	public:
-
 	};
-	class DispatchWorkItem : public IShared
+	class DispatchWorkItem : public IShared, public SListNode
 	{
 	public:
 		template<typename T>
@@ -25,16 +25,18 @@ namespace Omni
 		}
 		void Perform();
 		void Destroy() override;
-		DispatchWorkItem* GetNext();
 	private:
 		static DispatchWorkItem& CreateImpl(void* f, size_t aSize);
 		FORCEINLINE static void* GetArgPtr(DispatchWorkItem* item)
 		{
 			return ((u8*)item) + sizeof(DispatchWorkItem);
 		}
+		DispatchWorkItem(void* fptr)
+			: SListNode(nullptr)
+			, mFPtr(fptr)
+		{}
 	private:
-		void* mNext;
-		void* mFPtr;
+		void*				mFPtr;
 	};
 
 	class DispatchGroup

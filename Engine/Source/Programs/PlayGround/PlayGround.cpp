@@ -7,6 +7,7 @@
 #include "Runtime/Misc/AssertUtils.h"
 #include <chrono>
 #include <functional>
+#include <random>
 
 #define TRAP_MALLOCATIONS 0
 #if TRAP_MALLOCATIONS
@@ -58,11 +59,14 @@ namespace Omni
 	}
 	void MainThreadTest()
 	{
-		PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(Omni::MemoryKind::UserDefault);
-		size_t testSize = 1024;
-		std::byte* p = alloc.allocate(testSize);
-		memset(p, 0, testSize);
-		alloc.deallocate(p, testSize);
+		{
+			PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(Omni::MemoryKind::UserDefault);
+			size_t testSize = 1024;
+			std::byte* p = alloc.allocate(testSize);
+			memset(p, 0, testSize);
+			alloc.deallocate(p, testSize);
+		}
+		
 
 		ScratchStack& stack = MemoryModule::Get().GetThreadScratchStack();
 		stack.Push();
@@ -125,6 +129,67 @@ namespace Omni
 			CheckAlways(!succeeed);
 			sl.Unlock();
 			x.join();
+		}
+		{
+			constexpr size_t Size64K = 64 * 1024;
+			constexpr size_t Amount = (1024 * 1024 * 256ull);
+			constexpr size_t NThreads = 1;
+			constexpr size_t History = 8;
+			PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(MemoryKind::CacheLine);
+			std::thread threads[NThreads];
+			SpinLock lk;
+			lk.Lock();
+			for (size_t iThread = 0; iThread < NThreads; ++iThread)
+			{
+				threads[iThread] = std::thread([&] {
+					std::mt19937 gen;
+					gen.seed((unsigned int)iThread);
+					std::uniform_int_distribution<> dis((int)(Size64K / 3), (int)(Size64K * 3 / 4));
+					u8* slots[History];
+					size_t sizes[History];
+					memset(slots, 0, sizeof(slots));
+					memset(sizes, 0, sizeof(sizes));
+					size_t allocated = 0;
+					size_t slotIndex = 0;
+					lk.Lock();
+					lk.Unlock();
+					int runIndex = 0;
+					while (allocated < Amount)
+					{
+						u8* u8Ptr = slots[slotIndex];
+						size_t sz = sizes[slotIndex];
+						u8 w = (u8)sz;
+						if (sz != 0)
+						{
+							for (size_t iBytes = 0; iBytes < sz; ++iBytes)
+							{
+								CheckAlways(u8Ptr[iBytes] == w);
+							}
+							alloc.resource()->deallocate(slots[slotIndex], 0);
+						}
+						size_t size = (size_t)dis(gen);
+						std::byte* p = alloc.allocate(size);
+						memset(p, (int)size, size);
+						slots[slotIndex] = (u8*)p;
+						sizes[slotIndex] = size;
+						slotIndex = (slotIndex + 1) % History;
+						allocated += size;
+						++runIndex;
+					}
+					for (size_t iSlot = 0; iSlot < History; ++iSlot)
+					{
+						if (slots[iSlot])
+						{
+							alloc.resource()->deallocate(slots[iSlot], 0);
+						}
+					}
+				});
+			}
+			lk.Unlock();
+			for (int iThread = 0; iThread < NThreads; ++iThread)
+			{
+				threads[iThread].join();
+			}
 		}
 	}
 }

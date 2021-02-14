@@ -21,8 +21,7 @@ namespace Omni
 	{
 		PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(MemoryKind::CacheLine);
 		DispatchWorkItem* ret = (DispatchWorkItem*)alloc.resource()->allocate(sizeof(DispatchWorkItem) + aSize);
-		new (ret)DispatchWorkItem();
-		ret->mFPtr = f;
+		new (ret)DispatchWorkItem(f);
 		return *ret;
 	}
 }

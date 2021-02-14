@@ -1,4 +1,5 @@
 #include "Runtime/Memory/CacheLineAllocator.h"
+#include "Runtime/Concurrency/SpinLock.h"
 #include "Runtime/Math/CompileTime.h"
 #include "Runtime/Memory/MemoryWatch.h"
 #include "Runtime/Misc/ArrayUtils.h"
@@ -38,16 +39,21 @@ namespace Omni
 	public:
 		struct TopStruct
 		{
+			//u64						Guard;
 			std::atomic<size_t>		AcquireCount;
 			CacheLinePageHeader*	Next;
 			TopStruct()
-				: Next(nullptr)
+				//: Guard(0xDEADBEEFDEADBEEFull)
+				: AcquireCount(0)
+				, Next(nullptr)
 			{}
 		};
-		Padded<TopStruct, CPU_CACHE_LINE_SIZE>				Top;
-		Padded<std::atomic<size_t>, CPU_CACHE_LINE_SIZE>	ReleaseCount;
+		CacheAlign<TopStruct>				Top;
+		CacheAlign<std::atomic<size_t>>		ReleaseCount;
 	};
 
+#pragma warning( push )
+#pragma warning( disable : 4324 )
 	struct CacheLineAllocatorPrivate final : public std::pmr::memory_resource
 	{
 	public:
@@ -61,19 +67,19 @@ namespace Omni
 			, mPendingListTail(nullptr)
 		{}
 		~CacheLineAllocatorPrivate();
-		static u32 Size2Cachelines(size_t sz);
+		FORCEINLINE static u32 Size2Cachelines(size_t sz);
 		void Shrink();
 		void* do_allocate(std::size_t bytes, std::size_t alignment) override;
 		void do_deallocate(void* p, std::size_t bytes, std::size_t alignment) override;
 		bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override;
 
 	public:
-		Padded<MemoryWatch, CPU_CACHE_LINE_SIZE>	mWatch;
-		std::mutex									mLock;
-		CacheLinePageHeader*						mPendingListHead;
-		CacheLinePageHeader*						mPendingListTail;
+		CacheLinePageHeader*				mPendingListHead;
+		CacheLinePageHeader*				mPendingListTail;
+		SpinLock							mLock;
+		CacheAlign<MemoryWatch>				mWatch;
 	};
-
+#pragma warning( pop )
 	//global
 	static thread_local CacheLinePerThreadData gCacheLinePerThreadData;
 
@@ -93,7 +99,7 @@ namespace Omni
 	}
 	void CacheLineAllocatorPrivate::Shrink()
 	{
-		mLock.lock();
+		mLock.Lock();
 		mPendingListTail = nullptr;
 		for (CacheLinePageHeader** p = &mPendingListHead; *p != nullptr;)
 		{
@@ -109,7 +115,7 @@ namespace Omni
 				p = &(*p)->GetNext();
 			}
 		}
-		mLock.unlock();
+		mLock.Unlock();
 	}
 
 	void* CacheLineAllocatorPrivate::do_allocate(std::size_t bytes, std::size_t)
@@ -118,17 +124,17 @@ namespace Omni
 		CheckDebug(lines + HeaderCacheLines <= CacheLinesPerPage);
 		if (gCacheLinePerThreadData.Page != nullptr && gCacheLinePerThreadData.UsedCachelines + lines <= CacheLinesPerPage)
 		{
-			u8* ret = (u8*)(&gCacheLinePerThreadData.Page[1]) + (((u64)gCacheLinePerThreadData.UsedCachelines) << CacheLineSizeShift);
+			u8* ret = ((u8*)gCacheLinePerThreadData.Page) + (((u64)gCacheLinePerThreadData.UsedCachelines) << CacheLineSizeShift);
 			gCacheLinePerThreadData.UsedCachelines += lines;
 			gCacheLinePerThreadData.Page->Top.Data.AcquireCount.fetch_add(1, std::memory_order::relaxed); //not shared with others(not on the pending list)
 			return ret;
 		}
 		CacheLinePageHeader* avail = nullptr;
-		mLock.lock();
+		mLock.Lock();
 		{
 			CacheLinePageHeader* p;
 			CacheLinePageHeader* pp;
-			for (p = mPendingListHead, pp = nullptr; p != nullptr; pp = p, p = p->GetNext())
+			for (p = mPendingListHead, pp = nullptr; p != nullptr;)
 			{
 				if (p->IsAvailable())
 				{
@@ -137,16 +143,13 @@ namespace Omni
 						pp->GetNext() = p->GetNext();
 					else
 						mPendingListHead = p->GetNext();
-					if (mPendingListTail == p)
-					{
-						if (pp)
-							mPendingListTail = pp;
-						else
-							mPendingListTail = nullptr;
-					}
+					if (p->GetNext() == nullptr)//only touch this if we had touched tail node
+						mPendingListTail = pp;
 					p->GetNext() = nullptr;
 					break;
 				}
+				pp = p;
+				p = p->GetNext();
 			}
 			if (gCacheLinePerThreadData.Page != nullptr)
 			{
@@ -163,7 +166,7 @@ namespace Omni
 				}
 			}
 		}
-		mLock.unlock();
+		mLock.Unlock();
 		if (avail == nullptr)
 		{
 			//allocate page

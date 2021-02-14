@@ -4,14 +4,14 @@
 
 namespace Omni
 {
-	class SpinLock
-	{
-	public:
-		SpinLock();
-		void Lock();
-		bool TryLock();
-		void Unlock();
-	private:
-		std::atomic<bool> mFlag;
-	};
+    class SpinLock
+    {
+    public:
+        SpinLock();
+        void Lock();
+        bool TryLock();
+        void Unlock();
+    private:
+        std::atomic<bool> mFlag;
+    };
 }

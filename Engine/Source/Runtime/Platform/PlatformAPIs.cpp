@@ -25,7 +25,7 @@ namespace Omni
 #endif
 	}
 
-	void Pause()
+	void PauseThread()
 	{
 #if OMNI_WINDOWS
 		YieldProcessor();

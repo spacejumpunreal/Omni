@@ -15,6 +15,6 @@ namespace Omni
 		const char* GetName() override;
 		void Shrink() override;
 	private:
-		PrivateData<168> mData;
+		PrivateData<256> mData;
 	};
 }

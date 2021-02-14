@@ -14,7 +14,7 @@ namespace Omni
 			bool expected = false;
 			if (mFlag.compare_exchange_strong(expected, true, std::memory_order::acquire, std::memory_order::memory_order_relaxed))
 				return;
-			Pause();
+			PauseThread();
 		}
 	}
 	bool SpinLock::TryLock()

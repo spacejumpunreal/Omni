@@ -12,6 +12,7 @@ namespace Omni
 	class MemoryWatch
 	{
 	public:
+		MemoryWatch();
 		FORCEINLINE void Add(size_t size);
 		FORCEINLINE void Sub(size_t size);
 		void Dump(MemoryStats& stats);
@@ -22,7 +23,7 @@ namespace Omni
 		std::atomic<size_t>		mThroughput;
 	};
 
-	void MemoryWatch::Add(size_t size)
+	FORCEINLINE void MemoryWatch::Add(size_t size)
 	{
 		if constexpr (WatchMemoryUsed)
 		{
@@ -41,7 +42,7 @@ namespace Omni
 			mThroughput.fetch_add(size, std::memory_order::memory_order_relaxed);
 		}
 	}
-	void MemoryWatch::Sub(size_t size)
+	FORCEINLINE void MemoryWatch::Sub(size_t size)
 	{
 		if constexpr (WatchMemoryUsed)
 		{
