@@ -32,7 +32,6 @@ namespace Omni
 		//API for Engine users
 		SystemStatus GetStatus();
 		void TriggerFinalization();
-		void WaitTillFinalized();
 
 		//APIs for Modules
 		Module* GetModule(ModuleKey moduleKey) const;

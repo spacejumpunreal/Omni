@@ -24,7 +24,9 @@ namespace Omni
 
 		template<typename T, typename... Args>
 		FORCEINLINE PrivateData(PrivateDataType<T>, Args&&... args)
+#if OMNI_DEBUG
 			: mDestroyed(false)
+#endif
 		{
 			static_assert(sizeof(T) <= Size, "sizeof(T) <= Size");
 			T* p = Ptr<T>();
@@ -33,11 +35,13 @@ namespace Omni
 		template<typename T, size_t = sizeof(T)>
 		FORCEINLINE void DestroyAs()
 		{
+#if OMNI_DEBUG
 			CheckDebug(!mDestroyed);
 			static_assert(sizeof(T) <= Size, "sizeof(T) <= Size");
 			T* p = (T*)RawData;
 			p->~T();
 			mDestroyed = true;
+#endif
 		}
 		~PrivateData()
 		{
@@ -49,7 +53,9 @@ namespace Omni
 		static constexpr size_t AlignedWords = AlignedSize / sizeof(int);
 	private:
 		int RawData[AlignedWords];
+#if OMNI_DEBUG
 		bool mDestroyed;
+#endif
 	};
 #pragma warning( pop )
 }

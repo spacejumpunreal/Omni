@@ -20,7 +20,10 @@ namespace Omni
         ConcurrentQueue     mSharedQueue;
         ThreadData**        mThreadData;
         u32                 mThreadCount;
+
     public:
+        ConcurrencyModulePrivateImpl();
+        void WaitWorkersQuitOnMain();
     };
 
     //definitions
@@ -53,12 +56,12 @@ namespace Omni
         //nThreads = 1;
         self->mThreadCount = nThreads;
         self->mThreadData = AllocForType<ThreadData*, MemoryKind::SystemInit>(nThreads);
-        for (u32 iThread = 0; iThread < nThreads; ++iThread)
+        for (u32 iThread = MainThreadIndex; iThread < nThreads; ++iThread)
         {
             self->mThreadData[iThread] = &ThreadData::Create();
         }
         self->mThreadData[0]->InitAsMainOnMain();
-        for (u32 iThread = 1; iThread < nThreads; ++iThread)
+        for (u32 iThread = MainThreadIndex + 1; iThread < nThreads; ++iThread)
         {
             self->mThreadData[iThread]->LauchAsWorkerOnMain();
         }
@@ -70,10 +73,7 @@ namespace Omni
             return;
 
         ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
-        for (u32 iThread = 0; iThread < self->mThreadCount; ++iThread)
-            self->mThreadData[iThread]->AskQuitOnMain();
-        for (u32 iThread = 0; iThread < self->mThreadCount; ++iThread)
-            self->mThreadData[iThread]->JoinAndDestroyOnMain();
+        self->mThreadData[0]->JoinAndDestroyOnMain();
         FreeForType<ThreadData*, MemoryKind::SystemInit>(self->mThreadData, self->mThreadCount);
         gConcurrencyModule = nullptr;
         Module::Finalize();
@@ -104,6 +104,28 @@ namespace Omni
         ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
         self->mSharedQueue.Enqueue(&head, t);
     }
+    void ConcurrencyModule::DismissWorkers()
+    {
+        ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
+        DispatchWorkItem* lastJob = nullptr;
+        for (u32 iThread = 0; iThread < self->mThreadCount; ++iThread)
+        {
+            DispatchWorkItem& item = DispatchWorkItem::Create(ThreadData::MarkQuitWork);
+            item.Next = lastJob;
+            lastJob = &item;
+        }
+        Async(*lastJob);
+    }
+
+    ConcurrencyModulePrivateImpl::ConcurrencyModulePrivateImpl()
+        : mThreadData(nullptr)
+        , mThreadCount(0)
+    {}
+    void ConcurrencyModulePrivateImpl::WaitWorkersQuitOnMain()
+    {
+        for (u32 iThread = MainThreadIndex + 1; iThread < mThreadCount; ++iThread)
+            mThreadData[iThread]->JoinAndDestroyOnMain();
+    }
 
     void ConcurrentWorkerThreadFunc(ThreadData* self)
     {
@@ -114,8 +136,25 @@ namespace Omni
             item->Perform();
             item->Destroy();
         }
+        if (IsOnMainThread())
+        {//MainThread then cleans up everything else
+            //but first need to block it self until all other workers had received quit message
+            cm->WaitWorkersQuitOnMain();
+            bool todo = false;
+            do
+            {
+                bool sharedQueueEmpty = cm->mSharedQueue.IsEmpty();
+                if (!sharedQueueEmpty)
+                {
+                    DispatchWorkItem* item = cm->mSharedQueue.Dequeue<DispatchWorkItem>();
+                    item->Perform();
+                    item->Destroy();
+                }
+                //empty serial queues here
+                todo = !sharedQueueEmpty;
+            } while(todo);
+        }
     }
-
 
     Module* ConcurrencyModuleCtor(const EngineInitArgMap&)
     {

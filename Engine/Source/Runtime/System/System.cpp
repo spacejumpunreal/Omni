@@ -1,4 +1,5 @@
 #include "Runtime/System/System.h"
+#include "Runtime/Concurrency/ConcurrencyModule.h"
 #include "Runtime/Concurrency/ThreadUtils.h"
 #include "Runtime/System/Module.h"
 #include "Runtime/System/ModuleExport.h"
@@ -221,9 +222,7 @@ namespace Omni
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);
 		SystemStatus v = SystemStatus::Ready;
 		CheckAlways(self->mStatus.compare_exchange_strong(v, SystemStatus::ToBeFinalized));
-	}
-	void System::WaitTillFinalized()
-	{
+		ConcurrencyModule::Get().DismissWorkers();
 	}
 	Module* System::GetModule(ModuleKey key) const
 	{

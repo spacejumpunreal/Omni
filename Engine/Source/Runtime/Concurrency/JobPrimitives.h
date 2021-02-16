@@ -24,7 +24,7 @@ namespace Omni
 	class DispatchWorkItem : public SListNode
 	{
 	public:
-		template<typename T = void>
+		template<typename T>
 		static DispatchWorkItem& Create(void (*func)(T*), T* argPtr)
 		{
 			static_assert(std::is_standard_layout_v<T> && std::is_trivial_v<T>);
@@ -35,6 +35,12 @@ namespace Omni
 				void* ap = GetArgPtr(&r);
 				*(T*)ap = *argPtr;
 			}
+			return r;
+		}
+		static DispatchWorkItem& Create(void (*func)())
+		{
+			static_assert(alignof(DispatchWorkItem) <= sizeof(void*));
+			DispatchWorkItem& r = CreatePrivate(func, 0);
 			return r;
 		}
 		void Perform();
@@ -50,12 +56,12 @@ namespace Omni
 		void*				mFPtr;
 	};
 
-	class DispatchGroup : IShared
+	class DispatchGroup
 	{
 	public:
 		static DispatchGroup& Create(size_t enterCount);
-		//~DispatchGroup(); //no need for dtor, pod
-		void Destroy() override;
+		~DispatchGroup();
+		void Destroy();
 		void Enter();
 		void Leave();
 		void Notify(DispatchWorkItem& item, DispatchQueue* queue);

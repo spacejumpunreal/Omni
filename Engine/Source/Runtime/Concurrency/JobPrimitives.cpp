@@ -98,11 +98,15 @@ namespace Omni
 		: mData(PrivateDataType<DispatchGroupPrivate>{}, enterCount)
 	{
 	}
+	DispatchGroup::~DispatchGroup()
+	{
+		mData.DestroyAs<DispatchGroupPrivate>();
+	}
 	void DispatchGroup::Destroy()
 	{
 		this->~DispatchGroup(); //actually no need for dtor, pod, hope compiler can optimize it off
 		PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(MemoryKind::CacheLine);
-		alloc.resource()->deallocate(this, 0);
+		alloc.resource()->deallocate(this, 0);//note that we can use 0 because we use cacheline allocator
 	}
 	void DispatchGroup::Enter()
 	{
@@ -127,6 +131,8 @@ namespace Omni
 				ConcurrencyModule::Get().Async(*self.mNext);
 			}
 		}
+		if (v == 1)
+			Destroy();
 	}
 	void DispatchGroup::Notify(DispatchWorkItem& item, DispatchQueue* queue)
 	{

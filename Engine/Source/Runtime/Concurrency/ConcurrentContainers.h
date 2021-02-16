@@ -59,6 +59,14 @@ namespace Omni
             }
             return static_cast<T*>(ret);
         }
+        bool IsEmpty()
+        {
+            bool ret;
+            mLock.lock();
+            ret = mHead == nullptr;
+            mLock.unlock();
+            return ret;
+        }
     private:
         std::mutex                  mLock;
         std::condition_variable     mCV;

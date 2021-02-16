@@ -11,15 +11,11 @@ namespace Omni
         ~IThreadLocal() = default; //virtual dtor is not needed since thread_locals are not deleted through pointer
         virtual bool IsClean() = 0;
         static void CheckAllThreadLocalClean();
-#if OMNI_DEBUG
         IThreadLocal* GetAllThreadLocals();
-#endif
     protected:
         void CheckIsClean();
-#if OMNI_DEBUG
     private:
         IThreadLocal*       mNext;
-#endif
     };
 
     template<typename T>

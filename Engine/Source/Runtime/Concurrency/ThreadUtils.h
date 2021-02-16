@@ -5,12 +5,16 @@
 namespace Omni
 {
     using ThreadIndex = i16;
+
+    static constexpr ThreadIndex MainThreadIndex = 0;
+    static constexpr ThreadIndex InvalidThreadIndex = -1;
+
     class ThreadData
     {
     public:
         //for ConcurrencyModule
         static ThreadData& Create();
-        void AskQuitOnMain();
+        
         
         void InitAsMainOnMain();
         void RunAndFinalizeOnMain(SystemInitializedCallback cb);
@@ -19,6 +23,7 @@ namespace Omni
         //for thread
         static ThreadData& GetThisThreadData();
         bool IsAskedToQuit();
+        static void MarkQuitWork();
         bool IsOnSelfThread();
         ThreadIndex GetThreadIndex();
 

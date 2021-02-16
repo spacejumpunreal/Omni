@@ -18,5 +18,6 @@ namespace Omni
 
 		DispatchQueue& GetQueue(QueueKind queueKind);
 		void Async(DispatchWorkItem& item);
+		void DismissWorkers();
 	};
 }

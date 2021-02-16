@@ -51,7 +51,7 @@ namespace Omni
 	void AllocJobFunc0(AllocJobData* jobData)
 	{
 		constexpr size_t Size64K = 64 * 1024;
-		constexpr size_t Amount = 1024 * 1024 * 128;
+		constexpr size_t Amount = 1024 * 1024 * 512;
 		constexpr size_t History = 8;
 
 		PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(MemoryKind::CacheLine);
@@ -72,10 +72,16 @@ namespace Omni
 			u8 w = (u8)sz;
 			if (sz != 0)
 			{
+				bool bad = false;
 				for (size_t iBytes = 0; iBytes < sz; ++iBytes)
 				{
-					CheckAlways(u8Ptr[iBytes] == w);
+					if (u8Ptr[iBytes] != w)
+					{
+						bad = true;
+						break;
+					}
 				}
+				CheckAlways(!bad);
 				alloc.resource()->deallocate(slots[slotIndex], 0);
 			}
 			//size_t size = (size_t)dis(gen);
@@ -97,12 +103,13 @@ namespace Omni
 		}
 		jobData->Group->Leave();
 	}
-	void AllocJobFunc1(void*)
+	void AllocJobFunc1()
 	{
 		System::GetSystem().TriggerFinalization();
 	}
 	void MainThreadTest()
 	{
+#if false
 		{
 			PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(Omni::MemoryKind::UserDefault);
 			size_t testSize = 1024;
@@ -110,36 +117,37 @@ namespace Omni
 			memset(p, 0, testSize);
 			alloc.deallocate(p, testSize);
 		}
-
-		ScratchStack& stack = MemoryModule::Get().GetThreadScratchStack();
-		stack.Push();
 		{
-			MemoryArenaScope s0 = stack.PushScope();
-			void* f = nullptr;
+			ScratchStack& stack = MemoryModule::Get().GetThreadScratchStack();
+			stack.Push();
 			{
-				MemoryArenaScope s1 = stack.PushScope();
-				f = stack.Allocate(3);
-				constexpr u32 allocSizes[] = { 1, 2, 4, 8, 12, 17, 19, 354 };
-				for (u32 sz : allocSizes)
+				MemoryArenaScope s0 = stack.PushScope();
+				void* f = nullptr;
 				{
-					stack.Allocate(sz);
-				}
-				void* m = nullptr;
-				{
-					MemoryArenaScope s2 = stack.PushScope();
-					m = stack.Allocate(1);
+					MemoryArenaScope s1 = stack.PushScope();
+					f = stack.Allocate(3);
+					constexpr u32 allocSizes[] = { 1, 2, 4, 8, 12, 17, 19, 354 };
 					for (u32 sz : allocSizes)
 					{
 						stack.Allocate(sz);
 					}
+					void* m = nullptr;
+					{
+						MemoryArenaScope s2 = stack.PushScope();
+						m = stack.Allocate(1);
+						for (u32 sz : allocSizes)
+						{
+							stack.Allocate(sz);
+						}
+					}
+					void* m1 = stack.Allocate(2);
+					CheckAlways(m1 == m);
 				}
-				void* m1 = stack.Allocate(2);
-				CheckAlways(m1 == m);
+				void* f1 = stack.Allocate(1);
+				CheckAlways(f1 == f);
 			}
-			void* f1 = stack.Allocate(1);
-			CheckAlways(f1 == f);
+			stack.Pop();
 		}
-		stack.Pop();
 		{
 			SpinLock sl;
 			
@@ -155,6 +163,7 @@ namespace Omni
 			sl.Unlock();
 			x.join();
 		}
+#endif
 #if true
 		{
 			constexpr size_t NThreads = 8;
@@ -170,15 +179,13 @@ namespace Omni
 				lastJob = &item;
 				group.Enter();
 			}
-			DispatchWorkItem& item = DispatchWorkItem::Create<void>(AllocJobFunc1, nullptr);
+			DispatchWorkItem& item = DispatchWorkItem::Create(AllocJobFunc1);
 			group.Notify(item, nullptr);
 			ConcurrencyModule::Get().Async(*lastJob);
 		}
 #endif
 	}
 }
-
-
 
 int main(int, const char** )
 {

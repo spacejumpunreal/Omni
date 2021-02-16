@@ -11,9 +11,6 @@ namespace Omni
     struct ThreadDataImpl;
     extern void ConcurrentWorkerThreadFunc(ThreadData*);
 
-    static constexpr ThreadIndex MainThreadIndex = 0;
-    static constexpr ThreadIndex InvalidThreadIndex = -1;
-
     static std::atomic<ThreadIndex>                 gThreadCount;
     static std::thread::id                          gMainThreadId;
     OMNI_DECLARE_THREAD_LOCAL(ThreadDataImpl*,      gThreadData);
@@ -24,7 +21,7 @@ namespace Omni
     public:
         std::thread         mThread;
         ThreadIndex         mThreadId;
-        std::atomic<bool>   mQuitAsked;
+        bool                mQuitAsked;
     public:
         ThreadDataImpl(); //only called on main thread, worker thread not created actually
         void InitializeOnThread(); //only called on self thread
@@ -49,13 +46,6 @@ namespace Omni
     {
         auto p = AllocForType<ThreadDataImpl, MemoryKind::SystemInit>();
         return *new (p)ThreadDataImpl();
-    }
-    void ThreadData::AskQuitOnMain()
-    {
-        auto& self = *static_cast<ThreadDataImpl*>(this);
-        //CheckAlways(!self.mQuitAsked.load(std::memory_order::relaxed));
-        self.mQuitAsked = true;
-
     }
     void ThreadData::InitAsMainOnMain()
     {
@@ -84,10 +74,10 @@ namespace Omni
     {
         CheckAlways(IsOnMainThread());
         auto self = static_cast<ThreadDataImpl*>(this);
-        if (self->GetThreadIndex() == 0) //this is not main thread, wait for it
-            self->FinalizeOnThread();
+        if (self->GetThreadIndex() == 0) 
+            self->FinalizeOnThread(); //main thread is not ThreadFinalized yet(may still need stuff during some finalization), do it here
         else
-            self->mThread.join();
+            self->mThread.join(); //this is not main thread, wait for it
         self->~ThreadDataImpl();
         FreeForType<ThreadDataImpl, MemoryKind::SystemInit>(self);
     }
@@ -98,7 +88,11 @@ namespace Omni
     bool ThreadData::IsAskedToQuit()
     {
         auto& self = *static_cast<ThreadDataImpl*>(this);
-        return self.mQuitAsked.load(std::memory_order::relaxed);
+        return self.mQuitAsked;
+    }
+    void ThreadData::MarkQuitWork()
+    {
+        gThreadData.GetRaw()->mQuitAsked = true;
     }
     bool ThreadData::IsOnSelfThread()
     {
