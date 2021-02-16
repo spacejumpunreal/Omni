@@ -1,5 +1,4 @@
 #pragma once
-#if false
 #include "Runtime/Omni.h"
 #include "Runtime/Misc/Padding.h"
 #include "Runtime/Concurrency/SpinLock.h"
@@ -11,58 +10,60 @@
 namespace Omni
 {
     struct SListNode;
+    //can't wrap sync around Queue, Dequeue need to block on empty
     class ConcurrentQueue
     {
     public:
         ConcurrentQueue()
-            : mCount(0)
+            : mWaitCount(0)
             , mHead(nullptr)
             , mTail(nullptr)
         {}
         void Enqueue(SListNode* head, SListNode* tail)
         {
-            n->Next = nullptr;
-            int nCount;
-            mLock.Data.Lock();
+            CheckAlways(tail->Next == nullptr);
+            mLock.lock();
             if (mTail)
             {
-                SListNode* o = mTail;
-                mTail = n;
+                mTail->Next = head;
+                mTail = tail;
             }
             else
             {
                 CheckAlways(mHead == nullptr);
-                mHead = mTail = n;
+                mHead = head;
+                mTail = tail;
             }
-            ++mCount;
-            nCount = mCount;
-            mLock.Data.Unlock();
-            if (nCount > 0)
-                ???
+            size_t waitCount = mWaitCount;
+            mLock.unlock();
+            if (waitCount == 1)
+                mCV.notify_one();
+            else if (waitCount > 0)
+                mCV.notify_all();
         }
-        bool TryDequeue(SListNode*& outNode)
+        template<typename T>
+        T* Dequeue()
         {
-            bool ret = false;
-            mLock.Data.Lock();
-            --mCount;
-            if (mHead)
+            static_assert(std::is_base_of_v<SListNode, T>);
+            SListNode* ret;
             {
-                outNode = mHead;
+                std::unique_lock<std::mutex> lk(mLock);
+                ++mWaitCount;
+                while (mHead == nullptr)
+                    mCV.wait(lk);
+                --mWaitCount;
+                ret = mHead;
                 mHead = mHead->Next;
                 if (mHead == nullptr)
                     mTail = nullptr;
             }
-            mLock.Data.Unlock();
-            return ret;
+            return static_cast<T*>(ret);
         }
     private:
-        CacheAlign<SpinLock>        mLock;
-        std::mutex                  mSlowLock;
+        std::mutex                  mLock;
         std::condition_variable     mCV;
-        std::atomic<size_t>         mPendingThreads;
-        size_t                      mCount;
+        size_t                      mWaitCount;
         SListNode*                  mHead;
         SListNode*                  mTail;
     };
 }
-#endif

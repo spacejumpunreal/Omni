@@ -27,4 +27,43 @@ namespace Omni
 	private:
 		std::atomic<u32>	mRefCount;
 	};
+	template<typename T>
+	class SharedPtr
+	{
+	public:
+		static_assert(std::is_base_of_v<IShared, T>, "T must be derived from IShared");
+	public:
+		SharedPtr(T* p = nullptr)
+			: mRawPtr(p)
+		{
+			if (p)
+				p->Retain();
+		}
+		~SharedPtr()
+		{
+			if (mRawPtr)
+				mRawPtr->Release();
+		}
+		SharedPtr& operator=(T* p)
+		{
+			p->Retain();
+			if (mRawPtr)
+				mRawPtr->Release();
+			mRawPtr = p;
+		}
+		T* operator->() const
+		{
+			return mRawPtr;
+		}
+		operator bool() const
+		{
+			return mRawPtr != nullptr;
+		}
+		T* Raw() const
+		{
+			return mRawPtr;
+		}
+	private:
+		T*	mRawPtr;
+	};
 }

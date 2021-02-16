@@ -1,4 +1,5 @@
 #include "Runtime/Memory/CacheLineAllocator.h"
+#include "Runtime/Concurrency/IThreadLocal.h"
 #include "Runtime/Concurrency/SpinLock.h"
 #include "Runtime/Math/CompileTime.h"
 #include "Runtime/Memory/MemoryWatch.h"
@@ -27,8 +28,11 @@ namespace Omni
 
 	struct CacheLinePerThreadData
 	{
+	public:
 		CacheLinePageHeader*	Page;
 		u32						UsedCachelines;
+	public:
+		bool IsClean() { return Page == nullptr && UsedCachelines == 0; }
 	};
 	struct CacheLinePageHeader
 	{
@@ -66,7 +70,6 @@ namespace Omni
 			: mPendingListHead(nullptr)
 			, mPendingListTail(nullptr)
 		{}
-		~CacheLineAllocatorPrivate();
 		FORCEINLINE static u32 Size2Cachelines(size_t sz);
 		void Shrink();
 		void* do_allocate(std::size_t bytes, std::size_t alignment) override;
@@ -81,16 +84,13 @@ namespace Omni
 	};
 #pragma warning( pop )
 	//global
-	static thread_local CacheLinePerThreadData gCacheLinePerThreadData;
+	OMNI_DECLARE_THREAD_LOCAL(CacheLinePerThreadData, gCacheLinePerThreadData);
 
 	CacheLinePageHeader& CacheLinePageHeader::GetHeader(void* addr)
 	{
 		u64 addr64 = (u64)addr;
 		u64 p64 = addr64 & ~(u64)(CacheLineAllocatorPrivate::PageSize - 1);
 		return *(CacheLinePageHeader*)p64;
-	}
-	CacheLineAllocatorPrivate::~CacheLineAllocatorPrivate()
-	{
 	}
 
 	u32 CacheLineAllocatorPrivate::Size2Cachelines(size_t sz)
@@ -101,6 +101,7 @@ namespace Omni
 	{
 		mLock.Lock();
 		mPendingListTail = nullptr;
+		size_t pages = 0;
 		for (CacheLinePageHeader** p = &mPendingListHead; *p != nullptr;)
 		{
 			if ((*p)->IsAvailable())
@@ -108,6 +109,7 @@ namespace Omni
 				CacheLinePageHeader* op = *p;
 				*p = (*p)->GetNext();
 				FreePages(op, PageSize);
+				++pages;
 			}
 			else
 			{
@@ -116,17 +118,19 @@ namespace Omni
 			}
 		}
 		mLock.Unlock();
+		mWatch.Data.Sub(PageSize * pages);
 	}
 
 	void* CacheLineAllocatorPrivate::do_allocate(std::size_t bytes, std::size_t)
 	{
 		u32 lines = Size2Cachelines(bytes);
 		CheckDebug(lines + HeaderCacheLines <= CacheLinesPerPage);
-		if (gCacheLinePerThreadData.Page != nullptr && gCacheLinePerThreadData.UsedCachelines + lines <= CacheLinesPerPage)
+		CacheLinePerThreadData& gcptd = gCacheLinePerThreadData.GetRaw();
+		if (gcptd.Page != nullptr && gcptd.UsedCachelines + lines <= CacheLinesPerPage)
 		{
-			u8* ret = ((u8*)gCacheLinePerThreadData.Page) + (((u64)gCacheLinePerThreadData.UsedCachelines) << CacheLineSizeShift);
-			gCacheLinePerThreadData.UsedCachelines += lines;
-			gCacheLinePerThreadData.Page->Top.Data.AcquireCount.fetch_add(1, std::memory_order::relaxed); //not shared with others(not on the pending list)
+			u8* ret = ((u8*)gcptd.Page) + (((u64)gcptd.UsedCachelines) << CacheLineSizeShift);
+			gcptd.UsedCachelines += lines;
+			gcptd.Page->Top.Data.AcquireCount.fetch_add(1, std::memory_order::relaxed); //not shared with others(not on the pending list)
 			return ret;
 		}
 		CacheLinePageHeader* avail = nullptr;
@@ -151,18 +155,18 @@ namespace Omni
 				pp = p;
 				p = p->GetNext();
 			}
-			if (gCacheLinePerThreadData.Page != nullptr)
+			if (gcptd.Page != nullptr)
 			{
-				CheckDebug(gCacheLinePerThreadData.Page->GetNext() == nullptr);
+				CheckDebug(gcptd.Page->GetNext() == nullptr);
 				if (mPendingListTail)
 				{
-					mPendingListTail->GetNext() = gCacheLinePerThreadData.Page;
-					mPendingListTail = gCacheLinePerThreadData.Page;
+					mPendingListTail->GetNext() = gcptd.Page;
+					mPendingListTail = gcptd.Page;
 				}
 				else
 				{
 					CheckDebug(mPendingListHead == nullptr);
-					mPendingListHead = mPendingListTail = gCacheLinePerThreadData.Page;
+					mPendingListHead = mPendingListTail = gcptd.Page;
 				}
 			}
 		}
@@ -176,9 +180,9 @@ namespace Omni
 		}
 		avail->Top.Data.AcquireCount.store(1, std::memory_order::relaxed);
 		avail->ReleaseCount.Data.store(0, std::memory_order::relaxed); //these will complete before put on pending list(after enter lock)
-		gCacheLinePerThreadData.Page = avail;
-		gCacheLinePerThreadData.UsedCachelines = HeaderCacheLines + lines;
-		return (u8*)(&gCacheLinePerThreadData.Page[1]);
+		gcptd.Page = avail;
+		gcptd.UsedCachelines = HeaderCacheLines + lines;
+		return (u8*)(&gcptd.Page[1]);
 	}
 	void CacheLineAllocatorPrivate::do_deallocate(void* p, std::size_t, std::size_t)
 	{
@@ -208,7 +212,11 @@ namespace Omni
 
 	MemoryStats CacheLineAllocator::GetStats()
 	{
-		return MemoryStats();
+		MemoryStats ret;
+		CacheLineAllocatorPrivate& self = mData.Ref<CacheLineAllocatorPrivate>();
+		ret.Name = GetName();
+		self.mWatch.Data.Dump(ret);
+		return ret;
 	}
 
 	const char* CacheLineAllocator::GetName()
@@ -218,5 +226,39 @@ namespace Omni
 
 	void CacheLineAllocator::Shrink()
 	{
+		CacheLineAllocatorPrivate& self = mData.Ref<CacheLineAllocatorPrivate>();
+		self.Shrink();
 	}
+
+	void CacheLineAllocator::ThreadInitialize()
+	{
+		CheckAlways(
+			gCacheLinePerThreadData->Page == nullptr &&
+			gCacheLinePerThreadData->UsedCachelines == 0
+		);
+	}
+
+	void CacheLineAllocator::ThreadFinalize()
+	{
+		CacheLinePerThreadData& gcptd = gCacheLinePerThreadData.GetRaw();
+		if (gcptd.Page)
+		{
+			CacheLineAllocatorPrivate& self = mData.Ref<CacheLineAllocatorPrivate>();
+			self.mLock.Lock();
+			if (self.mPendingListTail)
+			{
+				self.mPendingListTail->GetNext() = gcptd.Page;
+				self.mPendingListTail = gcptd.Page;
+			}
+			else
+			{
+				self.mPendingListHead = self.mPendingListTail = gcptd.Page;
+			}
+			self.mLock.Unlock();
+			gcptd.Page = nullptr;
+			gcptd.UsedCachelines = 0;
+		}
+	}
+
+
 }

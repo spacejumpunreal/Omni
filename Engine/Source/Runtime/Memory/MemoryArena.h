@@ -27,13 +27,14 @@ namespace Omni
 	public:
 		ScratchStack();
 		void Reset(u8* ptr, u32 size);
+		bool IsClean();
 		FORCEINLINE u8* Allocate(u32 size);
 		FORCEINLINE void Push();
 		FORCEINLINE void Pop();
 		[[nodiscard]] FORCEINLINE MemoryArenaScope PushScope();
 		u32 GetUsedBytes() { return mUsedBytes; }
 		u8* GetPtr() { return mPtr; }
-	private:
+	protected:
 		u8* mPtr;
 		u32 mUsedBytes;
 		u32 mTotalBytes;

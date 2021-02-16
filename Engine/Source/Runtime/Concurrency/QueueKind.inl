@@ -1,0 +1,2 @@
+QUEUE_KIND(Main)
+QUEUE_KIND(Max)

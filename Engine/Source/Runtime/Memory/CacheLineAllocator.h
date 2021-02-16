@@ -5,6 +5,8 @@
 
 namespace Omni
 {
+	struct CacheLinePerThreadData;
+
 	class CacheLineAllocator : public IAllocator
 	{
 	public:
@@ -14,6 +16,8 @@ namespace Omni
 		MemoryStats GetStats() override;
 		const char* GetName() override;
 		void Shrink() override;
+		void ThreadInitialize();
+		void ThreadFinalize();
 	private:
 		PrivateData<256> mData;
 	};

@@ -20,4 +20,8 @@ namespace Omni
 		mPtr = ptr;
 		mTotalBytes = bytes;
 	}
+	bool ScratchStack::IsClean()
+	{
+		return mPtr == nullptr && mUsedBytes == 0 && mTotalBytes == 0 && mDepth == 0;
+	}
 }

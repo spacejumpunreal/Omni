@@ -1,10 +1,12 @@
 #include "Runtime/System/System.h"
+#include "Runtime/Concurrency/ConcurrencyModule.h"
 #include "Runtime/Concurrency/JobPrimitives.h"
 #include "Runtime/Concurrency/SpinLock.h"
 #include "Runtime/Memory/MemoryArena.h"
 #include "Runtime/Memory/MemoryModule.h"
 #include "Runtime/Misc/ArrayUtils.h"
 #include "Runtime/Misc/AssertUtils.h"
+#include "Runtime/Platform/PlatformAPIs.h"
 #include <chrono>
 #include <functional>
 #include <random>
@@ -41,21 +43,63 @@ void operator delete(void* ptr, std::align_val_t)
 
 namespace Omni
 {
-	struct SuperStruct
+	struct AllocJobData
 	{
-		int Data[64];
+		size_t				IThread;
+		DispatchGroup*		Group;
 	};
-	void AvoidFunction()
+	void AllocJobFunc0(AllocJobData* jobData)
 	{
-		printf("AvoidFunction()\n");
+		constexpr size_t Size64K = 64 * 1024;
+		constexpr size_t Amount = 1024 * 1024 * 128;
+		constexpr size_t History = 8;
+
+		PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(MemoryKind::CacheLine);
+		std::mt19937 gen;
+		gen.seed((unsigned int)jobData->IThread);
+		std::uniform_int_distribution<> dis((int)(Size64K / 3), (int)(Size64K * 3 / 4));
+		u8* slots[History];
+		size_t sizes[History];
+		memset(slots, 0, sizeof(slots));
+		memset(sizes, 0, sizeof(sizes));
+		size_t allocated = 0;
+		size_t slotIndex = 0;
+		int runIndex = 0;
+		while (allocated < Amount)
+		{
+			u8* u8Ptr = slots[slotIndex];
+			size_t sz = sizes[slotIndex];
+			u8 w = (u8)sz;
+			if (sz != 0)
+			{
+				for (size_t iBytes = 0; iBytes < sz; ++iBytes)
+				{
+					CheckAlways(u8Ptr[iBytes] == w);
+				}
+				alloc.resource()->deallocate(slots[slotIndex], 0);
+			}
+			//size_t size = (size_t)dis(gen);
+			size_t size = Size64K - 128;
+			std::byte* p = alloc.allocate(size);
+			memset(p, (int)size, size);
+			slots[slotIndex] = (u8*)p;
+			sizes[slotIndex] = size;
+			slotIndex = (slotIndex + 1) % History;
+			allocated += size;
+			++runIndex;
+		}
+		for (size_t iSlot = 0; iSlot < History; ++iSlot)
+		{
+			if (slots[iSlot])
+			{
+				alloc.resource()->deallocate(slots[iSlot], 0);
+			}
+		}
+		jobData->Group->Leave();
 	}
-	void Func0(int* x)
+	void AllocJobFunc1(void*)
 	{
-		printf("Func0(%x)\n", *x);
-	}
-	void Func1(SuperStruct* s)
-	{
-		printf("Func1(s->Data[63]:%d)\n", s->Data[63]);
+		System::GetSystem().TriggerFinalization();
 	}
 	void MainThreadTest()
 	{
@@ -66,7 +110,6 @@ namespace Omni
 			memset(p, 0, testSize);
 			alloc.deallocate(p, testSize);
 		}
-		
 
 		ScratchStack& stack = MemoryModule::Get().GetThreadScratchStack();
 		stack.Push();
@@ -97,24 +140,6 @@ namespace Omni
 			CheckAlways(f1 == f);
 		}
 		stack.Pop();
-		if constexpr (false)
-		{
-			int x = 98;
-			DispatchWorkItem& item = DispatchWorkItem::Create(Func0, &x);
-			x = 97;
-			item.Perform();
-			item.Release();
-		}
-		{
-			MemoryArenaScope s = stack.PushScope();
-			SuperStruct* ss = (SuperStruct*)stack.Allocate(sizeof(SuperStruct));
-			ss->Data[63] = 0x8866;
-
-			DispatchWorkItem& item = DispatchWorkItem::Create(Func1, ss);
-			ss->Data[63] = 0;
-			item.Perform();
-			item.Release();
-		}
 		{
 			SpinLock sl;
 			
@@ -130,67 +155,26 @@ namespace Omni
 			sl.Unlock();
 			x.join();
 		}
+#if true
 		{
-			constexpr size_t Size64K = 64 * 1024;
-			constexpr size_t Amount = (1024 * 1024 * 256ull);
-			constexpr size_t NThreads = 1;
-			constexpr size_t History = 8;
-			PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(MemoryKind::CacheLine);
-			std::thread threads[NThreads];
-			SpinLock lk;
-			lk.Lock();
+			constexpr size_t NThreads = 8;
+			DispatchGroup& group = DispatchGroup::Create(0);
+			AllocJobData jd;
+			jd.Group = &group;
+			DispatchWorkItem* lastJob = nullptr;
 			for (size_t iThread = 0; iThread < NThreads; ++iThread)
 			{
-				threads[iThread] = std::thread([&] {
-					std::mt19937 gen;
-					gen.seed((unsigned int)iThread);
-					std::uniform_int_distribution<> dis((int)(Size64K / 3), (int)(Size64K * 3 / 4));
-					u8* slots[History];
-					size_t sizes[History];
-					memset(slots, 0, sizeof(slots));
-					memset(sizes, 0, sizeof(sizes));
-					size_t allocated = 0;
-					size_t slotIndex = 0;
-					lk.Lock();
-					lk.Unlock();
-					int runIndex = 0;
-					while (allocated < Amount)
-					{
-						u8* u8Ptr = slots[slotIndex];
-						size_t sz = sizes[slotIndex];
-						u8 w = (u8)sz;
-						if (sz != 0)
-						{
-							for (size_t iBytes = 0; iBytes < sz; ++iBytes)
-							{
-								CheckAlways(u8Ptr[iBytes] == w);
-							}
-							alloc.resource()->deallocate(slots[slotIndex], 0);
-						}
-						size_t size = (size_t)dis(gen);
-						std::byte* p = alloc.allocate(size);
-						memset(p, (int)size, size);
-						slots[slotIndex] = (u8*)p;
-						sizes[slotIndex] = size;
-						slotIndex = (slotIndex + 1) % History;
-						allocated += size;
-						++runIndex;
-					}
-					for (size_t iSlot = 0; iSlot < History; ++iSlot)
-					{
-						if (slots[iSlot])
-						{
-							alloc.resource()->deallocate(slots[iSlot], 0);
-						}
-					}
-				});
+				jd.IThread = iThread;
+				DispatchWorkItem& item = DispatchWorkItem::Create(AllocJobFunc0, &jd);
+				item.Next = lastJob;
+				lastJob = &item;
+				group.Enter();
 			}
-			lk.Unlock();
-			for (int iThread = 0; iThread < NThreads; ++iThread)
-			{
-				threads[iThread].join();
-			}
+			DispatchWorkItem& item = DispatchWorkItem::Create<void>(AllocJobFunc1, nullptr);
+			group.Notify(item, nullptr);
+			ConcurrencyModule::Get().Async(*lastJob);
 		}
+#endif
 	}
 }
 
@@ -204,12 +188,7 @@ int main(int, const char** )
 	{
 		"",
 	};
-	system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv);
-
-	Omni::MainThreadTest();
-
-	system.TriggerFinalization();
-	system.Finalize();
+	system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv, Omni::MainThreadTest);
 	system.DestroySystem();
  
 	return 0;

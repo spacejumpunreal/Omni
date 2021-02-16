@@ -1,4 +1,5 @@
 #include "Runtime/Memory/MemoryModule.h"
+#include "Runtime/Concurrency/IThreadLocal.h"
 #include "Runtime/Misc/AssertUtils.h"
 #include "Runtime/Misc/PImplUtils.h"
 #include "Runtime/Misc/ThreadLocalData.h"
@@ -27,30 +28,31 @@ namespace Omni
 		PMRResource*					mKind2PMRResources[(size_t)MemoryKind::Max];
 		IAllocator*						mAllocators[(size_t)MemoryKind::Max];
 		u32								mThreadArenaSize;
+		CacheLineAllocator*				mCacheLineAllocator;
 
 		MemoryModulePrivateData()
 			: mThreadArenaSize(DefaultThreadArenaSize)
+			, mCacheLineAllocator(nullptr)
 		{
 			memset(mKind2PMRResources, 0, sizeof(mKind2PMRResources));
 			memset(mAllocators, 0, sizeof(mAllocators));
 		}
 	};
 	using MemoryModuleImpl = PImplCombine<MemoryModule, MemoryModulePrivateData>;
-
 	//globals
 	MemoryModule*							gMemoryModule;
-	thread_local static ScratchStack		gThreadArena;
+	OMNI_DECLARE_THREAD_LOCAL(ScratchStack, gThreadArena);
 	//methods
 	void MemoryModule::Initialize()
 	{
 		CheckAlways(gMemoryModule == nullptr, "singleton rule violated");
-		CheckAlways(gThreadArena.GetUsedBytes() == 0);
+		CheckAlways(gThreadArena->GetUsedBytes() == 0);
 		MemoryModulePrivateData* self = MemoryModuleImpl::GetCombinePtr(this);
 		size_t usedAllocators = 0;
 		IAllocator* primary = new SNAllocator();
 		self->mAllocators[usedAllocators++] = primary;
 		self->mKind2PMRResources[(u32)MemoryKind::SystemInit] = primary->GetResource();
-		IAllocator* cacheline = new CacheLineAllocator();
+		IAllocator* cacheline = self->mCacheLineAllocator = new CacheLineAllocator();
 		self->mAllocators[usedAllocators++] = cacheline;
 		self->mKind2PMRResources[(u32)MemoryKind::CacheLine] = cacheline->GetResource();
 
@@ -100,6 +102,7 @@ namespace Omni
 			IAllocator* alloc = self->mAllocators[iAllocator];
 			if (alloc == nullptr)
 				continue;
+			alloc->Shrink();
 			MemoryStats ms = alloc->GetStats();
 			CheckAlways(ms.Used == 0);
 			delete alloc;
@@ -121,33 +124,45 @@ namespace Omni
 	}
 	ScratchStack& MemoryModule::GetThreadScratchStack()
 	{
-		return gThreadArena;
+		return gThreadArena.GetRaw();
 	}
 	void MemoryModule::ThreadInitialize()
 	{
-		CheckAlways(gThreadArena.GetPtr() == nullptr);
+		CheckAlways(gThreadArena->GetPtr() == nullptr);
 		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(gMemoryModule);
 		void* p = gMemoryModule->GetPMRAllocator(MemoryKind::ThreadScratchStack).resource()->allocate(self->mThreadArenaSize, OMNI_DEFAULT_ALIGNMENT);
-		gThreadArena.Reset((u8*)p, self->mThreadArenaSize);
+		gThreadArena->Reset((u8*)p, self->mThreadArenaSize);
+		if (self->mCacheLineAllocator)
+			self->mCacheLineAllocator->ThreadInitialize();
 	}
 	void MemoryModule::ThreadFinalize()
 	{
-		CheckAlways(gThreadArena.GetPtr() != nullptr);
+		CheckAlways(gThreadArena->GetPtr() != nullptr);
 		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(gMemoryModule);
-		void* p = gThreadArena.GetPtr();
+		void* p = gThreadArena->GetPtr();
 		gMemoryModule->GetPMRAllocator(MemoryKind::ThreadScratchStack).resource()->deallocate(p, self->mThreadArenaSize, OMNI_DEFAULT_ALIGNMENT);
-		gThreadArena.Reset(nullptr, 0);
+		gThreadArena->Reset(nullptr, 0);
+		if (self->mCacheLineAllocator)
+			self->mCacheLineAllocator->ThreadFinalize();
 	}
 	void MemoryModule::GetStats(std::pmr::vector<MemoryStats>& ret)
 	{
 		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
 		for (IAllocator* a : self->mAllocators)
 		{
-			ret.push_back(a->GetStats());
+			if (a)
+				ret.push_back(a->GetStats());
 		}
 	}
 	void MemoryModule::Shrink()
-	{}
+	{
+		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
+		for (IAllocator* a : self->mAllocators)
+		{
+			if (a)
+				a->Shrink();
+		}
+	}
 	Module* MemoryModuleCtor(const EngineInitArgMap&)
 	{
 		return new MemoryModuleImpl();

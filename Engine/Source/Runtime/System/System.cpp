@@ -1,4 +1,5 @@
 #include "Runtime/System/System.h"
+#include "Runtime/Concurrency/ThreadUtils.h"
 #include "Runtime/System/Module.h"
 #include "Runtime/System/ModuleExport.h"
 #include "Runtime/System/InternalModuleRegistry.h"
@@ -6,6 +7,7 @@
 #include "Runtime/Misc/ArrayUtils.h"
 #include "Runtime/Misc/AssertUtils.h"
 #include "Runtime/Memory/MemoryModule.h"
+
 
 
 #include <array>
@@ -55,6 +57,7 @@ namespace Omni
 	//functions
 	void System::CreateSystem()
 	{
+		RegisterMainThread();
 		CheckAlways(GSystem == nullptr, "double create");
 		GSystem = new SystemImpl();
 	}
@@ -69,8 +72,9 @@ namespace Omni
 		CheckAlways(GSystem != nullptr, "double destroy");
 		delete GSystem;
 		GSystem = nullptr;
+		UnregisterMainThread();
 	}
-	void System::InitializeAndJoin(u32 argc, const char** argv)
+	void System::InitializeAndJoin(u32 argc, const char** argv, SystemInitializedCallback cb)
 	{
 		//parse args
 		EngineInitArgMap argMap;
@@ -161,15 +165,11 @@ namespace Omni
 			firstRound = false;
 		}
 		self->mStatus = SystemStatus::Ready;
-		//join concurrency module
+		ThreadData::GetThisThreadData().RunAndFinalizeOnMain(cb);
 
-		//TODO:remove this after concurrency module is done
-		MemoryModule::ThreadInitialize();
 	}
 	void System::Finalize()
 	{
-		//TODO:remove this after concurrency module is done
-		MemoryModule::ThreadFinalize();
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);
 		CheckAlways(self->mStatus == SystemStatus::ToBeFinalized);
 		self->mStatus = SystemStatus::Finalizing;
@@ -220,7 +220,7 @@ namespace Omni
 	{
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);
 		SystemStatus v = SystemStatus::Ready;
-		self->mStatus.compare_exchange_strong(v, SystemStatus::ToBeFinalized);
+		CheckAlways(self->mStatus.compare_exchange_strong(v, SystemStatus::ToBeFinalized));
 	}
 	void System::WaitTillFinalized()
 	{

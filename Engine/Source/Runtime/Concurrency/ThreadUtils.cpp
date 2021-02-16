@@ -1,0 +1,130 @@
+#include "Runtime/Concurrency/ThreadUtils.h"
+#include "Runtime/Concurrency/IThreadLocal.h"
+#include "Runtime/Memory/MemoryModule.h"
+#include "Runtime/Misc/AssertUtils.h"
+#include <atomic>
+#include <thread>
+
+
+namespace Omni
+{
+    struct ThreadDataImpl;
+    extern void ConcurrentWorkerThreadFunc(ThreadData*);
+
+    static constexpr ThreadIndex MainThreadIndex = 0;
+    static constexpr ThreadIndex InvalidThreadIndex = -1;
+
+    static std::atomic<ThreadIndex>                 gThreadCount;
+    static std::thread::id                          gMainThreadId;
+    OMNI_DECLARE_THREAD_LOCAL(ThreadDataImpl*,      gThreadData);
+
+    struct ThreadDataImpl : public ThreadData
+    {
+        //using WorkerThreadSignature = void(ThreadData* td);
+    public:
+        std::thread         mThread;
+        ThreadIndex         mThreadId;
+        std::atomic<bool>   mQuitAsked;
+    public:
+        ThreadDataImpl(); //only called on main thread, worker thread not created actually
+        void InitializeOnThread(); //only called on self thread
+        void FinalizeOnThread(); //only called on self thread
+    };
+
+    bool IsOnMainThread()
+    {
+        return gMainThreadId == std::this_thread::get_id();
+    }
+    void RegisterMainThread()
+    {
+        CheckAlways(gMainThreadId == std::thread::id{});
+        gMainThreadId = std::this_thread::get_id();
+    }
+    void UnregisterMainThread()
+    {
+        CheckAlways(IsOnMainThread());
+        gMainThreadId = std::thread::id{};
+    }
+    ThreadData& ThreadData::Create()
+    {
+        auto p = AllocForType<ThreadDataImpl, MemoryKind::SystemInit>();
+        return *new (p)ThreadDataImpl();
+    }
+    void ThreadData::AskQuitOnMain()
+    {
+        auto& self = *static_cast<ThreadDataImpl*>(this);
+        //CheckAlways(!self.mQuitAsked.load(std::memory_order::relaxed));
+        self.mQuitAsked = true;
+
+    }
+    void ThreadData::InitAsMainOnMain()
+    {
+        auto& self = *static_cast<ThreadDataImpl*>(this);
+        CheckAlways(IsOnMainThread());
+        self.InitializeOnThread();
+    }
+    void ThreadData::RunAndFinalizeOnMain(SystemInitializedCallback cb)
+    {
+        auto& self = *static_cast<ThreadDataImpl*>(this);
+        CheckAlways(IsOnMainThread());
+        cb();
+        ConcurrentWorkerThreadFunc(&self);
+        System::GetSystem().Finalize();
+    }
+    void ThreadData::LauchAsWorkerOnMain()
+    {
+        auto& self = *static_cast<ThreadDataImpl*>(this);
+        self.mThread = std::thread([&self] { 
+            self.InitializeOnThread();
+            ConcurrentWorkerThreadFunc(&self);
+            self.FinalizeOnThread();
+        });
+    }
+    void ThreadData::JoinAndDestroyOnMain()
+    {
+        CheckAlways(IsOnMainThread());
+        auto self = static_cast<ThreadDataImpl*>(this);
+        if (self->GetThreadIndex() == 0) //this is not main thread, wait for it
+            self->FinalizeOnThread();
+        else
+            self->mThread.join();
+        self->~ThreadDataImpl();
+        FreeForType<ThreadDataImpl, MemoryKind::SystemInit>(self);
+    }
+    ThreadData& ThreadData::GetThisThreadData()
+    {
+        return *gThreadData.GetRaw();
+    }
+    bool ThreadData::IsAskedToQuit()
+    {
+        auto& self = *static_cast<ThreadDataImpl*>(this);
+        return self.mQuitAsked.load(std::memory_order::relaxed);
+    }
+    bool ThreadData::IsOnSelfThread()
+    {
+        return gThreadData.GetRaw() == this;
+    }
+    ThreadIndex ThreadData::GetThreadIndex()
+    {
+        auto& self = *static_cast<ThreadDataImpl*>(this);
+        return self.mThreadId;
+    }
+    ThreadDataImpl::ThreadDataImpl()
+        : mThreadId(InvalidThreadIndex)
+        , mQuitAsked(false)
+    {
+        CheckAlways(IsOnMainThread());
+    }
+    void ThreadDataImpl::InitializeOnThread()
+    {
+        mThreadId = gThreadCount.fetch_add(1);
+        gThreadData.GetRaw() = this;
+        MemoryModule::ThreadInitialize();
+    }
+    void ThreadDataImpl::FinalizeOnThread()
+    {
+        MemoryModule::ThreadFinalize();
+        gThreadCount.fetch_sub(1);
+        gThreadData.GetRaw() = nullptr;
+    }
+}

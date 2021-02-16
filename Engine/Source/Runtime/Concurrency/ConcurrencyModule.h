@@ -6,14 +6,17 @@
 
 namespace Omni
 {
+	enum class QueueKind : u32;
 
 	class ConcurrencyModule : public Module
 	{
 	public:
 		void Initialize() override;
 		void Finalize() override;
+		void Finalizing() override;
 		static ConcurrencyModule& Get();
 
-		DispatchQueue& GetQueue(const char* name);
+		DispatchQueue& GetQueue(QueueKind queueKind);
+		void Async(DispatchWorkItem& item);
 	};
 }

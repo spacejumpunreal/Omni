@@ -14,6 +14,7 @@ namespace Omni
 	};
 
 	using ModuleKey = i32;
+	using SystemInitializedCallback = void(*)();
 
 	class System
 	{
@@ -24,7 +25,8 @@ namespace Omni
 		void DestroySystem();
 
 		//EngineModule MainThread
-		void InitializeAndJoin(u32 argc, const char** argv); //whoever called this became MainThread
+		//whoever called this became MainThread
+		void InitializeAndJoin(u32 argc, const char** argv, SystemInitializedCallback callback); 
 		void Finalize();
 
 		//API for Engine users
