@@ -16,9 +16,8 @@ namespace Omni
 		~DispatchQueue();
 		void SetName(const char* name);
 		void Enqueue(DispatchWorkItem* head, DispatchWorkItem* tail);
-		DispatchWorkItem* Dequeue();
 	private:
-		PrivateData<CPU_CACHE_LINE_SIZE * 2, CPU_CACHE_LINE_SIZE>	mData;
+		PrivateData<CPU_CACHE_LINE_SIZE * 3, CPU_CACHE_LINE_SIZE>	mData;
 	};
 
 	class DispatchWorkItem : public SListNode

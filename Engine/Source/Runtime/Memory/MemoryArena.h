@@ -1,7 +1,7 @@
 #pragma once
 #include "Runtime/Omni.h"
 #include "Runtime/Misc/ArrayUtils.h"
-#include "Runtime/Misc/AssertUtils.h"
+#include "Runtime/Test/AssertUtils.h"
 #include <memory_resource>
 
 namespace Omni

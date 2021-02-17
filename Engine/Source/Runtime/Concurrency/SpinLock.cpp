@@ -1,5 +1,5 @@
 #include "Runtime/Concurrency/SpinLock.h"
-#include "Runtime/Misc/AssertUtils.h"
+#include "Runtime/Test/AssertUtils.h"
 #include "Runtime/Platform/PlatformAPIs.h"
 
 namespace Omni

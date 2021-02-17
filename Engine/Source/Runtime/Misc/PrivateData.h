@@ -1,6 +1,6 @@
 #pragma once
 #include "Runtime/Omni.h"
-#include "Runtime/Misc/AssertUtils.h"
+#include "Runtime/Test/AssertUtils.h"
 
 namespace Omni
 {

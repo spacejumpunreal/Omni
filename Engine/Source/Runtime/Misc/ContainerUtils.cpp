@@ -4,8 +4,7 @@
 namespace Omni
 {
     Queue::Queue()
-        : mSize(0)
-        , mHead(nullptr)
+        : mHead(nullptr)
         , mTail(nullptr)
     {
     }
@@ -31,8 +30,14 @@ namespace Omni
             mTail = nullptr;
         return ret;
     }
-    size_t Queue::GetSize()
+    SListNode* Queue::DequeueAll()
     {
-        return mSize;
+        SListNode* ret = mHead;
+        mHead = mTail = nullptr;
+        return ret;
+    }
+    bool Queue::IsEmpty()
+    {
+        return mHead == nullptr;
     }
 }

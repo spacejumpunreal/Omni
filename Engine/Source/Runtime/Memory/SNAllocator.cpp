@@ -18,12 +18,13 @@ namespace Omni
 		void* do_allocate(std::size_t bytes, std::size_t alignment) override
 		{
 			size_t alignedSize = AlignUpSize(bytes, alignment);
-			mWatch.Add(alignedSize);
-			void* p = snmalloc::ThreadAlloc::get_noncachable()->alloc(alignedSize);
+			snmalloc::Alloc* alloc = snmalloc::ThreadAlloc::get_reference();
+			void* p = alloc->alloc(alignedSize);
 			if (TrashAllocatedMemory)
 			{
 				FillWithPattern(p, alignedSize, FillPattern);
 			}
+			mWatch.Add(alignedSize);
 			return p;
 		}
 		void do_deallocate(void* p, std::size_t bytes, std::size_t alignment) override

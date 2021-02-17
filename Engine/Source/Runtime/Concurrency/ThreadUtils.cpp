@@ -1,7 +1,7 @@
 #include "Runtime/Concurrency/ThreadUtils.h"
 #include "Runtime/Concurrency/IThreadLocal.h"
 #include "Runtime/Memory/MemoryModule.h"
-#include "Runtime/Misc/AssertUtils.h"
+#include "Runtime/Test/AssertUtils.h"
 #include <atomic>
 #include <thread>
 
@@ -44,8 +44,7 @@ namespace Omni
     }
     ThreadData& ThreadData::Create()
     {
-        auto p = AllocForType<ThreadDataImpl, MemoryKind::SystemInit>();
-        return *new (p)ThreadDataImpl();
+        return *OMNI_NEW(MemoryKind::SystemInit) ThreadDataImpl();
     }
     void ThreadData::InitAsMainOnMain()
     {
@@ -78,8 +77,7 @@ namespace Omni
             self->FinalizeOnThread(); //main thread is not ThreadFinalized yet(may still need stuff during some finalization), do it here
         else
             self->mThread.join(); //this is not main thread, wait for it
-        self->~ThreadDataImpl();
-        FreeForType<ThreadDataImpl, MemoryKind::SystemInit>(self);
+        OMNI_DELETE(self, MemoryKind::SystemInit);
     }
     ThreadData& ThreadData::GetThisThreadData()
     {

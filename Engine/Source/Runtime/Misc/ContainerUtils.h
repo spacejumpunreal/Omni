@@ -11,9 +11,9 @@ namespace Omni
         Queue();
         void Enqueue(SListNode* head, SListNode* tail);
         SListNode* Dequeue();
-        FORCEINLINE size_t GetSize();
+        SListNode* DequeueAll();
+        bool IsEmpty();
     private:
-        size_t      mSize;
         SListNode*  mHead;
         SListNode*  mTail;
     };

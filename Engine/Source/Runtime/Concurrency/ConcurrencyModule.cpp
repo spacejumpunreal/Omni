@@ -8,7 +8,7 @@
 #include "Runtime/Misc/PImplUtils.h"
 #include "Runtime/System/ModuleExport.h"
 #include "Runtime/System/Module.h"
-
+#include <vector>
 #include <Windows.h>
 namespace Omni
 {
@@ -16,13 +16,10 @@ namespace Omni
     struct ConcurrencyModulePrivateImpl
     {
     public:
-        DispatchQueue       mSerialQueues[(u32)QueueKind::Max];
-        ConcurrentQueue     mSharedQueue;
-        ThreadData**        mThreadData;
-        u32                 mThreadCount;
-
+        DispatchQueue                   mSerialQueues[(u32)QueueKind::Max];
+        ConcurrentQueue                 mSharedQueue;
+        std::pmr::vector<ThreadData*>   mThreadData;
     public:
-        ConcurrencyModulePrivateImpl();
         void WaitWorkersQuitOnMain();
     };
 
@@ -52,19 +49,15 @@ namespace Omni
         Module::Initialize();
 
         //2. worker threads
-        u32 nThreads = self->mThreadCount = (u32)std::thread::hardware_concurrency();
+        u32 nThreads = (u32)std::thread::hardware_concurrency();
         //nThreads = 1;
-        self->mThreadCount = nThreads;
-        self->mThreadData = AllocForType<ThreadData*, MemoryKind::SystemInit>(nThreads);
+        self->mThreadData.resize(nThreads);
+        self->mSharedQueue.SetAllWakeupLimit(nThreads / 2);
         for (u32 iThread = MainThreadIndex; iThread < nThreads; ++iThread)
-        {
             self->mThreadData[iThread] = &ThreadData::Create();
-        }
         self->mThreadData[0]->InitAsMainOnMain();
         for (u32 iThread = MainThreadIndex + 1; iThread < nThreads; ++iThread)
-        {
             self->mThreadData[iThread]->LauchAsWorkerOnMain();
-        }
     }
     void ConcurrencyModule::Finalize()
     {
@@ -74,7 +67,8 @@ namespace Omni
 
         ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
         self->mThreadData[0]->JoinAndDestroyOnMain();
-        FreeForType<ThreadData*, MemoryKind::SystemInit>(self->mThreadData, self->mThreadCount);
+        self->mThreadData.resize(0);
+        self->mThreadData.shrink_to_fit();
         gConcurrencyModule = nullptr;
         Module::Finalize();
         MemoryModule::Get().Release();
@@ -86,6 +80,11 @@ namespace Omni
     ConcurrencyModule& ConcurrencyModule::Get()
     {
         return *gConcurrencyModule;
+    }
+    u32 ConcurrencyModule::GetWorkerCount()
+    {
+        ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
+        return (u32)self->mThreadData.size();
     }
     DispatchQueue& ConcurrencyModule::GetQueue(QueueKind queueKind)
     {
@@ -108,7 +107,7 @@ namespace Omni
     {
         ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
         DispatchWorkItem* lastJob = nullptr;
-        for (u32 iThread = 0; iThread < self->mThreadCount; ++iThread)
+        for (u32 iThread = 0; iThread < (u32)self->mThreadData.size(); ++iThread)
         {
             DispatchWorkItem& item = DispatchWorkItem::Create(ThreadData::MarkQuitWork);
             item.Next = lastJob;
@@ -116,14 +115,9 @@ namespace Omni
         }
         Async(*lastJob);
     }
-
-    ConcurrencyModulePrivateImpl::ConcurrencyModulePrivateImpl()
-        : mThreadData(nullptr)
-        , mThreadCount(0)
-    {}
     void ConcurrencyModulePrivateImpl::WaitWorkersQuitOnMain()
     {
-        for (u32 iThread = MainThreadIndex + 1; iThread < mThreadCount; ++iThread)
+        for (u32 iThread = MainThreadIndex + 1; iThread < (u32)mThreadData.size(); ++iThread)
             mThreadData[iThread]->JoinAndDestroyOnMain();
     }
 
@@ -143,7 +137,7 @@ namespace Omni
             bool todo = false;
             do
             {
-                bool sharedQueueEmpty = cm->mSharedQueue.IsEmpty();
+                bool sharedQueueEmpty = cm->mSharedQueue.Size() == 0;
                 if (!sharedQueueEmpty)
                 {
                     DispatchWorkItem* item = cm->mSharedQueue.Dequeue<DispatchWorkItem>();

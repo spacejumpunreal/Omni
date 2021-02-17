@@ -6,7 +6,7 @@
 #include "Runtime/System/InternalModuleRegistry.h"
 #include "Runtime/Misc/PImplUtils.h"
 #include "Runtime/Misc/ArrayUtils.h"
-#include "Runtime/Misc/AssertUtils.h"
+#include "Runtime/Test/AssertUtils.h"
 #include "Runtime/Memory/MemoryModule.h"
 
 
@@ -221,8 +221,8 @@ namespace Omni
 	{
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);
 		SystemStatus v = SystemStatus::Ready;
-		CheckAlways(self->mStatus.compare_exchange_strong(v, SystemStatus::ToBeFinalized));
-		ConcurrencyModule::Get().DismissWorkers();
+		if (self->mStatus.compare_exchange_strong(v, SystemStatus::ToBeFinalized))
+			ConcurrencyModule::Get().DismissWorkers();
 	}
 	Module* System::GetModule(ModuleKey key) const
 	{

@@ -1,5 +1,5 @@
 #include "Runtime/Concurrency/IThreadLocal.h"
-#include "Runtime/Misc/AssertUtils.h"
+#include "Runtime/Test/AssertUtils.h"
 
 namespace Omni
 {

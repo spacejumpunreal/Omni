@@ -20,10 +20,7 @@ namespace Omni
 				Destroy();
 		}
 	protected:
-		virtual void Destroy()
-		{
-			delete this;
-		};
+		virtual void Destroy() = 0; //we have custom allocation, can't just call delete, dtor should be called in this
 	private:
 		std::atomic<u32>	mRefCount;
 	};

@@ -1,5 +1,5 @@
 #include "Runtime/Misc/ThreadLocalData.h"
-#include "Runtime/Misc/AssertUtils.h"
+#include "Runtime/Test/AssertUtils.h"
 
 #if OMNI_WINDOWS
 #include <windows.h> 

@@ -1,6 +1,6 @@
 #include "Runtime/Memory/MemoryModule.h"
 #include "Runtime/Concurrency/IThreadLocal.h"
-#include "Runtime/Misc/AssertUtils.h"
+#include "Runtime/Test/AssertUtils.h"
 #include "Runtime/Misc/PImplUtils.h"
 #include "Runtime/Misc/ThreadLocalData.h"
 #include "Runtime/Memory/CacheLineAllocator.h"
@@ -40,14 +40,14 @@ namespace Omni
 	};
 	using MemoryModuleImpl = PImplCombine<MemoryModule, MemoryModulePrivateData>;
 	//globals
-	MemoryModule*							gMemoryModule;
+	MemoryModuleImpl*						gMemoryModule;
 	OMNI_DECLARE_THREAD_LOCAL(ScratchStack, gThreadArena);
 	//methods
 	void MemoryModule::Initialize()
 	{
 		CheckAlways(gMemoryModule == nullptr, "singleton rule violated");
 		CheckAlways(gThreadArena->GetUsedBytes() == 0);
-		MemoryModulePrivateData* self = MemoryModuleImpl::GetCombinePtr(this);
+		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
 		size_t usedAllocators = 0;
 		IAllocator* primary = new SNAllocator();
 		self->mAllocators[usedAllocators++] = primary;
@@ -87,7 +87,7 @@ namespace Omni
 			}
 		}
 
-		gMemoryModule = this;
+		gMemoryModule = MemoryModuleImpl::GetCombinePtr(this);
 		Module::Initialize();
 	}
 	void MemoryModule::Finalize()
@@ -168,4 +168,9 @@ namespace Omni
 		return new MemoryModuleImpl();
 	}
 	ExportInternalModule(Memory, ModuleExportInfo(MemoryModuleCtor, true));
+}
+
+void operator delete(void*, Omni::MemoryKind)
+{
+	Omni::CheckAlways(false);
 }

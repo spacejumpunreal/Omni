@@ -1,5 +1,6 @@
 #include "Runtime/Concurrency/JobPrimitives.h"
 #include "Runtime/Concurrency/ConcurrencyModule.h"
+#include "Runtime/Concurrency/ThreadUtils.h"
 #include "Runtime/Concurrency/SpinLock.h"
 #include "Runtime/Memory/MemoryModule.h"
 #include "Runtime/Misc/ContainerUtils.h"
@@ -13,11 +14,18 @@ namespace Omni
 	struct DispatchQueuePrivate
 	{
 	public:
-		CacheAlign<SpinLock>	mLock;
-		Queue					mQueue;
-		const char*				mName;
+		CacheAlign<SpinLock>					mQueueLock;
+		CacheAlign<SpinLock>					mExecLock;
+		Queue									mQueue;
+		const char*								mName;
 	public:
+		DispatchQueuePrivate();
 	};
+
+	DispatchQueuePrivate::DispatchQueuePrivate()
+		: mName(nullptr)
+	{
+	}
 	DispatchQueue::DispatchQueue()
 		: mData(PrivateDataType<DispatchQueuePrivate>{})
 	{
@@ -30,20 +38,56 @@ namespace Omni
 	{
 		mData.Ref<DispatchQueuePrivate>().mName = name;
 	}
+	static void PollDispatchQueueFunc(DispatchQueue** pq)
+	{
+		DispatchQueuePrivate* queue = (DispatchQueuePrivate*)*pq;
+		if (!queue->mExecLock.Data.TryLock())
+			return;
+
+		bool isOwner = true;
+		bool done = false;
+		while (!done)
+		{
+			if (!isOwner)
+				queue->mExecLock.Data.Lock();
+			queue->mQueueLock.Data.Lock();
+			DispatchWorkItem* head = static_cast<DispatchWorkItem*>(queue->mQueue.DequeueAll());
+			queue->mQueueLock.Data.Unlock();
+			while (head != nullptr)
+			{
+				head->Perform();
+				DispatchWorkItem* sp = head;
+				head = static_cast<DispatchWorkItem*>(head->Next);
+				sp->Destroy();
+			}
+			queue->mExecLock.Data.Unlock();
+			isOwner = false;
+			queue->mQueueLock.Data.Lock();
+			done = queue->mQueue.IsEmpty();
+			queue->mQueueLock.Data.Unlock();
+		}
+	}
 	void DispatchQueue::Enqueue(DispatchWorkItem* head, DispatchWorkItem* tail)
 	{
+#if OMNI_DEBUG
+		{
+			CheckAlways(tail->Next == nullptr);
+			DispatchWorkItem* p = head, *pp = nullptr;
+			while (p != nullptr)
+			{
+				pp = p;
+				p = (DispatchWorkItem*)p->Next;
+			}
+			CheckAlways(pp == tail);
+		}
+#endif
 		DispatchQueuePrivate& self = mData.Ref<DispatchQueuePrivate>();
-		self.mLock.Data.Lock();
+		self.mQueueLock.Data.Lock();
 		self.mQueue.Enqueue(head, tail);
-		self.mLock.Data.Unlock();
-	}
-	DispatchWorkItem* DispatchQueue::Dequeue()
-	{
-		DispatchQueuePrivate& self = mData.Ref<DispatchQueuePrivate>();
-		self.mLock.Data.Lock();
-		DispatchWorkItem* ret = static_cast<DispatchWorkItem*>(self.mQueue.Dequeue());
-		self.mLock.Data.Unlock();
-		return ret;
+		self.mQueueLock.Data.Unlock();
+		DispatchQueue* pq = this;
+		DispatchWorkItem& pollQueue = DispatchWorkItem::Create(PollDispatchQueueFunc, &pq);
+		ConcurrencyModule::Get().Async(pollQueue);
 	}
 	void DispatchWorkItem::Perform()
 	{
