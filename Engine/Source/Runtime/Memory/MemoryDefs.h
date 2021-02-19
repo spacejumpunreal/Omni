@@ -1,6 +1,6 @@
 #pragma once
 #include "Runtime/Omni.h"
-#if EXPERIMENTAL_MEMORY_RESOURCE
+#if PMR_IS_EXPERIMENTAL
 #include <experimental/memory_resource>
 #else
 #include <memory_resource>

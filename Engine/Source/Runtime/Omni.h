@@ -48,8 +48,11 @@ namespace Omni
 #define OMNI_DEBUG 1
 #endif
 
+//prm related stuff
 #if OMNI_CLANG
 #define STD_PMR_NS std::experimental::pmr
 #else
 #define STD_PMR_NS std::pmr
 #endif
+
+#define PMR_IS_EXPERIMENTAL OMNI_CLANG
