@@ -18,18 +18,17 @@ namespace Omni
 	using usize = size_t;
 }
 
-
-#ifdef NDEBUG
-#define OMNI_DEBUG 0
-#else
-#define OMNI_DEBUG 1
-#endif
-
 #define OMNI_WINDOWS _WIN64
 #define OMNI_IOS __APPLE__
 #define OMNI_ANDROID __ANDROID__
 
-#if __MSVC__
+#ifdef _MSC_VER
+#define OMNI_MSVC 1
+#elif __clang__
+#define OMNI_CLANG 1
+#endif
+
+#ifdef OMNI_MSVC
 #define FORCEINLINE __forceinline
 #else
 #define FORCEINLINE __attribute__((always_inline))
@@ -43,4 +42,14 @@ namespace Omni
 	#define OMNI_DEFAULT_ALIGNMENT 8
 #endif
 
-#define EXPERIMENTAL_MEMORY_RESOURCE __clang__
+#ifdef NDEBUG
+#define OMNI_DEBUG 0
+#else
+#define OMNI_DEBUG 1
+#endif
+
+#if OMNI_CLANG
+#define STD_PMR_NS std::experimental::pmr
+#else
+#define STD_PMR_NS std::pmr
+#endif

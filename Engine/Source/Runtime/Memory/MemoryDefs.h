@@ -9,9 +9,9 @@
 namespace Omni
 {
 	template<typename T>
-	using PMRAllocatorT = std::pmr::polymorphic_allocator<T>;
-	using PMRAllocator = std::pmr::polymorphic_allocator<std::byte>;
-	using PMRResource = std::pmr::memory_resource;
+	using PMRAllocatorT = STD_PMR_NS::polymorphic_allocator<T>;
+	using PMRAllocator = STD_PMR_NS::polymorphic_allocator<std::byte>;
+	using PMRResource = STD_PMR_NS::memory_resource;
 
 	struct MemoryStats
 	{
