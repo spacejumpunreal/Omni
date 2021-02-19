@@ -6,7 +6,6 @@
 
 namespace Omni
 {
-
 	class ScratchStack;
 	class MemoryModule : public Module
 	{
@@ -27,7 +26,7 @@ namespace Omni
 		static ScratchStack& GetThreadScratchStack();
 		static void ThreadInitialize();
 		static void ThreadFinalize();
-		void GetStats(std::pmr::vector<MemoryStats>& stats);
+		void GetStats(STD_PMR_NS::vector<MemoryStats>& stats);
 		void Shrink();
 	};
 
