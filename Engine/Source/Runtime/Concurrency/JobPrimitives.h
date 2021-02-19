@@ -28,7 +28,7 @@ namespace Omni
 		{
 			static_assert(std::is_standard_layout_v<T> && std::is_trivial_v<T>);
 			static_assert(alignof(DispatchWorkItem) <= sizeof(void*));
-			DispatchWorkItem& r = CreatePrivate(func, sizeof(T));
+			DispatchWorkItem& r = CreatePrivate((void*)func, sizeof(T));
 			if (argPtr)
 			{
 				void* ap = GetArgPtr(&r);
