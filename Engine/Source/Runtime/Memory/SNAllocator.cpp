@@ -1,4 +1,3 @@
-#pragma once
 #include "Runtime/Memory/SNAllocator.h"
 #include "Runtime/Memory/MemoryWatch.h"
 #include "Runtime/Misc/ArrayUtils.h"

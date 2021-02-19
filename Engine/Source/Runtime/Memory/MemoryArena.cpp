@@ -1,4 +1,3 @@
-#pragma once
 #include "Runtime/Omni.h"
 #include "Runtime/Memory/MemoryArena.h"
 #include <cstring>

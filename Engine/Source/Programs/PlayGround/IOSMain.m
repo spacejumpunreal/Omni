@@ -9,7 +9,7 @@
 @implementation IOSSceneDelegate
 @end
 
-int IOSMain(int argc, const char** argv)
+int IOSMain(int argc, char* _Nullable * _Nonnull argv)
 {
     NSString * appDelegateClassName;
     @autoreleasepool {

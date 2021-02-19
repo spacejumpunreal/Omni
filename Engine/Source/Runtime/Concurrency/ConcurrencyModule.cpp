@@ -10,7 +10,12 @@
 #include "Runtime/System/ModuleExport.h"
 #include "Runtime/System/Module.h"
 
+#if OMNI_CLANG
+#else
 #include <Windows.h>
+#endif
+#include <thread>
+
 namespace Omni
 {
     //forard decalrations
@@ -19,8 +24,9 @@ namespace Omni
     public:
         DispatchQueue                   mSerialQueues[(u32)QueueKind::Max];
         ConcurrentQueue                 mSharedQueue;
-        PMRVector<ThreadData*>   mThreadData;
+        PMRVector<ThreadData*>          mThreadData;
     public:
+        ConcurrencyModulePrivateImpl();
         void WaitWorkersQuitOnMain();
     };
 
@@ -115,6 +121,10 @@ namespace Omni
             lastJob = &item;
         }
         Async(*lastJob);
+    }
+    ConcurrencyModulePrivateImpl::ConcurrencyModulePrivateImpl()
+        : mThreadData(MemoryModule::Get().GetPMRAllocator(MemoryKind::SystemInit))
+    {
     }
     void ConcurrencyModulePrivateImpl::WaitWorkersQuitOnMain()
     {

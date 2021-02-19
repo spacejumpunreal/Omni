@@ -9,12 +9,14 @@
 #include "Runtime/Platform/PlatformAPIs.h"
 #include "Runtime/Test/AssertUtils.h"
 #include "Runtime/Test/PerfUtils.h"
+
+#include <atomic>
 #include <chrono>
 #include <functional>
-#include <random>
-#include <unordered_set>
-#include <atomic>
 #include <mutex>
+#include <random>
+#include <thread>
+#include <unordered_set>
 
 
 namespace Omni
@@ -27,6 +29,7 @@ namespace Omni
 
 	void AllocJobFunc0(AllocJobData* jobData)
 	{
+        
 		constexpr size_t Size64K = 64 * 1024;
 		constexpr size_t Amount = 1024 * 1024 * 256;
 		constexpr size_t History = 8;

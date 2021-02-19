@@ -3,6 +3,7 @@
 #include "Runtime/Memory/MemoryDefs.h"
 #include "Runtime/Memory/MemoryWatch.h"
 #include "Runtime/System/Module.h"
+#include "Runtime/Misc/PMRContainers.h"
 
 namespace Omni
 {
@@ -26,7 +27,7 @@ namespace Omni
 		static ScratchStack& GetThreadScratchStack();
 		static void ThreadInitialize();
 		static void ThreadFinalize();
-		void GetStats(STD_PMR_NS::vector<MemoryStats>& stats);
+		void GetStats(PMRVector<MemoryStats>& stats);
 		void Shrink();
 	};
 

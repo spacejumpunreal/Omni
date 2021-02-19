@@ -31,7 +31,7 @@ namespace Omni
 #ifdef OMNI_MSVC
 #define FORCEINLINE __forceinline
 #else
-#define FORCEINLINE __attribute__((always_inline))
+#define FORCEINLINE inline __attribute__((always_inline))
 #endif
 
 #if OMNI_IOS

@@ -7,9 +7,9 @@
 @end
 
 @interface IOSSceneDelegate : UIResponder <UIWindowSceneDelegate>
-@property (strong, nonatomic) UIWindow * window;
+@property (strong, nonatomic) UIWindow *  _Nullable window;
 @end
 
-int IOSMain(int argc, const char** argv);
+int IOSMain(int argc, char* _Nullable * _Nonnull argv);
 
 
