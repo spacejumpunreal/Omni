@@ -36,7 +36,7 @@ namespace Omni
 			}
 			return r;
 		}
-		static DispatchWorkItem& Create(void (*func)())
+		static DispatchWorkItem& Create(void* func)
 		{
 			static_assert(alignof(DispatchWorkItem) <= sizeof(void*));
 			DispatchWorkItem& r = CreatePrivate(func, 0);
