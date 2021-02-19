@@ -1,11 +1,9 @@
 #include "Runtime/Memory/SNAllocator.h"
 #include "Runtime/Memory/MemoryWatch.h"
+#include "Runtime/Memory/SNMallocWrapper.h"
 #include "Runtime/Misc/ArrayUtils.h"
 
-#pragma warning( push )
-#pragma warning( disable : 4324 4127)
-#include "External/snmalloc/src/snmalloc.h"
-#pragma warning( pop )
+
 
 namespace Omni
 {

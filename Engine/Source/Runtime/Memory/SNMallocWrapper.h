@@ -1,6 +1,7 @@
 #pragma once
+#include "Runtime/Omni.h"
 
-#pragma warning( push )
-#pragma warning( disable : 4324 4127)
+OMNI_MSVC_DISABLE_WARNING(4324 4127)
 #include "External/snmalloc/src/snmalloc.h"
-#pragma warning( pop ) 
+OMNI_RESET_WARNING()
+

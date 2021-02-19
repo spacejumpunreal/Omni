@@ -64,9 +64,11 @@ namespace Omni
 #define OMNI_MSVC_DISABLE_WARNING(options) \
 	_Pragma("warning(push)") \
 	DO_PRAGMA(warning ( disable : options ) )
+#define OMNI_CLANG_DISABLE_WARNING(options)
 #define OMNI_RESET_WARNING() _Pragma("warning(pop)")
 
 #elif OMNI_CLANG
+#define OMNI_MSVC_DISABLE_WARNING(options)
 #define OMNI_CLANG_DISABLE_WARNING(options)
 #define OMNI_RESET_WARNING()
 #endif
