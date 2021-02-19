@@ -56,8 +56,8 @@ namespace Omni
 		CacheAlign<std::atomic<size_t>>		ReleaseCount;
 	};
 
-#pragma warning( push )
-#pragma warning( disable : 4324 )
+	OMNI_MSVC_DISABLE_WARNING(4324)
+
 	struct CacheLineAllocatorPrivate final : public STD_PMR_NS::memory_resource
 	{
 	public:
@@ -82,7 +82,9 @@ namespace Omni
 		SpinLock							mLock;
 		CacheAlign<MemoryWatch>				mWatch;
 	};
-#pragma warning( pop )
+
+OMNI_RESET_WARNING()
+
 	//global
 	OMNI_DECLARE_THREAD_LOCAL(CacheLinePerThreadData, gCacheLinePerThreadData);
 

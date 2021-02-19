@@ -56,3 +56,17 @@ namespace Omni
 #endif
 
 #define PMR_IS_EXPERIMENTAL OMNI_CLANG
+
+#define DO_PRAGMA_(x) _Pragma (#x)
+#define DO_PRAGMA(x) DO_PRAGMA_(x)
+
+#if OMNI_MSVC
+#define OMNI_MSVC_DISABLE_WARNING(options) \
+	_Pragma("warning(push)") \
+	DO_PRAGMA(warning ( disable : options ) )
+#define OMNI_RESET_WARNING() _Pragma("warning(pop)")
+
+#elif OMNI_CLANG
+#define OMNI_CLANG_DISABLE_WARNING(options)
+#define OMNI_RESET_WARNING()
+#endif
