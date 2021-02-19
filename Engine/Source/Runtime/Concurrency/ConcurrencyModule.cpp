@@ -6,9 +6,10 @@
 #include "Runtime/Memory/MemoryModule.h"
 #include "Runtime/Misc/Padding.h"
 #include "Runtime/Misc/PImplUtils.h"
+#include "Runtime/Misc/PMRContainers.h"
 #include "Runtime/System/ModuleExport.h"
 #include "Runtime/System/Module.h"
-#include <vector>
+
 #include <Windows.h>
 namespace Omni
 {
@@ -18,7 +19,7 @@ namespace Omni
     public:
         DispatchQueue                   mSerialQueues[(u32)QueueKind::Max];
         ConcurrentQueue                 mSharedQueue;
-        STD_PMR_NS::vector<ThreadData*>   mThreadData;
+        PMRVector<ThreadData*>   mThreadData;
     public:
         void WaitWorkersQuitOnMain();
     };
