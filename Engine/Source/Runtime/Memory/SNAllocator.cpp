@@ -12,7 +12,7 @@ namespace Omni
 {
 	static constexpr bool TrashAllocatedMemory = true;
 	static constexpr u32 FillPattern = 0xDEADBEEF;
-	struct SNAllocatorPrivate final : public std::pmr::memory_resource
+	struct SNAllocatorPrivate final : public STD_PMR_NS::memory_resource
 	{
 	public:
 		void* do_allocate(std::size_t bytes, std::size_t alignment) override
@@ -33,7 +33,7 @@ namespace Omni
 			mWatch.Sub(alignedSize);
 			snmalloc::ThreadAlloc::get_noncachable()->dealloc(p);
 		}
-		bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override
+		bool do_is_equal(const STD_PMR_NS::memory_resource& other) const noexcept override
 		{
 			return this == &other;
 		}

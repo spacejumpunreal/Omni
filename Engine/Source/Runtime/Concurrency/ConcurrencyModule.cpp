@@ -18,7 +18,7 @@ namespace Omni
     public:
         DispatchQueue                   mSerialQueues[(u32)QueueKind::Max];
         ConcurrentQueue                 mSharedQueue;
-        std::pmr::vector<ThreadData*>   mThreadData;
+        STD_PMR_NS::vector<ThreadData*>   mThreadData;
     public:
         void WaitWorkersQuitOnMain();
     };

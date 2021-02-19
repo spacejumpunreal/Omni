@@ -145,7 +145,7 @@ namespace Omni
 		if (self->mCacheLineAllocator)
 			self->mCacheLineAllocator->ThreadFinalize();
 	}
-	void MemoryModule::GetStats(std::pmr::vector<MemoryStats>& ret)
+	void MemoryModule::GetStats(STD_PMR_NS::vector<MemoryStats>& ret)
 	{
 		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
 		for (IAllocator* a : self->mAllocators)

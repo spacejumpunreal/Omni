@@ -7,10 +7,10 @@
 
 namespace Omni
 {
-	struct WrapperAllocatorImpl final : public std::pmr::memory_resource
+	struct WrapperAllocatorImpl final : public STD_PMR_NS::memory_resource
 	{
 	public:
-		WrapperAllocatorImpl(std::pmr::memory_resource& fallback, const char* name)
+		WrapperAllocatorImpl(STD_PMR_NS::memory_resource& fallback, const char* name)
 			: mFallback(fallback)
 			, mName(name)
 		{}
@@ -24,16 +24,16 @@ namespace Omni
 			mWatch.Sub(AlignUpSize(bytes, alignment));
 			mFallback.deallocate(p, bytes, alignment);
 		}
-		bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override
+		bool do_is_equal(const STD_PMR_NS::memory_resource& other) const noexcept override
 		{
 			return this == &other;
 		}
 	public:
 		MemoryWatch						mWatch;
-		std::pmr::memory_resource&		mFallback;
+		STD_PMR_NS::memory_resource&		mFallback;
 		const char*						mName;
 	};
-	WrapperAllocator::WrapperAllocator(std::pmr::memory_resource& memResource, const char* name)
+	WrapperAllocator::WrapperAllocator(STD_PMR_NS::memory_resource& memResource, const char* name)
 		: mData(PrivateDataType<WrapperAllocatorImpl>{}, memResource, name)
 	{
 	}

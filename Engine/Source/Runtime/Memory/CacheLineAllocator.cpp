@@ -58,7 +58,7 @@ namespace Omni
 
 #pragma warning( push )
 #pragma warning( disable : 4324 )
-	struct CacheLineAllocatorPrivate final : public std::pmr::memory_resource
+	struct CacheLineAllocatorPrivate final : public STD_PMR_NS::memory_resource
 	{
 	public:
 		static constexpr u32 PageSize = CPU_CACHE_LINE_SIZE * 1024;
@@ -74,7 +74,7 @@ namespace Omni
 		void Shrink();
 		void* do_allocate(std::size_t bytes, std::size_t alignment) override;
 		void do_deallocate(void* p, std::size_t bytes, std::size_t alignment) override;
-		bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override;
+		bool do_is_equal(const STD_PMR_NS::memory_resource& other) const noexcept override;
 
 	public:
 		CacheLinePageHeader*				mPendingListHead;
@@ -190,7 +190,7 @@ namespace Omni
 		CacheLinePageHeader& hdr = CacheLinePageHeader::GetHeader(p);
 		hdr.ReleaseCount.Data.fetch_add(1, std::memory_order_acq_rel);
 	}
-	bool CacheLineAllocatorPrivate::do_is_equal(const std::pmr::memory_resource& other) const noexcept
+	bool CacheLineAllocatorPrivate::do_is_equal(const STD_PMR_NS::memory_resource& other) const noexcept
 	{
 		return this == &other;
 	}
