@@ -2,6 +2,8 @@
 #if OMNI_WINDOWS
 #include <Windows.h>
 #include <memoryapi.h>
+#elif OMNI_IOS
+#include <sys/mman.h>
 #endif
 
 namespace Omni
@@ -11,17 +13,19 @@ namespace Omni
 	{
 #if OMNI_WINDOWS
 		return VirtualAlloc(nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+#elif OMNI_IOS
+        return mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_ANON, 0, 0);
 #else
 		static_assert(false, "not implemented");
 		return nullptr;
 #endif
 	}
-	void FreePages(void* mem, size_t)
+	void FreePages(void* mem, size_t size)
 	{
 #if OMNI_WINDOWS
 		VirtualFree(mem, 0, MEM_RELEASE);
 #else
-		static_assert(false, "not implemented");
+        munmap(mem, size);
 #endif
 	}
 
@@ -30,7 +34,7 @@ namespace Omni
 #if OMNI_WINDOWS
 		YieldProcessor();
 #else
-		__asm__ __volatile__("yield")
+        __asm__ __volatile__("yield");
 #endif
 	}
 
