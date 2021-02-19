@@ -39,7 +39,7 @@ namespace Omni
 	public:
 		static FORCEINLINE CacheLinePageHeader& GetHeader(void* p);
 		CacheLinePageHeader*& GetNext() { return Top.Data.Next; }
-		bool IsAvailable() { return Top.Data.AcquireCount.load(std::memory_order::relaxed) == ReleaseCount.Data.load(std::memory_order::relaxed); }
+		bool IsAvailable() { return Top.Data.AcquireCount.load(std::memory_order_relaxed) == ReleaseCount.Data.load(std::memory_order_relaxed); }
 	public:
 		struct TopStruct
 		{
@@ -130,7 +130,7 @@ namespace Omni
 		{
 			u8* ret = ((u8*)gcptd.Page) + (((u64)gcptd.UsedCachelines) << CacheLineSizeShift);
 			gcptd.UsedCachelines += lines;
-			gcptd.Page->Top.Data.AcquireCount.fetch_add(1, std::memory_order::relaxed); //not shared with others(not on the pending list)
+			gcptd.Page->Top.Data.AcquireCount.fetch_add(1, std::memory_order_relaxed); //not shared with others(not on the pending list)
 			return ret;
 		}
 		CacheLinePageHeader* avail = nullptr;
@@ -178,8 +178,8 @@ namespace Omni
 			new (avail)CacheLinePageHeader();
 			mWatch.Data.Add(PageSize);
 		}
-		avail->Top.Data.AcquireCount.store(1, std::memory_order::relaxed);
-		avail->ReleaseCount.Data.store(0, std::memory_order::relaxed); //these will complete before put on pending list(after enter lock)
+		avail->Top.Data.AcquireCount.store(1, std::memory_order_relaxed);
+		avail->ReleaseCount.Data.store(0, std::memory_order_relaxed); //these will complete before put on pending list(after enter lock)
 		gcptd.Page = avail;
 		gcptd.UsedCachelines = HeaderCacheLines + lines;
 		return (u8*)(&gcptd.Page[1]);
@@ -188,7 +188,7 @@ namespace Omni
 	{
 		//finish operation on mem before release(already on the list)
 		CacheLinePageHeader& hdr = CacheLinePageHeader::GetHeader(p);
-		hdr.ReleaseCount.Data.fetch_add(1, std::memory_order::acq_rel);
+		hdr.ReleaseCount.Data.fetch_add(1, std::memory_order_acq_rel);
 	}
 	bool CacheLineAllocatorPrivate::do_is_equal(const std::pmr::memory_resource& other) const noexcept
 	{

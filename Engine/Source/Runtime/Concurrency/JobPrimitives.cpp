@@ -155,17 +155,17 @@ namespace Omni
 	void DispatchGroup::Enter()
 	{
 		DispatchGroupPrivate& self = mData.Ref<DispatchGroupPrivate>();
-		CheckDebug(!self.mLocked.load(std::memory_order::relaxed));
-		self.mEnterCount.fetch_add(1, std::memory_order::relaxed);
+		CheckDebug(!self.mLocked.load(std::memory_order_relaxed));
+		self.mEnterCount.fetch_add(1, std::memory_order_relaxed);
 	}
 	void DispatchGroup::Leave()
 	{
 		DispatchGroupPrivate& self = mData.Ref<DispatchGroupPrivate>();
 #if OMNI_DEBUG
-		if (self.mLocked.load(std::memory_order::relaxed))
-			self.mLocked.store(true, std::memory_order::relaxed);
+		if (self.mLocked.load(std::memory_order_relaxed))
+			self.mLocked.store(true, std::memory_order_relaxed);
 #endif
-		size_t v = self.mEnterCount.fetch_sub(1, std::memory_order::release);
+		size_t v = self.mEnterCount.fetch_sub(1, std::memory_order_release);
 		if (v == 1 && self.mNext)
 		{
 			if (self.mQueue)
@@ -181,7 +181,7 @@ namespace Omni
 	void DispatchGroup::Notify(DispatchWorkItem& item, DispatchQueue* queue)
 	{
 		DispatchGroupPrivate& self = mData.Ref<DispatchGroupPrivate>();
-		CheckDebug(!self.mLocked.load(std::memory_order::relaxed));
+		CheckDebug(!self.mLocked.load(std::memory_order_relaxed));
 		self.mNext = &item;
 		self.mQueue = queue;
 	}

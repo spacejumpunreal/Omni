@@ -27,26 +27,26 @@ namespace Omni
 	{
 		if constexpr (WatchMemoryUsed)
 		{
-			mUsed.fetch_add(size, std::memory_order::memory_order_relaxed);
+			mUsed.fetch_add(size, std::memory_order_relaxed);
 		}
 		if constexpr (WatchMemoryPeek)
 		{
 			size_t old;
 			do
 			{
-				old = mPeak.load(std::memory_order::memory_order_relaxed);
-			} while (!mPeak.compare_exchange_weak(old, old + size, std::memory_order::memory_order_relaxed));
+				old = mPeak.load(std::memory_order_relaxed);
+			} while (!mPeak.compare_exchange_weak(old, old + size, std::memory_order_relaxed));
 		}
 		if constexpr (WatchMemoryThroughput)
 		{
-			mThroughput.fetch_add(size, std::memory_order::memory_order_relaxed);
+			mThroughput.fetch_add(size, std::memory_order_relaxed);
 		}
 	}
 	FORCEINLINE void MemoryWatch::Sub(size_t size)
 	{
 		if constexpr (WatchMemoryUsed)
 		{
-			mUsed.fetch_sub(size, std::memory_order::memory_order_relaxed);
+			mUsed.fetch_sub(size, std::memory_order_relaxed);
 		}
 	}
 }

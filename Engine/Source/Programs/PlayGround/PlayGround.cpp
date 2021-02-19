@@ -184,10 +184,10 @@ namespace Omni
 				DispatchWorkItem& item = DispatchWorkItem::Create(DoJob, &djd);
 				ConcurrencyModule::Get().Async(item);
 
-				int ov = state.mInFlightCapacity.fetch_sub(1, std::memory_order::relaxed);
+				int ov = state.mInFlightCapacity.fetch_sub(1, std::memory_order_relaxed);
 				if (ov <= 0)
 				{
-					while (state.mInFlightCapacity.load(std::memory_order::relaxed) <= 0)
+					while (state.mInFlightCapacity.load(std::memory_order_relaxed) <= 0)
 						PauseThread();
 				}
 			}
@@ -195,8 +195,8 @@ namespace Omni
 		}
 		static void DoJob(DoJobData* jd)
 		{
-			jd->State->mInFlightCapacity.fetch_add(1, std::memory_order::acquire);
-			int nv = jd->State->mTodo.fetch_sub(1, std::memory_order::relaxed);
+			jd->State->mInFlightCapacity.fetch_add(1, std::memory_order_acquire);
+			int nv = jd->State->mTodo.fetch_sub(1, std::memory_order_relaxed);
 			if (nv == 1)
 			{
 				jd->State->mGroup->Leave();

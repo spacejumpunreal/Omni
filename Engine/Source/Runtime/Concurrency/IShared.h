@@ -11,11 +11,11 @@ namespace Omni
 		{}
 		void Retain() 
 		{
-			mRefCount.fetch_add(1, std::memory_order::relaxed);
+			mRefCount.fetch_add(1, std::memory_order_relaxed);
 		}
 		void Release()
 		{
-			u32 o = mRefCount.fetch_sub(1, std::memory_order::acq_rel);
+			u32 o = mRefCount.fetch_sub(1, std::memory_order_acq_rel);
 			if (o == 1)
 				Destroy();
 		}
