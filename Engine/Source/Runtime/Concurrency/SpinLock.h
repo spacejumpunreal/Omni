@@ -15,3 +15,4 @@ namespace Omni
         std::atomic<bool> mFlag;
     };
 }
+

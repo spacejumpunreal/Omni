@@ -29,3 +29,4 @@ namespace Omni
 #undef MEMORY_KIND
 	};
 }
+

@@ -10,3 +10,4 @@ namespace Omni
 #undef QUEUE_KIND
     };
 }
+

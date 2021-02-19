@@ -43,3 +43,4 @@ namespace Omni
 		CheckAlways(mUserCount == 0);
 	};
 }
+

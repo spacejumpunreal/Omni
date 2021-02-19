@@ -22,3 +22,4 @@ namespace Omni
 		FORCEINLINE T Get() const { return reinterpret_cast<T>(GetImpl()); }
 	};
 }
+

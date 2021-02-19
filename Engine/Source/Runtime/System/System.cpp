@@ -105,14 +105,14 @@ namespace Omni
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);
 		self->mStatus = SystemStatus::Initializing;
 		//create internal modules
-		for (ModuleKey i = 0; i < ARRAY_LENGTH(InternalModuleInfo); ++i)
+		for (size_t i = 0; i < ARRAY_LENGTH(InternalModuleInfo); ++i)
 		{
 			auto info = InternalModuleInfo[i];
 			if (info->IsAlwaysLoad || loadModuleNames.count(InternalModuleInfo[i]->Name) != 0)
 			{
 				Module* m = info->Ctor(argMap);
 				self->mModules.push_back(m);
-				self->mKey2Module[i] = m;
+				self->mKey2Module[(ModuleKey)i] = m;
 				if (info->Name != nullptr)
 					self->mName2Module[info->Name] = m;
 			}

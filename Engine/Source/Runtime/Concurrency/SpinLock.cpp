@@ -28,3 +28,4 @@ namespace Omni
 		mFlag.store(false);
 	}
 }
+

@@ -66,3 +66,4 @@ namespace Omni
 	void SNAllocator::Shrink()
 	{}
 }
+

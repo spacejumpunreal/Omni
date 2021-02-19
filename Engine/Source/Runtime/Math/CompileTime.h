@@ -9,3 +9,4 @@ namespace Omni
 		return x == 1 ? 0 : CompileTimeLog2(x >> 1) + 1;
 	}
 }
+

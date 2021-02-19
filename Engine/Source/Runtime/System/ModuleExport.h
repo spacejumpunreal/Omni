@@ -26,3 +26,4 @@ namespace Omni
 
 #define ModuleCreationStubName(moduleName) moduleName##ExportInfoStub
 #define ExportInternalModule(moduleName, info) ModuleExportInfo ModuleCreationStubName(moduleName) = info;
+

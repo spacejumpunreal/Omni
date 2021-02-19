@@ -69,3 +69,4 @@ namespace Omni
 * - FrameTrigger logic stop, free main thread from ui loop
 * - main thread continue with finalization
 */
+

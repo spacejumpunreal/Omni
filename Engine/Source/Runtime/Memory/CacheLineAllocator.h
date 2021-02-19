@@ -22,3 +22,4 @@ namespace Omni
 		PrivateData<256> mData;
 	};
 }
+

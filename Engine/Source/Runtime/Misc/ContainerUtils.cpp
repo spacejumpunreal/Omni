@@ -41,3 +41,4 @@ namespace Omni
         return mHead == nullptr;
     }
 }
+

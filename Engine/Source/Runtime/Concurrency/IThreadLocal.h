@@ -59,3 +59,5 @@ namespace Omni
 
 #define OMNI_DECLARE_THREAD_LOCAL(Type, Name) static thread_local ThreadLocalWrapper<Type> Name;
 }
+
+

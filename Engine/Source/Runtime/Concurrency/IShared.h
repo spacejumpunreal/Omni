@@ -64,3 +64,4 @@ namespace Omni
 		T*	mRawPtr;
 	};
 }
+

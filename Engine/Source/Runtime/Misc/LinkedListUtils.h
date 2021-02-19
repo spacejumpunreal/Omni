@@ -13,3 +13,4 @@ namespace Omni
         SListNode*      Next;
     };
 }
+

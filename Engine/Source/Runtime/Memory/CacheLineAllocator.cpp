@@ -259,6 +259,4 @@ namespace Omni
 			gcptd.UsedCachelines = 0;
 		}
 	}
-
-
 }

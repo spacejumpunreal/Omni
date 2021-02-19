@@ -163,7 +163,7 @@ namespace Omni
 				a->Shrink();
 		}
 	}
-	Module* MemoryModuleCtor(const EngineInitArgMap&)
+	static Module* MemoryModuleCtor(const EngineInitArgMap&)
 	{
 		return new MemoryModuleImpl();
 	}
@@ -174,3 +174,4 @@ void operator delete(void*, Omni::MemoryKind)
 {
 	Omni::CheckAlways(false);
 }
+

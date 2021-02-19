@@ -18,3 +18,4 @@ namespace Omni
 	template<typename T>
 	using CacheAlign = Padded<T, CPU_CACHE_LINE_SIZE, CPU_CACHE_LINE_SIZE>;
 }
+

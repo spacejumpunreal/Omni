@@ -23,3 +23,4 @@ namespace Omni
 		void DismissWorkers();
 	};
 }
+

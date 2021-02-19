@@ -27,3 +27,4 @@ namespace Omni
         CheckAlways(IsClean());
      }
 }
+

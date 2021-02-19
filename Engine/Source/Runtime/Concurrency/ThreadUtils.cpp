@@ -120,3 +120,4 @@ namespace Omni
         gThreadData.GetRaw() = nullptr;
     }
 }
+

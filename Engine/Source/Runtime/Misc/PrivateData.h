@@ -59,3 +59,4 @@ namespace Omni
 	};
 #pragma warning( pop )
 }
+

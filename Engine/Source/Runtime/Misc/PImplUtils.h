@@ -30,3 +30,4 @@ namespace Omni
 		static const TData* GetData(const TInterface* api) { return GetCombinePtr(api); }
 	};
 }
+

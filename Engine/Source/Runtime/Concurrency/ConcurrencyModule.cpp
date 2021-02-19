@@ -131,7 +131,7 @@ namespace Omni
         for (u32 iThread = MainThreadIndex + 1; iThread < (u32)mThreadData.size(); ++iThread)
             mThreadData[iThread]->JoinAndDestroyOnMain();
     }
-
+    void ConcurrentWorkerThreadFunc(ThreadData* self);
     void ConcurrentWorkerThreadFunc(ThreadData* self)
     {
         ConcurrencyModuleImpl* cm = (ConcurrencyModuleImpl*)gConcurrencyModule;
@@ -161,7 +161,7 @@ namespace Omni
         }
     }
 
-    Module* ConcurrencyModuleCtor(const EngineInitArgMap&)
+    static Module* ConcurrencyModuleCtor(const EngineInitArgMap&)
     {
         return new ConcurrencyModuleImpl();
     }
