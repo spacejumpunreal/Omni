@@ -1,8 +1,7 @@
 #pragma once
 #include "Runtime/Omni.h"
 #include "Runtime/Memory/MemoryArena.h"
-#include <memory_resource>
-
+#include <cstring>
 namespace Omni
 {
 	ScratchStack::ScratchStack()

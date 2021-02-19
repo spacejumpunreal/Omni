@@ -36,3 +36,5 @@ namespace Omni
 #else//OMNI_WINDOWS and others
 	#define OMNI_DEFAULT_ALIGNMENT 8
 #endif
+
+#define EXPERIMENTAL_MEMORY_RESOURCE __clang__
