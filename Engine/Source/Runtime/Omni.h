@@ -29,10 +29,16 @@ namespace Omni
 #define OMNI_IOS __APPLE__
 #define OMNI_ANDROID __ANDROID__
 
+#if __MSVC__
 #define FORCEINLINE __forceinline
+#else
+#define FORCEINLINE __attribute__((always_inline))
+#endif
 
 #if OMNI_IOS
+    #define OMNI_DEFAULT_ALIGNMENT 16
 #elif OMNI_ANDROID
+    #define OMNI_DEFAULT_ALIGNMENT 16
 #else//OMNI_WINDOWS and others
 	#define OMNI_DEFAULT_ALIGNMENT 8
 #endif
