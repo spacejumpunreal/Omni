@@ -23,6 +23,7 @@ namespace Omni
 	void FreePages(void* mem, size_t size)
 	{
 #if OMNI_WINDOWS
+		(void)(size);
 		VirtualFree(mem, 0, MEM_RELEASE);
 #else
         munmap(mem, size);
