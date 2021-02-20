@@ -11,7 +11,7 @@ namespace Omni
 		static constexpr size_t Size = TSize;
 	};
 
-OMNI_MSVC_DISABLE_WARNING(4324)
+	OMNI_MSVC_DISABLE_WARNING(4324);
 
 	template<size_t Size, size_t Align = OMNI_DEFAULT_ALIGNMENT>
 	struct alignas(Align) PrivateData
@@ -58,7 +58,7 @@ OMNI_MSVC_DISABLE_WARNING(4324)
 #endif
 	};
 
-OMNI_RESET_WARNING()
+	OMNI_RESET_WARNING();
 
 }
 

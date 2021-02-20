@@ -83,7 +83,7 @@ namespace Omni
 		CacheAlign<MemoryWatch>				mWatch;
 	};
 
-OMNI_RESET_WARNING()
+	OMNI_RESET_WARNING();
 
 	//global
 	OMNI_DECLARE_THREAD_LOCAL(CacheLinePerThreadData, gCacheLinePerThreadData);
