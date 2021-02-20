@@ -24,30 +24,31 @@ namespace Omni
 	struct MemoryModulePrivateData
 	{
 		static constexpr size_t			DefaultThreadArenaSize = 1024 * 1024;
-
+	public:
 		PMRResource*					mKind2PMRResources[(size_t)MemoryKind::Max];
 		IAllocator*						mAllocators[(size_t)MemoryKind::Max];
 		u32								mThreadArenaSize;
 		CacheLineAllocator*				mCacheLineAllocator;
-
-		MemoryModulePrivateData()
-			: mThreadArenaSize(DefaultThreadArenaSize)
-			, mCacheLineAllocator(nullptr)
-		{
-			memset(mKind2PMRResources, 0, sizeof(mKind2PMRResources));
-			memset(mAllocators, 0, sizeof(mAllocators));
-		}
+	public:
+		MemoryModulePrivateData();
 	};
 	using MemoryModuleImpl = PImplCombine<MemoryModule, MemoryModulePrivateData>;
 	//globals
 	MemoryModuleImpl*						gMemoryModule;
 	OMNI_DECLARE_THREAD_LOCAL(ScratchStack, gThreadArena);
 	//methods
-	void MemoryModule::Initialize()
+
+	MemoryModulePrivateData::MemoryModulePrivateData()
+		: mThreadArenaSize(DefaultThreadArenaSize)
+		, mCacheLineAllocator(nullptr)
 	{
+		memset(mKind2PMRResources, 0, sizeof(mKind2PMRResources));
+		memset(mAllocators, 0, sizeof(mAllocators));
+
 		CheckAlways(gMemoryModule == nullptr, "singleton rule violated");
-		CheckAlways(gThreadArena->GetUsedBytes() == 0);
 		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
+		gMemoryModule = self;
+		
 		size_t usedAllocators = 0;
 		IAllocator* primary = new SNAllocator();
 		self->mAllocators[usedAllocators++] = primary;
@@ -58,7 +59,7 @@ namespace Omni
 
 		if constexpr (StatsMemoryKinds)
 		{
-			const char* MemoryKindNames[] = 
+			const char* MemoryKindNames[] =
 			{
 #define MEMORY_KIND(X) #X,
 #include "Runtime/Memory/MemoryKind.inl"
@@ -83,11 +84,12 @@ namespace Omni
 				{
 					res = primary->GetResource();
 				}
-				
+
 			}
 		}
-
-		gMemoryModule = MemoryModuleImpl::GetCombinePtr(this);
+	}
+	void MemoryModule::Initialize()
+	{
 		Module::Initialize();
 	}
 	void MemoryModule::Finalize()
@@ -129,8 +131,8 @@ namespace Omni
 	void MemoryModule::ThreadInitialize()
 	{
 		CheckAlways(gThreadArena->GetPtr() == nullptr);
-		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(gMemoryModule);
-		void* p = gMemoryModule->GetPMRAllocator(MemoryKind::ThreadScratchStack).resource()->allocate(self->mThreadArenaSize, OMNI_DEFAULT_ALIGNMENT);
+		MemoryModuleImpl* self = gMemoryModule;
+		void* p = self ->GetPMRAllocator(MemoryKind::ThreadScratchStack).resource()->allocate(self->mThreadArenaSize, OMNI_DEFAULT_ALIGNMENT);
 		gThreadArena->Reset((u8*)p, self->mThreadArenaSize);
 		if (self->mCacheLineAllocator)
 			self->mCacheLineAllocator->ThreadInitialize();
@@ -138,9 +140,9 @@ namespace Omni
 	void MemoryModule::ThreadFinalize()
 	{
 		CheckAlways(gThreadArena->GetPtr() != nullptr);
-		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(gMemoryModule);
+		MemoryModuleImpl* self = gMemoryModule;
 		void* p = gThreadArena->GetPtr();
-		gMemoryModule->GetPMRAllocator(MemoryKind::ThreadScratchStack).resource()->deallocate(p, self->mThreadArenaSize, OMNI_DEFAULT_ALIGNMENT);
+		self->GetPMRAllocator(MemoryKind::ThreadScratchStack).resource()->deallocate(p, self->mThreadArenaSize, OMNI_DEFAULT_ALIGNMENT);
 		gThreadArena->Reset(nullptr, 0);
 		if (self->mCacheLineAllocator)
 			self->mCacheLineAllocator->ThreadFinalize();
