@@ -203,7 +203,7 @@ namespace Omni
 			if (nv == 1)
 			{
 				jd->State->mGroup->Leave();
-				System::GetSystem().TriggerFinalization();
+				System::GetSystem().TriggerFinalization(true);
 			}
 		}
 		static void CleanupJob(JobParallelAddToQueueData** pp)

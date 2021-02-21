@@ -217,12 +217,16 @@ namespace Omni
 		const SystemImpl* self = SystemImpl::GetCombinePtr(this);
 		return self->mStatus;
 	}
-	void System::TriggerFinalization()
+	void System::TriggerFinalization(bool assertOnMiss)
 	{
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);
 		SystemStatus v = SystemStatus::Ready;
 		if (self->mStatus.compare_exchange_strong(v, SystemStatus::ToBeFinalized))
 			ConcurrencyModule::Get().DismissWorkers();
+		else if (assertOnMiss)
+		{
+			CheckAlways(false);
+		}
 	}
 	Module* System::GetModule(ModuleKey key) const
 	{
