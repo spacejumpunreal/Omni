@@ -56,7 +56,7 @@ namespace Omni
 		CacheAlign<std::atomic<size_t>>		ReleaseCount;
 	};
 
-	OMNI_MSVC_DISABLE_WARNING(4324)
+	OMNI_MSVC_DISABLE_WARNING(4324);
 
 	struct CacheLineAllocatorPrivate final : public STD_PMR_NS::memory_resource
 	{
@@ -119,8 +119,8 @@ namespace Omni
 				p = &(*p)->GetNext();
 			}
 		}
-		mLock.Unlock();
 		mWatch.Data.Sub(PageSize * pages);
+		mLock.Unlock();
 	}
 
 	void* CacheLineAllocatorPrivate::do_allocate(std::size_t bytes, std::size_t)

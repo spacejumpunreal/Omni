@@ -24,7 +24,8 @@ namespace Omni
     public:
         DispatchQueue                   mSerialQueues[(u32)QueueKind::Max];
         ConcurrentQueue                 mSharedQueue;
-        PMRVector<ThreadData*>          mThreadData;
+        ThreadData**                    mThreadData;
+        u32                             mThreadCount;
     public:
         ConcurrencyModulePrivateImpl();
         void WaitWorkersQuitOnMain();
@@ -58,7 +59,8 @@ namespace Omni
         //2. worker threads
         u32 nThreads = (u32)std::thread::hardware_concurrency();
         //nThreads = 1;
-        self->mThreadData.resize(nThreads);
+        self->mThreadCount = nThreads;
+        self->mThreadData = (ThreadData**)OmniMalloc(MemoryKind::SystemInit, sizeof(void*) * nThreads);
         self->mSharedQueue.SetAllWakeupLimit(nThreads / 2);
         for (u32 iThread = MainThreadIndex; iThread < nThreads; ++iThread)
             self->mThreadData[iThread] = &ThreadData::Create();
@@ -74,8 +76,7 @@ namespace Omni
 
         ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
         self->mThreadData[0]->JoinAndDestroyOnMain();
-        self->mThreadData.resize(0);
-        self->mThreadData.shrink_to_fit();
+        OmniFree(MemoryKind::SystemInit, sizeof(void*) * self->mThreadCount, self->mThreadData);
         gConcurrencyModule = nullptr;
         Module::Finalize();
         MemoryModule::Get().Release();
@@ -91,7 +92,7 @@ namespace Omni
     u32 ConcurrencyModule::GetWorkerCount()
     {
         ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
-        return (u32)self->mThreadData.size();
+        return (u32)self->mThreadCount;
     }
     DispatchQueue& ConcurrencyModule::GetQueue(QueueKind queueKind)
     {
@@ -114,7 +115,7 @@ namespace Omni
     {
         ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
         DispatchWorkItem* lastJob = nullptr;
-        for (u32 iThread = 0; iThread < (u32)self->mThreadData.size(); ++iThread)
+        for (u32 iThread = 0; iThread < self->mThreadCount; ++iThread)
         {
             DispatchWorkItem& item = DispatchWorkItem::Create(ThreadData::MarkQuitWork);
             item.Next = lastJob;
@@ -123,12 +124,13 @@ namespace Omni
         Async(*lastJob);
     }
     ConcurrencyModulePrivateImpl::ConcurrencyModulePrivateImpl()
-        : mThreadData(MemoryModule::Get().GetPMRAllocator(MemoryKind::SystemInit))
+        : mThreadData(nullptr)
+        , mThreadCount(0)
     {
     }
     void ConcurrencyModulePrivateImpl::WaitWorkersQuitOnMain()
     {
-        for (u32 iThread = MainThreadIndex + 1; iThread < (u32)mThreadData.size(); ++iThread)
+        for (u32 iThread = MainThreadIndex + 1; iThread < (u32)mThreadCount; ++iThread)
             mThreadData[iThread]->JoinAndDestroyOnMain();
     }
     void ConcurrentWorkerThreadFunc(ThreadData* self);

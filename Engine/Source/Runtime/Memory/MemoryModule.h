@@ -52,5 +52,14 @@ FORCEINLINE void* operator new(size_t size, std::align_val_t align, Omni::Memory
 }
 void operator delete(void*, Omni::MemoryKind);//only when there's exception in ctor
 
+FORCEINLINE void* OmniMalloc(Omni::MemoryKind kind, size_t size, std::align_val_t align = {})
+{
+	return Omni::MemoryModule::Get().GetPMRAllocator(kind).resource()->allocate(size, align == std::align_val_t{} ? OMNI_DEFAULT_ALIGNMENT : (size_t)align);
+}
+FORCEINLINE void OmniFree(Omni::MemoryKind kind, size_t size, void* p, std::align_val_t align = {})
+{
+	Omni::MemoryModule::Get().GetPMRAllocator(kind).resource()->deallocate(p, size, align == std::align_val_t{} ? OMNI_DEFAULT_ALIGNMENT : (size_t)align);
+}
+
 #define OMNI_NEW(Kind) new (Kind)
 #define OMNI_DELETE(Ptr, Kind) DeleteForType(Ptr, Kind); Ptr = nullptr

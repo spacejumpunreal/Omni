@@ -118,7 +118,7 @@ namespace Omni
 	{
 		CheckAlways((*state)->Sequence == (*state)->ExpectedSequence);
 		OMNI_DELETE(*state, MemoryKind::UserDefault);
-		System::GetSystem().TriggerFinalization();
+		//System::GetSystem().TriggerFinalization();
 	}
 	void AllocJobFuncDone()
 	{
@@ -214,6 +214,7 @@ namespace Omni
 
 	void MainThreadTest()
 	{
+		//System::GetSystem().TriggerFinalization();
 #if true
 		{
 			PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(Omni::MemoryKind::UserDefault);
@@ -267,6 +268,8 @@ namespace Omni
 			CheckAlways(!succeeed);
 			sl.Unlock();
 			x.join();
+			
+			
 		}
 #endif
 #if true
@@ -289,8 +292,9 @@ namespace Omni
 			ConcurrencyModule::Get().Async(*lastJob);
 		}
 #endif
+#if true
 		{
-			size_t NJobs = ConcurrencyModule::Get().GetWorkerCount() - 2;
+			size_t NJobs = ConcurrencyModule::Get().GetWorkerCount() - 1;
 			JobParallelAddToQueueData* state = OMNI_NEW(MemoryKind::UserDefault)JobParallelAddToQueueData();
 			
 			JobParallelAddToQueueData::LauncherJobData jd;
@@ -311,6 +315,7 @@ namespace Omni
 			state->mGroup->Notify(cleanupJob, nullptr);
 			ConcurrencyModule::Get().Async(*p);
 		}
+#endif
 	}
 }
 
