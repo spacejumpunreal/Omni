@@ -1,6 +1,7 @@
 #include "Runtime/System/System.h"
 #include "Runtime/Concurrency/ConcurrencyModule.h"
 #include "Runtime/Concurrency/JobPrimitives.h"
+#include "Runtime/Concurrency/LockfreeContainer.h"
 #include "Runtime/Concurrency/SpinLock.h"
 #include "Runtime/Concurrency/ThreadUtils.h"
 #include "Runtime/Memory/MemoryArena.h"
@@ -214,6 +215,29 @@ namespace Omni
 
 	void MainThreadTest()
 	{
+#if true
+		{
+			LockfreeStack stk;
+			constexpr u64 testCount = 1024;
+			u64 pushIndex = 0;
+			for (; pushIndex < testCount; ++pushIndex)
+			{
+				LockfreeNode* n = LockfreeNodeCache::Alloc();
+				n->Data[0] = (void*)pushIndex;
+				stk.Push(n);
+			}
+			while (true)
+			{
+				LockfreeNode* poped = stk.Pop();
+				if (poped == nullptr)
+					break;
+				CheckAlways(((u64)(poped->Data[0])) == --pushIndex);
+				LockfreeNodeCache::Free(poped);
+			}
+			
+		}
+#endif
+
 		//System::GetSystem().TriggerFinalization();
 #if true
 		{

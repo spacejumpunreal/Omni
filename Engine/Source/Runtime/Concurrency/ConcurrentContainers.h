@@ -102,4 +102,5 @@ namespace Omni
         u32                         mWaitCount;
         u32                         mAllWakeupLimit;
     };
+
 }

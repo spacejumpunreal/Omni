@@ -1,5 +1,6 @@
 #include "Runtime/Concurrency/ThreadUtils.h"
 #include "Runtime/Concurrency/IThreadLocal.h"
+#include "Runtime/Concurrency/LockfreeContainer.h"
 #include "Runtime/Memory/MemoryModule.h"
 #include "Runtime/Test/AssertUtils.h"
 #include <atomic>
@@ -112,9 +113,11 @@ namespace Omni
         mThreadId = gThreadCount.fetch_add(1);
         gThreadData.GetRaw() = this;
         MemoryModule::ThreadInitialize();
+        LockfreeNodeCache::ThreadInitialize();
     }
     void ThreadDataImpl::FinalizeOnThread()
     {
+        LockfreeNodeCache::TreadFinalize();
         MemoryModule::ThreadFinalize();
         gThreadCount.fetch_sub(1);
         gThreadData.GetRaw() = nullptr;

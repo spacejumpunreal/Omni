@@ -24,10 +24,13 @@ namespace Omni
 			return PMRAllocatorT<T>(GetPMRAllocator(kind));
 		}
 
+		void* Mmap(size_t size);
+		void Munmap(void* mem, size_t size);
+
 		static ScratchStack& GetThreadScratchStack();
 		static void ThreadInitialize();
 		static void ThreadFinalize();
-		void GetStats(PMRVector<MemoryStats>& stats);
+		void GetStats(STD_PMR_NS::vector<MemoryStats>& stats);
 		void Shrink();
 	};
 

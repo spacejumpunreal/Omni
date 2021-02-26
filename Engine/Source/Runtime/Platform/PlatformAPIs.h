@@ -4,9 +4,6 @@
 
 namespace Omni
 {
-	void* AllocPages(size_t size);
-	void FreePages(void* mem, size_t size);
-
 	void PauseThread();
 
 	static constexpr u64 TaggedPointerTagBegin = 48;

@@ -7,10 +7,17 @@
 #include "Runtime/Memory/MemoryArena.h"
 #include "Runtime/Memory/SNAllocator.h"
 #include "Runtime/Memory/WrapperAllocator.h"
+#include "Runtime/Platform/PlatformAPIs.h"
 #include "Runtime/System/Module.h"
 #include "Runtime/System/ModuleExport.h"
 
-
+#if OMNI_WINDOWS
+#include <Windows.h>
+#include <memoryapi.h>
+#include <atomic>
+#elif OMNI_IOS
+#include <sys/mman.h>
+#endif
 
 namespace Omni
 {
@@ -29,6 +36,7 @@ namespace Omni
 		IAllocator*						mAllocators[(size_t)MemoryKind::Max];
 		u32								mThreadArenaSize;
 		CacheLineAllocator*				mCacheLineAllocator;
+		std::atomic<size_t>				mMmappedSize;
 	public:
 		MemoryModulePrivateData();
 	};
@@ -84,7 +92,6 @@ namespace Omni
 				{
 					res = primary->GetResource();
 				}
-
 			}
 		}
 	}
@@ -109,6 +116,7 @@ namespace Omni
 			CheckAlways(ms.Used == 0);
 			delete alloc;
 		}
+		CheckAlways(self->mMmappedSize == 0);
 		Module::Finalize();
 		gMemoryModule = nullptr;
 	}
@@ -123,6 +131,30 @@ namespace Omni
 	{
 		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
 		return self->mKind2PMRResources[(u32)kind];
+	}
+	void* MemoryModule::Mmap(size_t size)
+	{
+		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
+		self->mMmappedSize.fetch_add(size, std::memory_order_relaxed);
+#if OMNI_WINDOWS
+		return VirtualAlloc(nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+#elif OMNI_IOS
+		return mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_ANON, 0, 0);
+#else
+		static_assert(false, "not implemented");
+		return nullptr;
+#endif
+	}
+	void MemoryModule::Munmap(void* mem, size_t size)
+	{
+		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
+		self->mMmappedSize.fetch_sub(size, std::memory_order_relaxed);
+#if OMNI_WINDOWS
+		(void)(size);
+		VirtualFree(mem, 0, MEM_RELEASE);
+#else
+		munmap(mem, size);
+#endif
 	}
 	ScratchStack& MemoryModule::GetThreadScratchStack()
 	{

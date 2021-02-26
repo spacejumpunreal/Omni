@@ -2,6 +2,7 @@
 #include "Runtime/Concurrency/IThreadLocal.h"
 #include "Runtime/Concurrency/SpinLock.h"
 #include "Runtime/Math/CompileTime.h"
+#include "Runtime/Memory/MemoryModule.h"
 #include "Runtime/Memory/MemoryWatch.h"
 #include "Runtime/Misc/ArrayUtils.h"
 #include "Runtime/Misc/Padding.h"
@@ -22,8 +23,6 @@ namespace Omni
 	//	global:
 	//		- free list of pages
 	//		- page granulity counters
-
-	struct CacheLinePerThreadData;
 	struct CacheLinePageHeader;
 
 	struct CacheLinePerThreadData
@@ -110,7 +109,7 @@ namespace Omni
 			{
 				CacheLinePageHeader* op = *p;
 				*p = (*p)->GetNext();
-				FreePages(op, PageSize);
+				MemoryModule::Get().Munmap(op, PageSize);
 				++pages;
 			}
 			else
@@ -176,7 +175,7 @@ namespace Omni
 		if (avail == nullptr)
 		{
 			//allocate page
-			avail = (CacheLinePageHeader*)AllocPages(PageSize);
+			avail = (CacheLinePageHeader*)MemoryModule::Get().Mmap(PageSize);
 			new (avail)CacheLinePageHeader();
 			mWatch.Data.Add(PageSize);
 		}
