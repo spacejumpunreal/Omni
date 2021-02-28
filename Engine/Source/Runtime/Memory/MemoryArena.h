@@ -26,6 +26,7 @@ namespace Omni
 	public:
 		ScratchStack();
 		void Reset(u8* ptr, u32 size);
+		u8* Cleanup();
 		bool IsClean();
 		FORCEINLINE u8* Allocate(u32 size);
 		FORCEINLINE void Push();

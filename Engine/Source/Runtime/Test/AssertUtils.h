@@ -33,7 +33,7 @@ namespace Omni
 #define CheckAlways(cond, ...) Check((cond), ##__VA_ARGS__)
 #define CheckSucceeded(cond, ...) Check(SUCCEEDED(cond), ##__VA_ARGS__)
 #ifdef NDEBUG
-#define CheckDebug(...) 
+#define CheckDebug(cond, ...) ((void)(cond))
 #else
-#define CheckDebug(cond, ...) Check(cond, ##__VA_ARGS__)
+#define CheckDebug(cond, ...) Check((cond), ##__VA_ARGS__)
 #endif

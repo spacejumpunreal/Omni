@@ -113,11 +113,10 @@ namespace Omni
         mThreadId = gThreadCount.fetch_add(1);
         gThreadData.GetRaw() = this;
         MemoryModule::ThreadInitialize();
-        LockfreeNodeCache::ThreadInitialize();
+        
     }
     void ThreadDataImpl::FinalizeOnThread()
     {
-        LockfreeNodeCache::TreadFinalize();
         MemoryModule::ThreadFinalize();
         gThreadCount.fetch_sub(1);
         gThreadData.GetRaw() = nullptr;

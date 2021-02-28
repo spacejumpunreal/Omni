@@ -17,7 +17,7 @@ namespace Omni
         static void GlobalInitialize();
         static void GlobalFinalize();
         static void ThreadInitialize();
-        static void TreadFinalize();
+        static void ThreadFinalize();
         static LockfreeNode* Alloc();
         static void Free(LockfreeNode* node);
     };

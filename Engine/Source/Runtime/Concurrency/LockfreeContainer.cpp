@@ -173,7 +173,7 @@ namespace Omni
 	{
 		CheckAlways(gLockfreeNodeCachePerThreadData.IsClean());
 	}
-	void LockfreeNodeCache::TreadFinalize()
+	void LockfreeNodeCache::ThreadFinalize()
 	{
 		gLockfreeNodeCachePerThreadData.GetRaw().Cleanup();
 	}

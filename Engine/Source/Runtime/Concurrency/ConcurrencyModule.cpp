@@ -1,7 +1,6 @@
 #include "Runtime/Concurrency/ConcurrencyModule.h"
 #include "Runtime/Concurrency/ConcurrentContainers.h"
 #include "Runtime/Concurrency/ConcurrentDefs.h"
-#include "Runtime/Concurrency/LockfreeContainer.h"
 #include "Runtime/Concurrency/SpinLock.h"
 #include "Runtime/Concurrency/ThreadUtils.h"
 #include "Runtime/Memory/MemoryModule.h"
@@ -56,9 +55,6 @@ namespace Omni
             self->mSerialQueues[iQueue].SetName(queueNames[iQueue]);
         }
 
-        //2. global setup LockfreeNodeCache
-        LockfreeNodeCache::GlobalInitialize();
-
         //3. worker threads
         u32 nThreads = (u32)std::thread::hardware_concurrency();
         //nThreads = 1;
@@ -83,9 +79,6 @@ namespace Omni
         ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
         self->mThreadData[0]->JoinAndDestroyOnMain();
         OmniFree(MemoryKind::SystemInit, sizeof(void*) * self->mThreadCount, self->mThreadData);
-
-        //2. global setup LockfreeNodeCache
-        LockfreeNodeCache::GlobalFinalize();
 
         gConcurrencyModule = nullptr;
         Module::Finalize();
