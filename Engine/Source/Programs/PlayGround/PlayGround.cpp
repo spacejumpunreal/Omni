@@ -237,6 +237,41 @@ namespace Omni
 			
 		}
 #endif
+#if true
+		{
+			constexpr int TestCount = 1024;
+			LockfreeQueue<1> queue;
+			for (u64 i = 0; i < TestCount; ++i)
+			{
+				LockfreeNode* n = LockfreeNodeCache::Alloc();
+				n->Data[0] = (void*)i;
+				queue.Enqueue(n);
+			}
+			for (u64 i = 0; i < TestCount; ++i)
+			{
+				LockfreeNode* n = queue.Dequeue();
+				CheckAlways(n->Data[0] == (void*)i);
+				LockfreeNodeCache::Free(n);
+			}
+			for (u64 i = 0; i < TestCount; ++i)
+			{
+				LockfreeNode* n0 = LockfreeNodeCache::Alloc();
+				n0->Data[0] = (void*)(2 * i);
+				queue.Enqueue(n0);
+				LockfreeNode* n1 = LockfreeNodeCache::Alloc();
+				n1->Data[0] = (void*)(2 * i + 1);
+				queue.Enqueue(n1);
+
+				LockfreeNode* d0 = queue.Dequeue();
+				LockfreeNode* d1 = queue.Dequeue();
+				CheckAlways(d0->Data[0] == (void*)(2 * i));
+				CheckAlways(d1->Data[0] == (void*)(2 * i + 1));
+				LockfreeNodeCache::Free(d0);
+				LockfreeNodeCache::Free(d1);
+			}
+			
+		}
+#endif
 
 		//System::GetSystem().TriggerFinalization();
 #if true

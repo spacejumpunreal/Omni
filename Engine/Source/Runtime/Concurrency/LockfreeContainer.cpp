@@ -57,7 +57,6 @@ namespace Omni
 			if (mColdCount == 0)
 			{
 				std::tie(mColdList, mColdCount) = gLockfreeNodeCacheGlobalData.AllocateBatch();
-				CheckDebug(mColdCount > 0);
 			}
 			std::swap(mHotList, mColdList);
 			std::swap(mHotCount, mColdCount);
@@ -69,20 +68,25 @@ namespace Omni
 	}
 	void LockfreeNodeCachePerThreadData::Free(LockfreeNode* node)
 	{
-		if (mHotCount >= LockfreeNodeTransferBatchCount)
+		if (mHotCount == LockfreeNodeTransferBatchCount)
 		{
-			if (mColdCount >= LockfreeNodeTransferBatchCount)
-			{
-				gLockfreeNodeCacheGlobalData.FreeBatch(mColdList, mColdCount);
-				mColdCount = 0;
-			}
 			++mColdCount;
 			node->Next = mColdList;
 			mColdList = node;
+			if (mColdCount == LockfreeNodeTransferBatchCount)
+			{
+				gLockfreeNodeCacheGlobalData.FreeBatch(mColdList, mColdCount);
+				mColdCount = 0;
+				mColdList = nullptr;
+			}
 		}
-		++mHotCount;
-		node->Next = mHotList;
-		mHotList = node;
+		else
+		{
+			++mHotCount;
+			node->Next = mHotList;
+			mHotList = node;
+		}
+		
 	}
 	void LockfreeNodeCachePerThreadData::Cleanup()
 	{
@@ -221,22 +225,56 @@ namespace Omni
 		return oldHead.Ptr;
 #endif
 	}
-	LockfreeQueue::LockfreeQueue()
+	template<u32 NodeDataCount>
+	LockfreeQueue<NodeDataCount>::LockfreeQueue()
 	{
 		mHead.Tag = 0;
 		mTail = mHead.Ptr = LockfreeNodeCache::Alloc();
 		mHead.Ptr->Next = nullptr;
 	}
-	LockfreeQueue::~LockfreeQueue()
+	template<u32 NodeDataCount>
+	LockfreeQueue<NodeDataCount>::~LockfreeQueue()
 	{
-		CheckAlways(mHead.Ptr->Next = nullptr);
+		CheckAlways(mHead.Ptr->Next == nullptr);
 		LockfreeNodeCache::Free(mHead.Ptr);
 	}
-	void LockfreeQueue::Enqueue(LockfreeNode* /*first*/, LockfreeNode* /*last*/)
+	template<u32 NodeDataCount>
+	void LockfreeQueue<NodeDataCount>::Enqueue(LockfreeNode* first, LockfreeNode* last)
 	{
+		last->Next = nullptr;
+		std::atomic<LockfreeNode*>& rTail = (std::atomic<LockfreeNode*>&)mTail;
+		LockfreeNode* oldTail = rTail.exchange(last, std::memory_order_release);
+		std::atomic<LockfreeNode*>& oldTailNext = (std::atomic<LockfreeNode*>&)oldTail->Next;
+		oldTailNext.store(first, std::memory_order_release);
 	}
-	LockfreeNode* LockfreeQueue::Dequeue()
+	template<u32 NodeDataCount>
+	LockfreeNode* LockfreeQueue<NodeDataCount>::Dequeue()
 	{
-		return nullptr;
+#if OMNI_WINDOWS
+		TaggedPointer oldHead;
+		LockfreeNode* next;
+		LockfreeNode* head;
+		do
+		{
+			oldHead.Tag = mHead.Tag;
+			head = mHead.Ptr;
+			oldHead.Ptr = head;
+			CheckDebug(head != nullptr);
+			next = ((std::atomic<LockfreeNode*>&)head->Next).load(std::memory_order_acquire);
+			if (next == nullptr)
+				return nullptr;
+			for (u32 i = 0; i < NodeDataCount; ++i)
+				head->Data[i] = next->Data[i];
+		} while (_InterlockedCompareExchange128((volatile long long*)&mHead, (long long)next, (long long)oldHead.Tag + 1, (long long*)&oldHead) == 0);
+		return head;
+#endif		
 	}
+
+	template class LockfreeQueue<1>;
+	template class LockfreeQueue<2>;
+	template class LockfreeQueue<3>;
+	template class LockfreeQueue<4>;
+	template class LockfreeQueue<5>;
+	template class LockfreeQueue<6>;
+	template class LockfreeQueue<7>;
 }

@@ -6,10 +6,11 @@ namespace Omni
 {
     struct LockfreeNode
     {
-        LockfreeNode*   Next;
-        void*           Data[7];
+        LockfreeNode*           Next;
+        void*                   Data[7];
     };
     static_assert(sizeof(LockfreeNode) <= CPU_CACHE_LINE_SIZE);
+    
 
     struct LockfreeNodeCache
     {
@@ -39,6 +40,7 @@ namespace Omni
         volatile TaggedPointer       mHead;
     };
 
+    template<u32 NodeDataCount>
     class LockfreeQueue
     {
     public:
