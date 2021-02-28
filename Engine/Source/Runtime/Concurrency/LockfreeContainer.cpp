@@ -194,6 +194,7 @@ namespace Omni
 	{
 		CheckDebug(mHead.Ptr == nullptr);
 	}
+
 	void LockfreeStack::Push(LockfreeNode* node)
 	{
 #if OMNI_WINDOWS
@@ -216,7 +217,7 @@ namespace Omni
 			oldHead.Ptr = mHead.Ptr;
 			if (oldHead.Ptr == nullptr)
 				return nullptr;
-		} while (_InterlockedCompareExchange128((volatile long long*)&mHead, (long long)(oldHead.Ptr->Next), (long long)oldHead.Tag, (long long*)&oldHead) == 0);
+		} while (_InterlockedCompareExchange128((volatile long long*)&mHead, (long long)(oldHead.Ptr->Next), (long long)oldHead.Tag + 1, (long long*)&oldHead) == 0);
 		return oldHead.Ptr;
 #endif
 	}
