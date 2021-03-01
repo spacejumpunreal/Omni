@@ -7,7 +7,7 @@
 namespace Omni
 {
 	template<typename T>
-	inline void Check(const T& v, const char* fmt, ...)
+	inline void OmniCheck(const T& v, const char* fmt, ...)
 	{
 		if (!v)
 		{
@@ -21,7 +21,7 @@ namespace Omni
 
 	}
 	template<typename T>
-	inline void Check(const T& v, ...)
+	inline void OmniCheck(const T& v, ...)
 	{
 		if (!v)
 		{
@@ -30,10 +30,10 @@ namespace Omni
 	}
 }
 
-#define CheckAlways(cond, ...) Check((cond), ##__VA_ARGS__)
-#define CheckSucceeded(cond, ...) Check(SUCCEEDED(cond), ##__VA_ARGS__)
+#define CheckAlways(cond, ...) OmniCheck((cond), ##__VA_ARGS__)
+#define CheckSucceeded(cond, ...) OmniCheck(SUCCEEDED(cond), ##__VA_ARGS__)
 #ifdef NDEBUG
 #define CheckDebug(cond, ...) ((void)(cond))
 #else
-#define CheckDebug(cond, ...) Check((cond), ##__VA_ARGS__)
+#define CheckDebug(cond, ...) OmniCheck((cond), ##__VA_ARGS__)
 #endif
