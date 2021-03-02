@@ -32,6 +32,7 @@ namespace Omni
 		TestSpinLock();
 		TestMultiThreadAllocation();
 		TestDispatchQueue();
+		TestAsync();
 		System::GetSystem().TriggerFinalization(true);
 	}
 }
