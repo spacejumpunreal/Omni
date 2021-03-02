@@ -13,25 +13,26 @@
 
 namespace Omni
 {
-	//mmap pages
-	//scheme:1 core write, other cores read, always cache align to avoid false sharing
-	//alloc: add ref count(almost always current thread), always page align
-	//dealloc: sub ref count
-	//data:
-	//	per thread:
-	//		- pointer, 1 page
-	//	global:
-	//		- free list of pages
-	//		- page granulity counters
 	struct CacheLinePageHeader;
 
 	struct CacheLinePerThreadData
 	{
 	public:
+		bool IsClean() { return Page == nullptr && UsedCachelines == 0; }
+	public:
 		CacheLinePageHeader*	Page;
 		u32						UsedCachelines;
+	};
+	struct TopStruct
+	{
 	public:
-		bool IsClean() { return Page == nullptr && UsedCachelines == 0; }
+		std::atomic<size_t>		AcquireCount;
+		CacheLinePageHeader* Next;
+	public:
+		TopStruct()
+			: AcquireCount(0)
+			, Next(nullptr)
+		{}
 	};
 	struct CacheLinePageHeader
 	{
@@ -40,17 +41,6 @@ namespace Omni
 		CacheLinePageHeader*& GetNext() { return Top.Data.Next; }
 		bool IsAvailable() { return Top.Data.AcquireCount.load(std::memory_order_relaxed) == ReleaseCount.Data.load(std::memory_order_relaxed); }
 	public:
-		struct TopStruct
-		{
-			//u64						Guard;
-			std::atomic<size_t>		AcquireCount;
-			CacheLinePageHeader*	Next;
-			TopStruct()
-				//: Guard(0xDEADBEEFDEADBEEFull)
-				: AcquireCount(0)
-				, Next(nullptr)
-			{}
-		};
 		CacheAlign<TopStruct>				Top;
 		CacheAlign<std::atomic<size_t>>		ReleaseCount;
 	};
