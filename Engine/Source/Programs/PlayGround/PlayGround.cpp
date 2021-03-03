@@ -28,15 +28,12 @@ namespace Omni
 		TestLockfreeStackSingleThread();
 		TestLockfreeQueueSingleThread();
 		TestLockfreeQueueMultiThread();
-		/*
 		TestPMRAllocate();
 		TestScratchStack();
 		TestSpinLock();
-
 		TestMultiThreadAllocation();
 		TestDispatchQueue();
 		TestAsync();
-		*/
 		System::GetSystem().TriggerFinalization(true);
 	}
 }

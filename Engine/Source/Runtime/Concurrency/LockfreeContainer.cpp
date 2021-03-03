@@ -203,7 +203,7 @@ namespace Omni
 	void LockfreeStack::Push(LockfreeNode* node)
 	{
 #if OMNI_WINDOWS
-		volatile TaggedPointer oldHead;
+		TaggedPointer oldHead;
 		do
 		{
 			oldHead.Tag = mHead.Tag;
@@ -215,7 +215,7 @@ namespace Omni
 	LockfreeNode* LockfreeStack::Pop()
 	{
 #if OMNI_WINDOWS
-		volatile TaggedPointer oldHead;
+		TaggedPointer oldHead;
 		do
 		{
 			oldHead.Tag = mHead.Tag;
@@ -251,8 +251,8 @@ namespace Omni
 	LockfreeNode* LockfreeQueue<NodeDataCount>::Dequeue()
 	{
 #if OMNI_WINDOWS
-		volatile TaggedPointer oldHead;
-		volatile LockfreeNode* next;
+		TaggedPointer oldHead;
+		LockfreeNode* next;
 		void* sData[LockfreeNode::MaxDataSlots];
 		oldHead.Tag = mHead.Tag;
 		oldHead.Ptr = mHead.Ptr;
