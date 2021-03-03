@@ -244,8 +244,8 @@ namespace Omni
 	void LockfreeQueue<NodeDataCount>::Enqueue(LockfreeNode* first, LockfreeNode* last)
 	{
 		last->Next = nullptr;
-		LockfreeNode* oldTail = std::atomic_exchange_explicit((std::atomic<LockfreeNode*>*)&mTail, last, std::memory_order_seq_cst);
-		std::atomic_store_explicit((std::atomic<LockfreeNode*>*)&oldTail->Next, first, std::memory_order_seq_cst);
+		LockfreeNode* oldTail = std::atomic_exchange_explicit((std::atomic<LockfreeNode*>*)&mTail, last, std::memory_order_release);
+		std::atomic_store_explicit((std::atomic<LockfreeNode*>*)&oldTail->Next, first, std::memory_order_release);
 	}
 	template<u32 NodeDataCount>
 	LockfreeNode* LockfreeQueue<NodeDataCount>::Dequeue()
