@@ -258,7 +258,7 @@ namespace Omni
 		oldHead.Ptr = mHead.Ptr;
 		do
 		{
-			next = std::atomic_load_explicit((std::atomic<LockfreeNode*>*)&(oldHead.Ptr->Next), std::memory_order_seq_cst);
+			next = std::atomic_load_explicit((std::atomic<LockfreeNode*>*)&(oldHead.Ptr->Next), std::memory_order_acquire);
 			if (next == nullptr)
 				return nullptr;
 			for (u32 i = 0; i < NodeDataCount; ++i)
