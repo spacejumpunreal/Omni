@@ -1,6 +1,7 @@
 #include "Runtime/Memory/MemoryModule.h"
 #include "Runtime/Concurrency/IThreadLocal.h"
 #include "Runtime/Concurrency/LockfreeContainer.h"
+#include "Runtime/Concurrency/ThreadUtils.h"
 #include "Runtime/Memory/CacheLineAllocator.h"
 #include "Runtime/Memory/MemoryArena.h"
 #include "Runtime/Memory/SNAllocator.h"
@@ -58,12 +59,14 @@ namespace Omni
 		MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
 		gMemoryModule = self;
 		
+		CheckAlways(IsOnMainThread());
 		LockfreeNodeCache::GlobalInitialize();
-
+		LockfreeNodeCache::ThreadInitialize(); //cacheline allocator will use this, so init early for main thread
 		size_t usedAllocators = 0;
 		IAllocator* primary = new SNAllocator();
 		self->mAllocators[usedAllocators++] = primary;
 		self->mKind2PMRResources[(u32)MemoryKind::SystemInit] = primary->GetResource();
+		
 		IAllocator* cacheline = self->mCacheLineAllocator = new CacheLineAllocator();
 		self->mAllocators[usedAllocators++] = cacheline;
 		self->mKind2PMRResources[(u32)MemoryKind::CacheLine] = cacheline->GetResource();
@@ -119,9 +122,8 @@ namespace Omni
 			CheckAlways(ms.Used == 0);
 			delete alloc;
 		}
-
+		LockfreeNodeCache::ThreadFinalize();
 		LockfreeNodeCache::GlobalFinalize();
-
 		CheckAlways(self->mMmappedSize == 0);
 		Module::Finalize();
 		gMemoryModule = nullptr;
@@ -172,7 +174,8 @@ namespace Omni
 		MemoryModuleImpl* self = gMemoryModule;
 		void* p = self ->GetPMRAllocator(MemoryKind::ThreadScratchStack).resource()->allocate(self->mThreadArenaSize, OMNI_DEFAULT_ALIGNMENT);
 		gThreadArena->Reset((u8*)p, self->mThreadArenaSize);
-		LockfreeNodeCache::ThreadInitialize();
+		if (!IsOnMainThread())
+			LockfreeNodeCache::ThreadInitialize();
 		if (self->mCacheLineAllocator)
 			self->mCacheLineAllocator->ThreadInitialize();
 	}
@@ -181,7 +184,8 @@ namespace Omni
 		MemoryModuleImpl* self = gMemoryModule;
 		if (self->mCacheLineAllocator)
 			self->mCacheLineAllocator->ThreadFinalize();
-		LockfreeNodeCache::ThreadFinalize();
+		if (!IsOnMainThread())
+			LockfreeNodeCache::ThreadFinalize();
 		void* p = gThreadArena->Cleanup();
 		CheckAlways(p != nullptr);
 		self->GetPMRAllocator(MemoryKind::ThreadScratchStack).resource()->deallocate(p, self->mThreadArenaSize, OMNI_DEFAULT_ALIGNMENT);

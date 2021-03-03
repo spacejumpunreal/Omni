@@ -1,6 +1,6 @@
 #include "Runtime/Memory/CacheLineAllocator.h"
 #include "Runtime/Concurrency/IThreadLocal.h"
-#include "Runtime/Concurrency/SpinLock.h"
+#include "Runtime/Concurrency/LockfreeContainer.h"
 #include "Runtime/Math/CompileTime.h"
 #include "Runtime/Memory/MemoryModule.h"
 #include "Runtime/Memory/MemoryWatch.h"
@@ -18,35 +18,26 @@ namespace Omni
 	struct CacheLinePerThreadData
 	{
 	public:
-		bool IsClean() { return Page == nullptr && UsedCachelines == 0; }
+		static constexpr u32 LocalPageCount = 4;
 	public:
-		CacheLinePageHeader*	Page;
-		u32						UsedCachelines;
-	};
-	struct TopStruct
-	{
+		//too verbose to declare/implement methods in this class, just treat this as POD
+		bool IsClean() { return Index == 0 && UsedCachelines == 0; }
 	public:
-		std::atomic<size_t>		AcquireCount;
-		CacheLinePageHeader* Next;
-	public:
-		TopStruct()
-			: AcquireCount(0)
-			, Next(nullptr)
-		{}
+		u32						UsedCachelines;//for current active page
+		u32						Index;
+		CacheLinePageHeader*	Pages[LocalPageCount];
 	};
 	struct CacheLinePageHeader
 	{
 	public:
 		static FORCEINLINE CacheLinePageHeader& GetHeader(void* p);
-		CacheLinePageHeader*& GetNext() { return Top.Data.Next; }
-		bool IsAvailable() { return Top.Data.AcquireCount.load(std::memory_order_relaxed) == ReleaseCount.Data.load(std::memory_order_relaxed); }
+		bool IsAvailable() { return AcquireCount.Data.load(std::memory_order_relaxed) == ReleaseCount.Data.load(std::memory_order_relaxed); }
 	public:
-		CacheAlign<TopStruct>				Top;
+		CacheAlign<std::atomic<size_t>>		AcquireCount;
 		CacheAlign<std::atomic<size_t>>		ReleaseCount;
 	};
 
 	OMNI_MSVC_DISABLE_WARNING(4324);
-
 	struct CacheLineAllocatorPrivate final : public STD_PMR_NS::memory_resource
 	{
 	public:
@@ -55,23 +46,15 @@ namespace Omni
 		static constexpr u32 CacheLineSizeShift = (u32)CompileTimeLog2(CPU_CACHE_LINE_SIZE);
 		static constexpr u32 HeaderCacheLines = sizeof(CacheLinePageHeader) / CPU_CACHE_LINE_SIZE;
 	public:
-		CacheLineAllocatorPrivate()
-			: mPendingListHead(nullptr)
-			, mPendingListTail(nullptr)
-		{}
 		FORCEINLINE static u32 Size2Cachelines(size_t sz);
 		void Shrink();
 		void* do_allocate(std::size_t bytes, std::size_t alignment) override;
 		void do_deallocate(void* p, std::size_t bytes, std::size_t alignment) override;
 		bool do_is_equal(const STD_PMR_NS::memory_resource& other) const noexcept override;
-
 	public:
-		CacheLinePageHeader*				mPendingListHead;
-		CacheLinePageHeader*				mPendingListTail;
-		SpinLock							mLock;
+		LockfreeQueue<1>					mPendingPages;
 		CacheAlign<MemoryWatch>				mWatch;
 	};
-
 	OMNI_RESET_WARNING();
 
 	//global
@@ -83,124 +66,108 @@ namespace Omni
 		u64 p64 = addr64 & ~(u64)(CacheLineAllocatorPrivate::PageSize - 1);
 		return *(CacheLinePageHeader*)p64;
 	}
-
 	u32 CacheLineAllocatorPrivate::Size2Cachelines(size_t sz)
 	{
 		return ((u32)AlignUpSize(sz, CPU_CACHE_LINE_SIZE)) >> CacheLineSizeShift;
 	}
 	void CacheLineAllocatorPrivate::Shrink()
 	{
-		mLock.Lock();
-		mPendingListTail = nullptr;
-		size_t pages = 0;
-		for (CacheLinePageHeader** p = &mPendingListHead; *p != nullptr;)
+		MemoryModule& mm = MemoryModule::Get();
+		while (true)
 		{
-			if ((*p)->IsAvailable())
-			{
-				CacheLinePageHeader* op = *p;
-				*p = (*p)->GetNext();
-				MemoryModule::Get().Munmap(op, PageSize);
-				++pages;
-			}
-			else
-			{
-				mPendingListTail = *p;
-				p = &(*p)->GetNext();
-			}
+			LockfreeNode* node = mPendingPages.Dequeue();
+			if (!node)
+				return;
+			mm.Munmap(node->Data[0], PageSize);
+			LockfreeNodeCache::Free(node);
 		}
-		mWatch.Data.Sub(PageSize * pages);
-		mLock.Unlock();
 	}
 
 	void* CacheLineAllocatorPrivate::do_allocate(std::size_t bytes, std::size_t)
 	{
 		u32 lines = Size2Cachelines(bytes);
 		CheckDebug(lines + HeaderCacheLines <= CacheLinesPerPage);
-		CacheLinePerThreadData& gcptd = gCacheLinePerThreadData.GetRaw();
-		if (gcptd.Page != nullptr && gcptd.UsedCachelines + lines <= CacheLinesPerPage)
+		CacheLinePerThreadData& ld = gCacheLinePerThreadData.GetRaw();
+		if (ld.UsedCachelines + lines > CacheLinesPerPage)
 		{
-			u8* ret = ((u8*)gcptd.Page) + (((u64)gcptd.UsedCachelines) << CacheLineSizeShift);
-			gcptd.UsedCachelines += lines;
-			gcptd.Page->Top.Data.AcquireCount.fetch_add(1, std::memory_order_relaxed); //not shared with others(not on the pending list)
-			return ret;
-		}
-		CacheLinePageHeader* avail = nullptr;
-		mLock.Lock();
-		{
-			CacheLinePageHeader* p;
-			CacheLinePageHeader* pp;
-			for (p = mPendingListHead, pp = nullptr; p != nullptr;)
+			u32 ni = (ld.Index + 1) % CacheLinePerThreadData::LocalPageCount;
+			if (!ld.Pages[ni]->IsAvailable())
 			{
-				if (p->IsAvailable())
+				LockfreeNode* tail = nullptr;
+				LockfreeNode* head = nullptr;
+				LockfreeNode* avail = nullptr;
+				while (!avail)
 				{
-					avail = p;
-					if (pp)
-						pp->GetNext() = p->GetNext();
+					LockfreeNode* node = mPendingPages.Dequeue();
+					if ((!node))
+						break;
+					CacheLinePageHeader* h = (CacheLinePageHeader*)node->Data[0];
+					if (h->IsAvailable())
+						avail = node;
+					if (head == nullptr)
+						head = tail = node;
 					else
-						mPendingListHead = p->GetNext();
-					if (p->GetNext() == nullptr)//only touch this if we had touched tail node
-						mPendingListTail = pp;
-					p->GetNext() = nullptr;
-					break;
+					{
+						tail->Next = node;
+						tail = node;
+					}
+					if (avail)
+						break;
 				}
-				pp = p;
-				p = p->GetNext();
+				if (!avail)
+				{
+					MemoryModule& mm = MemoryModule::Get();
+					CacheLinePageHeader* p = (CacheLinePageHeader*)mm.Mmap(CacheLineAllocatorPrivate::PageSize);
+					new (p) CacheLinePageHeader();
+					avail = LockfreeNodeCache::Alloc();
+					avail->Data[0] = p;
+					avail->Next = nullptr;
+					if (head == nullptr)
+						head = tail = avail;
+					else
+					{
+						tail->Next = avail;
+						tail = avail;
+					}
+				}
+				CacheLinePageHeader* t = ld.Pages[ld.Index];
+				ld.Pages[ld.Index] = (CacheLinePageHeader*)avail->Data[0];
+				avail->Data[0] = (CacheLinePageHeader*)t;
+				CheckDebug(avail->Next == nullptr);
+				mPendingPages.Enqueue(head, tail);
 			}
-			if (gcptd.Page != nullptr)
+			else
 			{
-				CheckDebug(gcptd.Page->GetNext() == nullptr);
-				if (mPendingListTail)
-				{
-					mPendingListTail->GetNext() = gcptd.Page;
-					mPendingListTail = gcptd.Page;
-				}
-				else
-				{
-					CheckDebug(mPendingListHead == nullptr);
-					mPendingListHead = mPendingListTail = gcptd.Page;
-				}
+				ld.Index = ni;
 			}
+			ld.UsedCachelines = 2;
 		}
-		mLock.Unlock();
-		if (avail == nullptr)
-		{
-			//allocate page
-			avail = (CacheLinePageHeader*)MemoryModule::Get().Mmap(PageSize);
-			new (avail)CacheLinePageHeader();
-			mWatch.Data.Add(PageSize);
-		}
-		avail->Top.Data.AcquireCount.store(1, std::memory_order_relaxed);
-		avail->ReleaseCount.Data.store(0, std::memory_order_relaxed); //these will complete before put on pending list(after enter lock)
-		gcptd.Page = avail;
-		gcptd.UsedCachelines = HeaderCacheLines + lines;
-		return (u8*)(&gcptd.Page[1]);
+		ld.Pages[ld.Index]->AcquireCount.Data.fetch_add(1, std::memory_order_relaxed);
+		char* p = ((char*)ld.Pages[ld.Index]) + ((u64)ld.UsedCachelines << CacheLineAllocatorPrivate::CacheLineSizeShift);
+		ld.UsedCachelines += lines;
+		return p;
 	}
 	void CacheLineAllocatorPrivate::do_deallocate(void* p, std::size_t, std::size_t)
 	{
-		//finish operation on mem before release(already on the list)
-		CacheLinePageHeader& hdr = CacheLinePageHeader::GetHeader(p);
-		hdr.ReleaseCount.Data.fetch_add(1, std::memory_order_acq_rel);
+		CacheLinePageHeader& header = CacheLinePageHeader::GetHeader(p);
+		header.ReleaseCount.Data.fetch_add(1, std::memory_order_release);
 	}
 	bool CacheLineAllocatorPrivate::do_is_equal(const STD_PMR_NS::memory_resource& other) const noexcept
 	{
 		return this == &other;
 	}
-
 	CacheLineAllocator::CacheLineAllocator()
 		: mData(PrivateDataType<CacheLineAllocatorPrivate>{})
 	{
 	}
-
 	CacheLineAllocator::~CacheLineAllocator()
 	{
 		mData.DestroyAs<CacheLineAllocatorPrivate>();
 	}
-
 	PMRResource* CacheLineAllocator::GetResource()
 	{
 		return mData.Ptr<CacheLineAllocatorPrivate>();
 	}
-
 	MemoryStats CacheLineAllocator::GetStats()
 	{
 		MemoryStats ret;
@@ -209,45 +176,37 @@ namespace Omni
 		self.mWatch.Data.Dump(ret);
 		return ret;
 	}
-
 	const char* CacheLineAllocator::GetName()
 	{
 		return "CacheLineAllocator";
 	}
-
 	void CacheLineAllocator::Shrink()
 	{
 		CacheLineAllocatorPrivate& self = mData.Ref<CacheLineAllocatorPrivate>();
 		self.Shrink();
 	}
-
 	void CacheLineAllocator::ThreadInitialize()
 	{
-		CheckAlways(
-			gCacheLinePerThreadData->Page == nullptr &&
-			gCacheLinePerThreadData->UsedCachelines == 0
-		);
+		CheckAlways(gCacheLinePerThreadData->IsClean());
+		MemoryModule& mm = MemoryModule::Get();
+		gCacheLinePerThreadData->Index = 0;
+		gCacheLinePerThreadData->UsedCachelines = 2;
+		for (u32 i = 0; i < CacheLinePerThreadData::LocalPageCount; ++i)
+		{
+			auto p = gCacheLinePerThreadData->Pages[i] = (CacheLinePageHeader*)mm.Mmap(CacheLineAllocatorPrivate::PageSize);
+			new (p) CacheLinePageHeader();
+		}
 	}
-
 	void CacheLineAllocator::ThreadFinalize()
 	{
-		CacheLinePerThreadData& gcptd = gCacheLinePerThreadData.GetRaw();
-		if (gcptd.Page)
+		CacheLineAllocatorPrivate& self = mData.Ref<CacheLineAllocatorPrivate>();
+		for (u32 i = 0; i < CacheLinePerThreadData::LocalPageCount; ++i)
 		{
-			CacheLineAllocatorPrivate& self = mData.Ref<CacheLineAllocatorPrivate>();
-			self.mLock.Lock();
-			if (self.mPendingListTail)
-			{
-				self.mPendingListTail->GetNext() = gcptd.Page;
-				self.mPendingListTail = gcptd.Page;
-			}
-			else
-			{
-				self.mPendingListHead = self.mPendingListTail = gcptd.Page;
-			}
-			self.mLock.Unlock();
-			gcptd.Page = nullptr;
-			gcptd.UsedCachelines = 0;
+			LockfreeNode* node = LockfreeNodeCache::Alloc();
+			node->Data[0] = gCacheLinePerThreadData->Pages[i];
+			self.mPendingPages.Enqueue(node);
 		}
+		gCacheLinePerThreadData->Index = 0;
+		gCacheLinePerThreadData->UsedCachelines = 0;
 	}
 }

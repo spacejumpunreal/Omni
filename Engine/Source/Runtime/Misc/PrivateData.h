@@ -29,6 +29,7 @@ namespace Omni
 #endif
 		{
 			static_assert(sizeof(T) <= Size, "sizeof(T) <= Size");
+			static_assert(alignof(T) <= Align, "alignof(T) <= Align");
 			T* p = Ptr<T>();
 			new (p) T(std::forward<Args>(args)...);
 		}
@@ -38,6 +39,7 @@ namespace Omni
 #if OMNI_DEBUG
 			CheckDebug(!mDestroyed);
 			static_assert(sizeof(T) <= Size, "sizeof(T) <= Size");
+			static_assert(alignof(T) <= Align, "alignof(T) <= Align");
 			T* p = (T*)RawData;
 			p->~T();
 			mDestroyed = true;
@@ -45,7 +47,9 @@ namespace Omni
 		}
 		~PrivateData()
 		{
-			CheckDebug(mDestroyed);
+#if OMNI_DEBUG
+			CheckAlways(mDestroyed);
+#endif
 		}
 	public:
 		static_assert(Align >= (sizeof(int)), "Align size should be at least sizeof(int)");

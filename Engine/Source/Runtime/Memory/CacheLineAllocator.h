@@ -7,6 +7,7 @@ namespace Omni
 {
 	struct CacheLinePerThreadData;
 
+	OMNI_MSVC_DISABLE_WARNING(4324);
 	class CacheLineAllocator : public IAllocator
 	{
 	public:
@@ -19,7 +20,8 @@ namespace Omni
 		void ThreadInitialize();
 		void ThreadFinalize();
 	private:
-		PrivateData<256> mData;
+		PrivateData<256, 128> mData;
 	};
+	OMNI_RESET_WARNING();
 }
 

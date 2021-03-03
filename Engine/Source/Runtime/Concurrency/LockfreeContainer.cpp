@@ -64,6 +64,7 @@ namespace Omni
 		--mHotCount;
 		LockfreeNode* ret = mHotList;
 		mHotList = mHotList->Next;
+		ret->Next = nullptr;
 		return ret;
 	}
 	void LockfreeNodeCachePerThreadData::Free(LockfreeNode* node)
@@ -222,6 +223,7 @@ namespace Omni
 			if (oldHead.Ptr == nullptr)
 				return nullptr;
 		} while (_InterlockedCompareExchange128((volatile long long*)&mHead, (long long)(oldHead.Ptr->Next), (long long)oldHead.Tag + 1, (long long*)&oldHead) == 0);
+		oldHead.Ptr->Next = nullptr;
 		return oldHead.Ptr;
 #endif
 	}
@@ -254,11 +256,11 @@ namespace Omni
 		TaggedPointer oldHead;
 		LockfreeNode* next;
 		LockfreeNode* head;
+		head = ((std::atomic<LockfreeNode*>&)mHead.Ptr).load(std::memory_order_acquire);
+		oldHead.Tag = mHead.Tag;
+		oldHead.Ptr = head;
 		do
 		{
-			oldHead.Tag = mHead.Tag;
-			head = mHead.Ptr;
-			oldHead.Ptr = head;
 			CheckDebug(head != nullptr);
 			next = ((std::atomic<LockfreeNode*>&)head->Next).load(std::memory_order_acquire);
 			if (next == nullptr)
@@ -266,6 +268,7 @@ namespace Omni
 			for (u32 i = 0; i < NodeDataCount; ++i)
 				head->Data[i] = next->Data[i];
 		} while (_InterlockedCompareExchange128((volatile long long*)&mHead, (long long)next, (long long)oldHead.Tag + 1, (long long*)&oldHead) == 0);
+		head->Next = nullptr;
 		return head;
 #endif		
 	}

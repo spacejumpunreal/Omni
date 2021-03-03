@@ -8,6 +8,8 @@
 #include "Runtime/Memory/MemoryModule.h"
 #include "Runtime/Test/AssertUtils.h"
 #include "Runtime/Test/MultiThreadTest.h"
+#include <random>
+#include <array>
 
 namespace Omni
 {
@@ -62,6 +64,85 @@ namespace Omni
 			CheckAlways(d1->Data[0] == (void*)(2 * i + 1));
 			LockfreeNodeCache::Free(d0);
 			LockfreeNodeCache::Free(d1);
+		}
+	}
+	void TestLockfreeQueueMultiThread()
+	{
+		constexpr int Repeats = 1024;
+		for (int iRepeat = 0; iRepeat < Repeats; ++iRepeat)
+		{
+			constexpr int TestSize = 1024 * 1024 * 16;
+			constexpr int QueueLength = 256;
+			constexpr size_t LocalMaxKeep = 16;
+			LockfreeQueue<1> queue;
+			for (int i = 0; i < QueueLength; ++i)
+			{
+				LockfreeNode* node = LockfreeNodeCache::Alloc();
+				node->Data[0] = (void*)(u64)i;
+				queue.Enqueue(node);
+			}
+			struct Tester
+			{
+				static void DoTest(u64 idx, LockfreeQueue<1>* queue)
+				{
+					std::random_device rd;  //Will be used to obtain a seed for the random number engine
+					std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+					gen.seed((unsigned int)idx);
+					std::uniform_int_distribution<> dis(0, 9);
+					PMRVector<LockfreeNode*> localKeep;
+					for (int i = 0; i < TestSize; ++i)
+					{
+						bool doPop = true;
+						if (localKeep.size() == 0)
+							doPop = true;
+						else if (localKeep.size() == LocalMaxKeep)
+							doPop = false;
+						else
+							doPop = dis(gen);
+						if (doPop)
+						{
+							LockfreeNode* n = queue->Dequeue();
+							if (n)
+								localKeep.push_back(n);
+						}
+						if (localKeep.size() > 0)
+						{
+							LockfreeNode* n = localKeep.back();
+							CheckAlways(n != nullptr);
+							queue->Enqueue(n);
+							localKeep.pop_back();
+						}
+					}
+					for (LockfreeNode* n : localKeep)
+					{
+						queue->Enqueue(n);
+					}
+				}
+			};
+			PMRVector<std::thread> threads;
+			u64 nThreads = std::thread::hardware_concurrency();
+			threads.resize(nThreads);
+			std::array<bool, QueueLength> allKeys{};
+			memset(&allKeys[0], 0, sizeof(allKeys));
+			for (u64 iThread = 0; iThread < nThreads; ++iThread)
+			{
+				threads[iThread] = std::thread(Tester::DoTest, iThread, &queue);
+			}
+			for (u64 iThread = 0; iThread < nThreads; ++iThread)
+			{
+				threads[iThread].join();
+			}
+			while (true)
+			{
+				LockfreeNode* n = queue.Dequeue();
+				if (!n)
+					break;
+				int i = (int)(u64)(n->Data[0]);
+				LockfreeNodeCache::Free(n);
+				CheckAlways(i < QueueLength);
+				CheckAlways(!allKeys[i]);
+				allKeys[i] = true;
+			}
 		}
 	}
 	void TestPMRAllocate()

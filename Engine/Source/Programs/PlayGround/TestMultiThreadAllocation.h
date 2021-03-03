@@ -21,7 +21,7 @@ namespace Omni
 		static void Run(JobData*)
 		{
 			constexpr size_t Size64K = 64 * 1024;
-			constexpr size_t Amount = 1024 * 1024 * 256;
+			constexpr size_t Amount = 1024 * 1024 * 1024;
 			constexpr size_t History = 8;
 
 			PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(MemoryKind::CacheLine);
