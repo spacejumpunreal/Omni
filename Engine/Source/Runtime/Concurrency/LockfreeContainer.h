@@ -40,7 +40,7 @@ namespace Omni
         void Push(LockfreeNode* node);
         LockfreeNode* Pop();
     private:
-        volatile TaggedPointer       mHead;
+        TaggedPointer       mHead;
     };
 
     template<u32 NodeDataCount>
@@ -53,7 +53,7 @@ namespace Omni
         void Enqueue(LockfreeNode* node) { Enqueue(node, node); }
         LockfreeNode* Dequeue();
     private:
-        volatile TaggedPointer      mHead;
-        volatile LockfreeNode*      mTail;
+        TaggedPointer      mHead;
+        LockfreeNode*      mTail;
     };
 }
