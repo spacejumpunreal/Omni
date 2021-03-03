@@ -68,10 +68,10 @@ namespace Omni
 	}
 	void TestLockfreeQueueMultiThread()
 	{
-		constexpr int Repeats = 1024;
+		constexpr int Repeats = 1024 * 1024;
 		for (int iRepeat = 0; iRepeat < Repeats; ++iRepeat)
 		{
-			constexpr int TestSize = 1024 * 1024 * 16;
+			constexpr int TestSize = 1024 * 16;
 			constexpr int QueueLength = 256;
 			constexpr size_t LocalMaxKeep = 16;
 			LockfreeQueue<1> queue;

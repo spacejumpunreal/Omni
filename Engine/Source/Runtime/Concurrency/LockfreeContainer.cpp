@@ -261,7 +261,7 @@ namespace Omni
 		oldHead.Ptr = head;
 		do
 		{
-			CheckDebug(head != nullptr);
+			//CheckDebug(head != nullptr);
 			next = ((std::atomic<LockfreeNode*>&)head->Next).load(std::memory_order_acquire);
 			if (next == nullptr)
 				return nullptr;
