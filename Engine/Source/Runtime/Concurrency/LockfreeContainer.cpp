@@ -63,7 +63,7 @@ namespace Omni
 		}
 		--mHotCount;
 		LockfreeNode* ret = mHotList;
-		mHotList = mHotList->Next;
+		mHotList = (LockfreeNode*)mHotList->Next;
 		ret->Next = nullptr;
 		return ret;
 	}
@@ -137,7 +137,7 @@ namespace Omni
 	void LockfreeNodeCacheGlobalData::FreeBatch(LockfreeNode* lst, u32 count)
 	{
 		lst->Data[0] = (void*)(u64)count;
-		lst->Data[1] = lst->Next;
+		lst->Data[1] = (LockfreeNode*)lst->Next;
 		mBatchStack.Push(lst);
 	}
 	bool LockfreeNodeCacheGlobalData::IsClean()
@@ -158,7 +158,7 @@ namespace Omni
 				u64 addr = (u64)batch;
 				addr >>= CompileTimeLog2(LockfreeNodeMmapSize);
 				pages.insert(addr);
-				batch = batch->Next;
+				batch = (LockfreeNode*)batch->Next;
 			}
 		}
 		for (u64 addr : pages)
@@ -203,19 +203,19 @@ namespace Omni
 	void LockfreeStack::Push(LockfreeNode* node)
 	{
 #if OMNI_WINDOWS
-		TaggedPointer oldHead;
+		volatile TaggedPointer oldHead;
 		do
 		{
 			oldHead.Tag = mHead.Tag;
 			oldHead.Ptr = mHead.Ptr;
 			node->Next = oldHead.Ptr;
-		} while (_InterlockedCompareExchange128((volatile long long*)&mHead, (long long)node, (long long)mHead.Tag + 1, (long long*)&oldHead) == 0);
+		} while (_InterlockedCompareExchange128((volatile long long*)&mHead, (long long)node, (long long)oldHead.Tag + 1, (long long*)&oldHead) == 0);
 #endif
 	}
 	LockfreeNode* LockfreeStack::Pop()
 	{
 #if OMNI_WINDOWS
-		TaggedPointer oldHead;
+		volatile TaggedPointer oldHead;
 		do
 		{
 			oldHead.Tag = mHead.Tag;
@@ -244,32 +244,30 @@ namespace Omni
 	void LockfreeQueue<NodeDataCount>::Enqueue(LockfreeNode* first, LockfreeNode* last)
 	{
 		last->Next = nullptr;
-		std::atomic<LockfreeNode*>& rTail = (std::atomic<LockfreeNode*>&)mTail;
-		LockfreeNode* oldTail = rTail.exchange(last, std::memory_order_release);
-		std::atomic<LockfreeNode*>& oldTailNext = (std::atomic<LockfreeNode*>&)oldTail->Next;
-		oldTailNext.store(first, std::memory_order_release);
+		LockfreeNode* oldTail = std::atomic_exchange_explicit((std::atomic<LockfreeNode*>*)&mTail, last, std::memory_order_seq_cst);
+		std::atomic_store_explicit((std::atomic<LockfreeNode*>*)&oldTail->Next, first, std::memory_order_seq_cst);
 	}
 	template<u32 NodeDataCount>
 	LockfreeNode* LockfreeQueue<NodeDataCount>::Dequeue()
 	{
 #if OMNI_WINDOWS
-		TaggedPointer oldHead;
-		LockfreeNode* next;
-		LockfreeNode* head;
-		head = ((std::atomic<LockfreeNode*>&)mHead.Ptr).load(std::memory_order_acquire);
+		volatile TaggedPointer oldHead;
+		volatile LockfreeNode* next;
+		void* sData[LockfreeNode::MaxDataSlots];
 		oldHead.Tag = mHead.Tag;
-		oldHead.Ptr = head;
+		oldHead.Ptr = mHead.Ptr;
 		do
 		{
-			//CheckDebug(head != nullptr);
-			next = ((std::atomic<LockfreeNode*>&)head->Next).load(std::memory_order_acquire);
+			next = std::atomic_load_explicit((std::atomic<LockfreeNode*>*)&(oldHead.Ptr->Next), std::memory_order_seq_cst);
 			if (next == nullptr)
 				return nullptr;
 			for (u32 i = 0; i < NodeDataCount; ++i)
-				head->Data[i] = next->Data[i];
+				sData[i] = next->Data[i];
 		} while (_InterlockedCompareExchange128((volatile long long*)&mHead, (long long)next, (long long)oldHead.Tag + 1, (long long*)&oldHead) == 0);
-		head->Next = nullptr;
-		return head;
+		for (u32 i = 0; i < NodeDataCount; ++i)
+			oldHead.Ptr->Data[i] = sData[i];
+		oldHead.Ptr->Next = nullptr;
+		return oldHead.Ptr;
 #endif		
 	}
 

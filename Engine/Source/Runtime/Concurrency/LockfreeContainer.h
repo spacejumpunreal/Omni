@@ -1,12 +1,15 @@
 #pragma once
 #include "Runtime/Omni.h"
 #include "Runtime/Platform/PlatformDefs.h"
+#include <atomic>
 
 namespace Omni
 {
     struct LockfreeNode
     {
-        LockfreeNode*           Next;
+        static constexpr u32    MaxDataSlots = 7;
+
+        volatile LockfreeNode*  Next;
         void*                   Data[7];
     };
     static_assert(sizeof(LockfreeNode) <= CPU_CACHE_LINE_SIZE);

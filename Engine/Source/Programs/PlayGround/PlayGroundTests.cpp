@@ -71,8 +71,8 @@ namespace Omni
 		constexpr int Repeats = 1024 * 1024;
 		for (int iRepeat = 0; iRepeat < Repeats; ++iRepeat)
 		{
-			constexpr int TestSize = 1024 * 16;
-			constexpr int QueueLength = 256;
+			constexpr int TestSize = 256;
+			constexpr int QueueLength = 16;
 			constexpr size_t LocalMaxKeep = 16;
 			LockfreeQueue<1> queue;
 			for (int i = 0; i < QueueLength; ++i)
@@ -98,14 +98,14 @@ namespace Omni
 						else if (localKeep.size() == LocalMaxKeep)
 							doPop = false;
 						else
-							doPop = dis(gen);
+							doPop = dis(gen) > 4;
 						if (doPop)
 						{
 							LockfreeNode* n = queue->Dequeue();
 							if (n)
 								localKeep.push_back(n);
 						}
-						if (localKeep.size() > 0)
+						else if (localKeep.size() > 0)
 						{
 							LockfreeNode* n = localKeep.back();
 							CheckAlways(n != nullptr);
@@ -123,7 +123,10 @@ namespace Omni
 			u64 nThreads = std::thread::hardware_concurrency();
 			threads.resize(nThreads);
 			std::array<bool, QueueLength> allKeys{};
-			memset(&allKeys[0], 0, sizeof(allKeys));
+			for (size_t i = 0; i < allKeys.size(); ++i)
+			{
+				allKeys[i] = false;
+			}
 			for (u64 iThread = 0; iThread < nThreads; ++iThread)
 			{
 				threads[iThread] = std::thread(Tester::DoTest, iThread, &queue);
@@ -132,12 +135,14 @@ namespace Omni
 			{
 				threads[iThread].join();
 			}
+			PMRVector<int> collectedThings;
 			while (true)
 			{
 				LockfreeNode* n = queue.Dequeue();
 				if (!n)
 					break;
 				int i = (int)(u64)(n->Data[0]);
+				collectedThings.push_back(i);
 				LockfreeNodeCache::Free(n);
 				CheckAlways(i < QueueLength);
 				CheckAlways(!allKeys[i]);
