@@ -146,7 +146,7 @@ namespace Omni
 	}
 	void LockfreeNodeCacheGlobalData::Cleanup()
 	{
-		std::pmr::unordered_set<u64> pages;
+        PMRUnorderedSet<u64, std::hash<u64>, std::equal_to<u64>> pages;
 		while (true)
 		{
 			LockfreeNode* batch = mBatchStack.Pop();
