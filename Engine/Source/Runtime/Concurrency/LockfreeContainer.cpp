@@ -192,7 +192,9 @@ namespace Omni
 	}
 	LockfreeStack::LockfreeStack()
 	{
+#if OMNI_WINDOWS
 		mHead.Tag = 0;
+#endif
 		mHead.Ptr = nullptr;
 	}
 	LockfreeStack::~LockfreeStack()
@@ -210,6 +212,20 @@ namespace Omni
 			oldHead.Ptr = mHead.Ptr;
 			node->Next = oldHead.Ptr;
 		} while (_InterlockedCompareExchange128((volatile long long*)&mHead, (long long)node, (long long)oldHead.Tag + 1, (long long*)&oldHead) == 0);
+#elif OMNI_IOS
+        long ok;
+        LockfreeNode* oldHead;
+        __asm__ __volatile__
+        (
+         "0:\n\t"
+         "ldxr %[oldHead], %[Head]\n\t"
+         "str %[oldHead], [%[node]]\n\t"
+         "stlxr %w[ok], %[node], %[Head]\n\t"
+         "cbnz %[ok], 0b\n\t"
+         : [Head]"+m"(mHead), [oldHead]"=&r"(oldHead), [ok]"=&r"(ok)
+         : [node]"r"(node)
+         : "cc", "memory"
+        );
 #endif
 	}
 	LockfreeNode* LockfreeStack::Pop()
@@ -225,12 +241,32 @@ namespace Omni
 		} while (_InterlockedCompareExchange128((volatile long long*)&mHead, (long long)(oldHead.Ptr->Next), (long long)oldHead.Tag + 1, (long long*)&oldHead) == 0);
 		oldHead.Ptr->Next = nullptr;
 		return oldHead.Ptr;
+#elif OMNI_IOS
+        LockfreeNode* ret;
+        LockfreeNode* next;
+        long ok;
+        __asm__ __volatile__
+        (
+        "0:\n\t"
+        "ldaxr %[ret], %[Head]\n\t"
+        "cbz %[ret], 1f\n\t"
+        "ldr %[next], [%[ret]]\n\t"
+        "stxr %w[ok], %[next], %[Head]\n\t"
+        "cbnz %[ok], 0b\n\t"
+        "1:\n\t"
+        : [ret]"=&r"(ret), [next]"=&r"(next), [ok]"=&r"(ok),[Head]"+m"(mHead)
+        :
+        : "cc", "memory"
+        );
+        return ret;
 #endif
 	}
 	template<u32 NodeDataCount>
 	LockfreeQueue<NodeDataCount>::LockfreeQueue()
 	{
+#if OMNI_WINDOWS
 		mHead.Tag = 0;
+#endif
 		mTail = mHead.Ptr = LockfreeNodeCache::Alloc();
 		mHead.Ptr->Next = nullptr;
 	}
@@ -243,9 +279,26 @@ namespace Omni
 	template<u32 NodeDataCount>
 	void LockfreeQueue<NodeDataCount>::Enqueue(LockfreeNode* first, LockfreeNode* last)
 	{
+#if OMNI_WINDOWS
 		last->Next = nullptr;
 		LockfreeNode* oldTail = std::atomic_exchange_explicit((std::atomic<LockfreeNode*>*)&mTail, last, std::memory_order_release);
 		std::atomic_store_explicit((std::atomic<LockfreeNode*>*)&oldTail->Next, first, std::memory_order_release);
+#elif OMNI_IOS
+        long ok;
+        last->Next = nullptr;
+        LockfreeNode* oldTail;
+        __asm__ __volatile__
+        (
+         "0:\n\t"
+         "ldxr %[oldTail], %[Tail]\n\t"
+         "stlxr %w[ok], %[t], %[Tail]\n\t"
+         "cbnz %[ok], 0b\n\t"
+         "stlr %[h], [%[oldTail]]\n\t"
+         : [oldTail]"=&r"(oldTail), [Tail]"+m"(mTail), [ok]"=&r"(ok)
+         : [t]"r"(last), [h]"r"(first)
+         : "cc", "memory"
+        );
+#endif
 	}
 	template<u32 NodeDataCount>
 	LockfreeNode* LockfreeQueue<NodeDataCount>::Dequeue()
@@ -268,6 +321,46 @@ namespace Omni
 			oldHead.Ptr->Data[i] = sData[i];
 		oldHead.Ptr->Next = nullptr;
 		return oldHead.Ptr;
+#elif OMNI_IOS
+        void* tData[NodeDataCount];
+        LockfreeNode* next;
+        LockfreeNode* ret = nullptr;
+        long cCount;
+        LockfreeNode* psrc;
+        LockfreeNode* pdst;
+        void* td;
+        
+        __asm__ __volatile__
+        (
+         "0:\n\t"
+         "ldaxr %[ret], %[Head]\n\t"
+         "ldar %[next], [%[ret]]\n\t"
+         "cbz %[next], 2f\n\t"
+         "mov %[psrc], %[next]\n\t"
+         "mov %[pdst], %[tData]\n\t"
+         "mov %[cCount], %[NodeDataCount]\n\t"
+         "1:\n\t"
+         "ldr %[td], [%[psrc], #8]!\n\t"
+         "str %[td], [%[pdst]], #8\n\t"
+         "sub %[cCount], %[cCount], #1\n\t"
+         "cbnz %[cCount], 1b\n\t"
+         "stlxr %w[td], %[next], %[Head]\n\t"
+         "cbnz %[td], 0b\n\t"
+         "2:\n\t"
+         : [next]"=&r"(next), [ret]"=&r"(ret), [cCount]"=&r"(cCount), [psrc]"=&r"(psrc), [pdst]"=&r"(pdst), [td]"=&r"(td), [Head]"+m"(mHead)
+         : [NodeDataCount]"i"(NodeDataCount), [tData]"r"(tData)
+         : "cc", "memory"
+         );
+        if (next)
+        {
+            for (size_t i = 0; i < NodeDataCount; ++i)
+            {
+                ret->Data[i] = tData[i];
+            }
+            return ret;
+        }
+        else
+            return nullptr;
 #endif		
 	}
 

@@ -10,6 +10,7 @@
 #include "Runtime/Test/MultiThreadTest.h"
 #include <random>
 #include <array>
+#include <thread>
 
 namespace Omni
 {
@@ -196,10 +197,10 @@ namespace Omni
 
 		sl.Lock();
 		std::thread x = std::thread([&]
-			{
-				//std::this_thread::sleep_for(std::chrono::seconds(5));
-				sl.Unlock();
-			});
+        {
+            //std::this_thread::sleep_for(std::chrono::seconds(5));
+            sl.Unlock();
+        });
 		sl.Lock();
 		bool succeeed = sl.TryLock();
 		CheckAlways(!succeeed);

@@ -10,6 +10,7 @@
 #include "Runtime/Test/PerfUtils.h"
 #include <random>
 #include <chrono>
+#include <thread>
 
 namespace Omni
 {

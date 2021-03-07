@@ -28,7 +28,9 @@ namespace Omni
 
     struct alignas(sizeof(u64) * 2) TaggedPointer
     {
+#if OMNI_WINDOWS
         u64                 Tag;
+#endif
         LockfreeNode*       Ptr;
     };
 
