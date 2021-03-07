@@ -17,6 +17,8 @@ namespace Omni
 	}
 	inline void FillWithPattern(void* ptr, size_t size, u32 pattern)
 	{
+		if (size == 0)
+			return;
 		u8* bp = (u8*)ptr;
 		u64 u64Ptr = (u64)ptr;
 		u32* alignedPtr = (u32*)AlignUpSize(u64Ptr, 4ull);
