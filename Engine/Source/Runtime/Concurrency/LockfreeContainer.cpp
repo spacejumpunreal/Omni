@@ -258,6 +258,8 @@ namespace Omni
         :
         : "cc", "memory"
         );
+        if (ret)
+            ret->Next = nullptr;
         return ret;
 #endif
 	}
@@ -279,13 +281,12 @@ namespace Omni
 	template<u32 NodeDataCount>
 	void LockfreeQueue<NodeDataCount>::Enqueue(LockfreeNode* first, LockfreeNode* last)
 	{
+        last->Next = nullptr;
 #if OMNI_WINDOWS
-		last->Next = nullptr;
 		LockfreeNode* oldTail = std::atomic_exchange_explicit((std::atomic<LockfreeNode*>*)&mTail, last, std::memory_order_release);
 		std::atomic_store_explicit((std::atomic<LockfreeNode*>*)&oldTail->Next, first, std::memory_order_release);
 #elif OMNI_IOS
         long ok;
-        last->Next = nullptr;
         LockfreeNode* oldTail;
         __asm__ __volatile__
         (
@@ -303,26 +304,26 @@ namespace Omni
 	template<u32 NodeDataCount>
 	LockfreeNode* LockfreeQueue<NodeDataCount>::Dequeue()
 	{
+        void* tData[NodeDataCount];
 #if OMNI_WINDOWS
 		TaggedPointer oldHead;
 		LockfreeNode* next;
-		void* sData[LockfreeNode::MaxDataSlots];
+		
 		oldHead.Tag = mHead.Tag;
 		oldHead.Ptr = mHead.Ptr;
 		do
 		{
 			next = std::atomic_load_explicit((std::atomic<LockfreeNode*>*)&(oldHead.Ptr->Next), std::memory_order_acquire);
-			if (next == nullptr)
+			if (!next)
 				return nullptr;
 			for (u32 i = 0; i < NodeDataCount; ++i)
-				sData[i] = next->Data[i];
+            tData[i] = next->Data[i];
 		} while (_InterlockedCompareExchange128((volatile long long*)&mHead, (long long)next, (long long)oldHead.Tag + 1, (long long*)&oldHead) == 0);
 		for (u32 i = 0; i < NodeDataCount; ++i)
-			oldHead.Ptr->Data[i] = sData[i];
+			oldHead.Ptr->Data[i] = tData[i];
 		oldHead.Ptr->Next = nullptr;
 		return oldHead.Ptr;
 #elif OMNI_IOS
-        void* tData[NodeDataCount];
         LockfreeNode* next;
         LockfreeNode* ret = nullptr;
         long cCount;
@@ -353,10 +354,9 @@ namespace Omni
          );
         if (next)
         {
+            ret->Next = nullptr;
             for (size_t i = 0; i < NodeDataCount; ++i)
-            {
                 ret->Data[i] = tData[i];
-            }
             return ret;
         }
         else
