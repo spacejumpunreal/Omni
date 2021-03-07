@@ -153,13 +153,15 @@ namespace Omni
 			if (!batch)
 				break;
 			batch->Next = (LockfreeNode*)batch->Data[1];
-			while (batch)
+			u32 batchCount = (u32)(u64)batch->Data[0];
+			for (u32 i = 0; i < batchCount; ++i)
 			{
 				u64 addr = (u64)batch;
 				addr >>= CompileTimeLog2(LockfreeNodeMmapSize);
 				pages.insert(addr);
 				batch = (LockfreeNode*)batch->Next;
 			}
+			CheckAlways(batch == nullptr);
 		}
 		for (u64 addr : pages)
 		{
