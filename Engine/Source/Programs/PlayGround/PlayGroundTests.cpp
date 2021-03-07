@@ -72,7 +72,7 @@ namespace Omni
 		constexpr int Repeats = 256;
 		for (int iRepeat = 0; iRepeat < Repeats; ++iRepeat)
 		{
-			constexpr int TestSize = 1024 * 256;
+			constexpr int TestSize = 1024 * 16;
 			constexpr int QueueLength = 8;
 			constexpr size_t LocalMaxKeep = 4;
 			LockfreeQueue<1> queue;
@@ -90,7 +90,8 @@ namespace Omni
 					std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
 					gen.seed((unsigned int)idx);
 					std::uniform_int_distribution<> dis(0, 9);
-					PMRVector<LockfreeNode*> localKeep;
+					PMRAllocator defaultAllocator = MemoryModule::Get().GetPMRAllocator(MemoryKind::UserDefault);
+					PMRVector<LockfreeNode*> localKeep(defaultAllocator);
 					for (int i = 0; i < TestSize; ++i)
 					{
 						bool doPop = true;
@@ -120,7 +121,8 @@ namespace Omni
 					}
 				}
 			};
-			PMRVector<std::thread> threads;
+			PMRAllocator defaultAllocator = MemoryModule::Get().GetPMRAllocator(MemoryKind::UserDefault);
+			PMRVector<std::thread> threads(defaultAllocator);
 			u64 nThreads = std::thread::hardware_concurrency();
 			threads.resize(nThreads);
 			std::array<bool, QueueLength> allKeys{};
@@ -136,7 +138,7 @@ namespace Omni
 			{
 				threads[iThread].join();
 			}
-			PMRVector<int> collectedThings;
+			PMRVector<int> collectedThings(defaultAllocator);
 			while (true)
 			{
 				LockfreeNode* n = queue.Dequeue();
