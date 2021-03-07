@@ -132,7 +132,7 @@ namespace Omni
 				}
 				CacheLinePageHeader* t = ld.Pages[ld.Index];
 				ld.Pages[ld.Index] = (CacheLinePageHeader*)avail->Data[0];
-				avail->Data[0] = (CacheLinePageHeader*)t;
+				avail->Data[0] = t;
 				CheckDebug(avail->Next == nullptr);
                 CheckDebug((((u64)head) & 0xf) == 0);
 				mPendingPages.Enqueue(head, tail);

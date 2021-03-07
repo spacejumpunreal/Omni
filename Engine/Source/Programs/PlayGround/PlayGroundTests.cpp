@@ -69,7 +69,7 @@ namespace Omni
 	}
 	void TestLockfreeQueueMultiThread()
 	{
-		constexpr int Repeats = 256 * 4;
+		constexpr int Repeats = 256;
 		for (int iRepeat = 0; iRepeat < Repeats; ++iRepeat)
 		{
 			constexpr int TestSize = 1024 * 16;
@@ -156,7 +156,7 @@ namespace Omni
 
 	void TestLockfreeStackMultiThread()
 	{
-		constexpr int Repeats = 256 * 4;
+		constexpr int Repeats = 256;
 		for (int iRepeat = 0; iRepeat < Repeats; ++iRepeat)
 		{
 			constexpr int TestSize = 1024 * 16;
