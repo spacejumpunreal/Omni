@@ -151,7 +151,9 @@ namespace Omni
 #if OMNI_WINDOWS
 		return VirtualAlloc(nullptr, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 #elif OMNI_IOS
-		return mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_ANON, 0, 0);
+		void* addr = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, 0, 0);
+        CheckAlways(addr != MAP_FAILED);
+        return addr;
 #else
 		static_assert(false, "not implemented");
 		return nullptr;
