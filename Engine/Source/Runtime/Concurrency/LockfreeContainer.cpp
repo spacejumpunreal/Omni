@@ -347,7 +347,7 @@ namespace Omni
          "str %[td], [%[pdst]], #8\n\t"
          "sub %[cCount], %[cCount], #1\n\t"
          "cbnz %[cCount], 1b\n\t"
-         "stlxr %w[td], %[next], %[Head]\n\t"
+         "stxr %w[td], %[next], %[Head]\n\t"
          "cbnz %[td], 0b\n\t"
          "2:\n\t"
          : [next]"=&r"(next), [ret]"=&r"(ret), [cCount]"=&r"(cCount), [psrc]"=&r"(psrc), [pdst]"=&r"(pdst), [td]"=&r"(td), [Head]"+m"(mHead)
