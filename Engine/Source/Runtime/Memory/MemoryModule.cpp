@@ -52,7 +52,9 @@ namespace Omni
 		: mThreadArenaSize(DefaultThreadArenaSize)
 		, mCacheLineAllocator(nullptr)
 	{
+#if OMNI_WINDOWS
 		std::pmr::set_default_resource(std::pmr::null_memory_resource());
+#endif
 
 		memset(mKind2PMRResources, 0, sizeof(mKind2PMRResources));
 		memset(mAllocators, 0, sizeof(mAllocators));
