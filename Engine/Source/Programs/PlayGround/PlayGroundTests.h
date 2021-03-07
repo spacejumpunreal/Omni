@@ -5,6 +5,7 @@ namespace Omni
 	void TestLockfreeStackSingleThread();
 	void TestLockfreeQueueSingleThread();
 	void TestLockfreeQueueMultiThread();
+	void TestLockfreeStackMultiThread();
 	void TestPMRAllocate();
 	void TestScratchStack();
 	void TestSpinLock();

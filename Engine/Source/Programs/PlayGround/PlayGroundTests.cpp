@@ -153,6 +153,94 @@ namespace Omni
 			}
 		}
 	}
+
+	void TestLockfreeStackMultiThread()
+	{
+		constexpr int Repeats = 256;
+		for (int iRepeat = 0; iRepeat < Repeats; ++iRepeat)
+		{
+			constexpr int TestSize = 1024 * 16;
+			constexpr int QueueLength = 8;
+			constexpr size_t LocalMaxKeep = 4;
+			LockfreeStack stk;
+			for (int i = 0; i < QueueLength; ++i)
+			{
+				LockfreeNode* node = LockfreeNodeCache::Alloc();
+				node->Data[0] = (void*)(u64)i;
+				stk.Push(node);
+			}
+			struct Tester
+			{
+				static void DoTest(u64 idx, LockfreeStack* stk)
+				{
+					std::random_device rd;  //Will be used to obtain a seed for the random number engine
+					std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+					gen.seed((unsigned int)idx);
+					std::uniform_int_distribution<> dis(0, 9);
+					PMRAllocator defaultAllocator = MemoryModule::Get().GetPMRAllocator(MemoryKind::UserDefault);
+					PMRVector<LockfreeNode*> localKeep(defaultAllocator);
+					for (int i = 0; i < TestSize; ++i)
+					{
+						bool doPop = true;
+						if (localKeep.size() == 0)
+							doPop = true;
+						else if (localKeep.size() == LocalMaxKeep)
+							doPop = false;
+						else
+							doPop = dis(gen) > 4;
+						if (doPop)
+						{
+							LockfreeNode* n = stk->Pop();
+							if (n)
+								localKeep.push_back(n);
+						}
+						else if (localKeep.size() > 0)
+						{
+							LockfreeNode* n = localKeep.back();
+							CheckAlways(n != nullptr);
+							stk->Push(n);
+							localKeep.pop_back();
+						}
+					}
+					for (LockfreeNode* n : localKeep)
+					{
+						stk->Push(n);
+					}
+				}
+			};
+			PMRAllocator defaultAllocator = MemoryModule::Get().GetPMRAllocator(MemoryKind::UserDefault);
+			PMRVector<std::thread> threads(defaultAllocator);
+			u64 nThreads = std::thread::hardware_concurrency();
+			threads.resize(nThreads);
+			std::array<bool, QueueLength> allKeys{};
+			for (size_t i = 0; i < allKeys.size(); ++i)
+			{
+				allKeys[i] = false;
+			}
+			for (u64 iThread = 0; iThread < nThreads; ++iThread)
+			{
+				threads[iThread] = std::thread(Tester::DoTest, iThread, &stk);
+			}
+			for (u64 iThread = 0; iThread < nThreads; ++iThread)
+			{
+				threads[iThread].join();
+			}
+			PMRVector<int> collectedThings(defaultAllocator);
+			while (true)
+			{
+				LockfreeNode* n = stk.Pop();
+				if (!n)
+					break;
+				int i = (int)(u64)(n->Data[0]);
+				collectedThings.push_back(i);
+				LockfreeNodeCache::Free(n);
+				CheckAlways(i < QueueLength);
+				CheckAlways(!allKeys[i]);
+				allKeys[i] = true;
+			}
+		}
+	}
+
 	void TestPMRAllocate()
 	{
 		PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(Omni::MemoryKind::UserDefault);
