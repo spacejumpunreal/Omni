@@ -57,7 +57,7 @@ namespace Omni
 
         //3. worker threads
         u32 nThreads = (u32)std::thread::hardware_concurrency();
-        nThreads = 1;
+        //nThreads = 1;
         self->mThreadCount = nThreads;
         self->mThreadData = (ThreadData**)OmniMalloc(MemoryKind::SystemInit, sizeof(void*) * nThreads);
         self->mSharedQueue.SetAllWakeupLimit(nThreads / 2);

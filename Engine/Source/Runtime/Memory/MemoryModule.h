@@ -24,7 +24,7 @@ namespace Omni
 			return PMRAllocatorT<T>(GetPMRAllocator(kind));
 		}
 
-		void* Mmap(size_t size);
+		void* Mmap(size_t size, size_t alignment);
 		void Munmap(void* mem, size_t size);
 
 		static ScratchStack& GetThreadScratchStack();

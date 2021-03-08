@@ -15,6 +15,11 @@ namespace Omni
 		unsigned long long p = reinterpret_cast<unsigned long long>(ptr);
 		return (p & (unsigned long long)(align - 1)) == 0;
 	}
+	template<typename T>
+	constexpr bool IsPow2(T x)
+	{
+		return (x & (x - 1)) == 0;
+	}
 	inline void FillWithPattern(void* ptr, size_t size, u32 pattern)
 	{
 		if (size == 0)

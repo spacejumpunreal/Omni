@@ -117,7 +117,7 @@ namespace Omni
 				if (!avail)
 				{
 					MemoryModule& mm = MemoryModule::Get();
-					CacheLinePageHeader* p = (CacheLinePageHeader*)mm.Mmap(CacheLineAllocatorPrivate::PageSize);
+					CacheLinePageHeader* p = (CacheLinePageHeader*)mm.Mmap(CacheLineAllocatorPrivate::PageSize, CacheLineAllocatorPrivate::PageSize);
 					new (p) CacheLinePageHeader();
 					avail = LockfreeNodeCache::Alloc();
 					avail->Data[0] = p;
@@ -194,7 +194,7 @@ namespace Omni
 		gCacheLinePerThreadData->UsedCachelines = 2;
 		for (u32 i = 0; i < CacheLinePerThreadData::LocalPageCount; ++i)
 		{
-			auto p = gCacheLinePerThreadData->Pages[i] = (CacheLinePageHeader*)mm.Mmap(CacheLineAllocatorPrivate::PageSize);
+			auto p = gCacheLinePerThreadData->Pages[i] = (CacheLinePageHeader*)mm.Mmap(CacheLineAllocatorPrivate::PageSize, CacheLineAllocatorPrivate::PageSize);
 			new (p) CacheLinePageHeader();
 		}
 	}

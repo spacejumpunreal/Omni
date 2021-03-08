@@ -8,7 +8,7 @@
 
 namespace Omni
 {
-	constexpr u32 LockfreeNodeMmapSize = 64 * 1024;
+	constexpr u32 LockfreeNodeMmapSize = 1024 * 1024;
 	constexpr u32 LockfreeNodeTransferBatchCount = 32;
     constexpr u32 TmpCountSlot = 0;
     constexpr u32 TmpNextSlot = 1;
@@ -116,7 +116,7 @@ namespace Omni
 		if (n == nullptr)
 		{
 			constexpr u32 totalCount = LockfreeNodeMmapSize / sizeof(LockfreeNode);
-			LockfreeNode* p = (LockfreeNode*)MemoryModule::Get().Mmap(LockfreeNodeMmapSize);
+			LockfreeNode* p = (LockfreeNode*)MemoryModule::Get().Mmap(LockfreeNodeMmapSize, LockfreeNodeMmapSize);
 			constexpr u32 batch = totalCount / LockfreeNodeTransferBatchCount;
 			LockfreeNode* tp = p;
 			for (u32 iBatch = 0; iBatch < batch; ++iBatch)
@@ -322,7 +322,7 @@ namespace Omni
 			if (!next)
 				return nullptr;
 			for (u32 i = 0; i < NodeDataCount; ++i)
-            tData[i] = next->Data[i];
+				tData[i] = next->Data[i];
 		} while (_InterlockedCompareExchange128((volatile long long*)&mHead, (long long)next, (long long)oldHead.Tag + 1, (long long*)&oldHead) == 0);
 		for (u32 i = 0; i < NodeDataCount; ++i)
 			oldHead.Ptr->Data[i] = tData[i];
