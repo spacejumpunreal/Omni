@@ -25,16 +25,16 @@ namespace Omni
 {
 	void MainThreadTest()
 	{
-		TestLockfreeStackSingleThread();
-		TestLockfreeQueueSingleThread();
-		TestLockfreeStackMultiThread();
-		TestLockfreeQueueMultiThread();
-		TestPMRAllocate();
-		TestScratchStack();
-		TestSpinLock();
-		TestMultiThreadAllocation();
-		TestDispatchQueue();
-		TestAsync();
+		//TestLockfreeStackSingleThread();
+		//TestLockfreeQueueSingleThread();
+		//TestLockfreeStackMultiThread();
+		//TestLockfreeQueueMultiThread();
+		//TestPMRAllocate();
+		//TestScratchStack();
+		//TestSpinLock();
+		//TestMultiThreadAllocation();
+		//TestDispatchQueue();
+		//TestAsync();
 		System::GetSystem().TriggerFinalization(true);
 	}
 }

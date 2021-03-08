@@ -10,6 +10,8 @@ namespace Omni
 {
 	constexpr u32 LockfreeNodeMmapSize = 64 * 1024;
 	constexpr u32 LockfreeNodeTransferBatchCount = 32;
+    constexpr u32 TmpCountSlot = 0;
+    constexpr u32 TmpNextSlot = 1;
 	//cache managing policy:
 	class LockfreeNodeCachePerThreadData
 	{
@@ -130,14 +132,14 @@ namespace Omni
 		}
 		else
 		{
-			n->Next = (LockfreeNode*)n->Data[1];
-			return std::make_tuple(n, (u32)(u64)n->Data[0]);
+			n->Next = (LockfreeNode*)n->Data[TmpNextSlot];
+			return std::make_tuple(n, (u32)(u64)n->Data[TmpCountSlot]);
 		}
 	}
 	void LockfreeNodeCacheGlobalData::FreeBatch(LockfreeNode* lst, u32 count)
 	{
-		lst->Data[0] = (void*)(u64)count;
-		lst->Data[1] = (LockfreeNode*)lst->Next;
+		lst->Data[TmpCountSlot] = (void*)(u64)count;
+		lst->Data[TmpNextSlot] = (LockfreeNode*)lst->Next;
 		mBatchStack.Push(lst);
 	}
 	bool LockfreeNodeCacheGlobalData::IsClean()
@@ -149,17 +151,18 @@ namespace Omni
         std::unordered_set<u64, std::hash<u64>, std::equal_to<u64>> pages;
 		while (true)
 		{
-			LockfreeNode* batch = mBatchStack.Pop();
-			if (!batch)
+			LockfreeNode* batch1 = mBatchStack.Pop();
+			if (!batch1)
 				break;
-			batch->Next = (LockfreeNode*)batch->Data[1];
-			u32 batchCount = (u32)(u64)batch->Data[0];
+            LockfreeNode* batch = batch1;
+			batch->Next = (LockfreeNode*)batch->Data[TmpNextSlot];
+			u32 batchCount = (u32)(u64)batch->Data[TmpCountSlot];
 			for (u32 i = 0; i < batchCount; ++i)
 			{
 				u64 addr = (u64)batch;
 				addr >>= CompileTimeLog2(LockfreeNodeMmapSize);
 				pages.insert(addr);
-				batch = (LockfreeNode*)batch->Next;
+				batch = batch->Next;
 			}
 			CheckAlways(batch == nullptr);
 		}
