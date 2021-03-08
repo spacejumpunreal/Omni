@@ -173,7 +173,26 @@ namespace Omni
 #elif OMNI_IOS
         void* addr = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, 0, 0);
         CheckAlways(addr != MAP_FAILED);
-        return addr;
+        void* alignedAddr = AlignupPtr(addr, alignment);
+        size_t unalignedSize = alignedAddr - addr;
+        if (!unalignedSize)
+            return addr;
+        munmap(addr, unalignedSize);
+        void* next = mmap(addr + size, unalignedSize, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, 0, 0);
+        if (next != MAP_FAILED)
+            return alignedAddr;
+        munmap(alignedAddr, size - unalignedSize);
+        //things are tough, use another strategy: map twice larger range and keep aligned range
+        void* begin = mmap(nullptr, size + alignment, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, 0, 0);
+        CheckAlways(next != MAP_FAILED);
+        void* end = size + alignment + (u8*)begin;
+        alignedAddr = AlignUpPtr(begin, alignment);
+        size_t holeHead = alignedAddr - begin;
+        if (holeHead > 0)
+            munmap(begin, holeHead);
+        size_t holeTail = end - (alignedAddr + size);
+        if (holeTail > 0)
+            munmap(alignedAddr + size, holeTail);
 #else
         static_assert(false, "not implemented");
         return nullptr;

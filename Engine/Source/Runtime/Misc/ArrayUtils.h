@@ -10,6 +10,11 @@ namespace Omni
 		return (size + align - 1) & (~(align - 1));
 	}
 	template<typename T>
+	static FORCEINLINE void* AlignupPtr(void* ptr, T align)
+	{
+		return (void*)AlignUpSize((u64)ptr, align);
+	}
+	template<typename T>
 	bool IsAligned(void* ptr, T align)
 	{
 		unsigned long long p = reinterpret_cast<unsigned long long>(ptr);
