@@ -171,10 +171,10 @@ namespace Omni
         
         return p;
 #elif OMNI_IOS
-        void* addr = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, 0, 0);
+        u8* addr = (u8*)mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, 0, 0);
         CheckAlways(addr != MAP_FAILED);
-        void* alignedAddr = AlignupPtr(addr, alignment);
-        size_t unalignedSize = alignedAddr - addr;
+        u8* alignedAddr = (u8*)AlignUpPtr(addr, alignment);
+        size_t unalignedSize = ((u8*)alignedAddr) - addr;
         if (!unalignedSize)
             return addr;
         munmap(addr, unalignedSize);
@@ -183,16 +183,17 @@ namespace Omni
             return alignedAddr;
         munmap(alignedAddr, size - unalignedSize);
         //things are tough, use another strategy: map twice larger range and keep aligned range
-        void* begin = mmap(nullptr, size + alignment, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, 0, 0);
+        u8* begin = (u8*)mmap(nullptr, size + alignment, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, 0, 0);
         CheckAlways(next != MAP_FAILED);
-        void* end = size + alignment + (u8*)begin;
-        alignedAddr = AlignUpPtr(begin, alignment);
+        u8* end = size + alignment + (u8*)begin;
+        alignedAddr = (u8*)AlignUpPtr(begin, alignment);
         size_t holeHead = alignedAddr - begin;
         if (holeHead > 0)
             munmap(begin, holeHead);
         size_t holeTail = end - (alignedAddr + size);
         if (holeTail > 0)
             munmap(alignedAddr + size, holeTail);
+        return alignedAddr;
 #else
         static_assert(false, "not implemented");
         return nullptr;

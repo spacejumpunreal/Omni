@@ -25,10 +25,12 @@ namespace Omni
 {
 	void MainThreadTest()
 	{
+
 		TestLockfreeStackSingleThread();
 		TestLockfreeQueueSingleThread();
 		TestLockfreeStackMultiThread();
 		TestLockfreeQueueMultiThread();
+
 		TestPMRAllocate();
 		TestScratchStack();
 		TestSpinLock();
