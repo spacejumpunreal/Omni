@@ -12,4 +12,19 @@ namespace Omni
 	void TestMultiThreadAllocation();
 	void TestDispatchQueue();
 	void TestAsync();
+
+	FORCEINLINE void TestAll()
+	{
+		TestLockfreeStackSingleThread();
+		TestLockfreeQueueSingleThread();
+		TestLockfreeStackMultiThread();
+		TestLockfreeQueueMultiThread();
+
+		TestPMRAllocate();
+		TestScratchStack();
+		TestSpinLock();
+		TestMultiThreadAllocation();
+		TestDispatchQueue();
+		TestAsync();
+	}
 }

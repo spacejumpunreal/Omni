@@ -1,4 +1,5 @@
 #include "Runtime/System/System.h"
+#include "Programs/PlayGround/PlayGroundExperiment.h"
 #include "Programs/PlayGround/PlayGroundTests.h"
 #include "Runtime/Concurrency/ConcurrencyModule.h"
 #include "Runtime/Concurrency/JobPrimitives.h"
@@ -26,17 +27,9 @@ namespace Omni
 	void MainThreadTest()
 	{
 
-		TestLockfreeStackSingleThread();
-		TestLockfreeQueueSingleThread();
-		TestLockfreeStackMultiThread();
-		TestLockfreeQueueMultiThread();
+		//TestAll();
+		ExperimentAll();
 
-		TestPMRAllocate();
-		TestScratchStack();
-		TestSpinLock();
-		TestMultiThreadAllocation();
-		TestDispatchQueue();
-		TestAsync();
 		System::GetSystem().TriggerFinalization(true);
 	}
 }
