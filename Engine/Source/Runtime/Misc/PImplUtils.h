@@ -28,6 +28,13 @@ namespace Omni
 
 		static TData* GetData(TInterface* api) { return GetCombinePtr(api); }
 		static const TData* GetData(const TInterface* api) { return GetCombinePtr(api); }
+
+
+		template<typename... Args>
+		PImplCombine(Args&&... args)
+			: TData{ std::forward<Args>(args)... }
+		{}
+
 	};
 }
 

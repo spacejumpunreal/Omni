@@ -148,7 +148,7 @@ namespace Omni
 				Module* mod = self->mModules[i];
 				if (firstRound || mod->GetStatus() == ModuleStatus::Initializing)
 				{
-					mod->Initialize();
+					mod->Initialize(argMap);
 				}
 				ModuleStatus ms = mod->GetStatus();
 				switch (ms)

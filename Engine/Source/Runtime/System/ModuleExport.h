@@ -7,7 +7,7 @@
 namespace Omni
 {
 	class Module;
-	using EngineInitArgMap = std::multimap<std::string, std::string>;
+	class EngineInitArgMap : public std::multimap<std::string, std::string> {};
 	using ModuleCtor = Module* (*)(const EngineInitArgMap&);
 	struct ModuleExportInfo
 	{

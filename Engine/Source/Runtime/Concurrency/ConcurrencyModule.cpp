@@ -37,7 +37,7 @@ namespace Omni
     //global variables
     ConcurrencyModuleImpl* gConcurrencyModule;
 
-    void ConcurrencyModule::Initialize()
+    void ConcurrencyModule::Initialize(const EngineInitArgMap& args)
     {
         MemoryModule::Get().Retain();
 
@@ -68,7 +68,7 @@ namespace Omni
         for (u32 iThread = MainThreadIndex + 1; iThread < nThreads; ++iThread)
             self->mThreadData[iThread]->LauchAsWorkerOnMain();
 
-        Module::Initialize();
+        Module::Initialize(args);
     }
     void ConcurrencyModule::Finalize()
     {

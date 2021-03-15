@@ -12,7 +12,7 @@ namespace Omni
 	{
 	public:
 		~MemoryModule();
-		void Initialize() override;
+		void Initialize(const EngineInitArgMap&) override;
 		void Finalize() override;
 
 		static MemoryModule& Get();

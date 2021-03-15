@@ -105,9 +105,9 @@ namespace Omni
             }
         }
     }
-    void MemoryModule::Initialize()
+    void MemoryModule::Initialize(const EngineInitArgMap& args)
     {
-        Module::Initialize();
+        Module::Initialize(args);
     }
     void MemoryModule::Finalize()
     {

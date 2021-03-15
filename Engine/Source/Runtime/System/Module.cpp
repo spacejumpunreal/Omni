@@ -6,7 +6,7 @@ namespace Omni
 		: mStatus(ModuleStatus::Uninitialized)
 		, mUserCount(0)
 	{}
-	void Module::Initialize() 
+	void Module::Initialize(const EngineInitArgMap&)
 	{
 		mStatus = ModuleStatus::Ready;
 	};

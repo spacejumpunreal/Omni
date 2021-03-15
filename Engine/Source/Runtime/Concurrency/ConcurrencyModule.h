@@ -12,7 +12,7 @@ namespace Omni
 	class ConcurrencyModule : public Module
 	{
 	public:
-		void Initialize() override;
+		void Initialize(const EngineInitArgMap&) override;
 		void Finalize() override;
 		void Finalizing() override;
 		static ConcurrencyModule& Get();

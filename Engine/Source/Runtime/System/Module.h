@@ -7,6 +7,7 @@ namespace Omni
 	class Module;
 	class System;
 
+	class EngineInitArgMap;
 	enum class ModuleStatus : u8
 	{
 		Uninitialized,
@@ -19,7 +20,7 @@ namespace Omni
 	{
 	public:
 		Module();
-		virtual void Initialize();
+		virtual void Initialize(const EngineInitArgMap&);
 		virtual void Initializing();
 		virtual void Finalize();
 		virtual void Finalizing();
