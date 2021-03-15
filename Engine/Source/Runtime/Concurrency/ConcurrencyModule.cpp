@@ -35,14 +35,15 @@ namespace Omni
     using ConcurrencyModuleImpl = PImplCombine<ConcurrencyModule, ConcurrencyModulePrivateImpl>;
 
     //global variables
-    ConcurrencyModule* gConcurrencyModule;
+    ConcurrencyModuleImpl* gConcurrencyModule;
 
     void ConcurrencyModule::Initialize()
     {
         MemoryModule::Get().Retain();
 
         ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
-        gConcurrencyModule = this;
+        CheckAlways(gConcurrencyModule == nullptr);
+        gConcurrencyModule = self;
 
         //1. init serial queues
         const char* queueNames[] = {

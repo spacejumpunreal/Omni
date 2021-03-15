@@ -28,9 +28,8 @@ namespace Omni
 	{
 
 		//TestAll();
-		ExperimentAll();
-
-		System::GetSystem().TriggerFinalization(true);
+		//ExperimentAll();
+		//System::GetSystem().TriggerFinalization(true);
 	}
 }
 
