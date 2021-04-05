@@ -26,7 +26,7 @@ namespace Omni
 
 		//EngineModule MainThread
 		//whoever called this became MainThread
-		void InitializeAndJoin(u32 argc, const char** argv, SystemInitializedCallback callback); 
+		void InitializeAndJoin(u32 argc, const char** argv, SystemInitializedCallback onSystemInitialized); 
 		void Finalize();
 
 		//API for Engine users

@@ -2,6 +2,7 @@
 #include "Runtime/Concurrency/IThreadLocal.h"
 #include "Runtime/Concurrency/LockfreeContainer.h"
 #include "Runtime/Memory/MemoryModule.h"
+#include "Runtime/Platform/WindowModule.h"
 #include "Runtime/Test/AssertUtils.h"
 #include <atomic>
 #include <thread>
@@ -53,11 +54,14 @@ namespace Omni
         CheckAlways(IsOnMainThread());
         self.InitializeOnThread();
     }
-    void ThreadData::RunAndFinalizeOnMain(SystemInitializedCallback cb)
+    void ThreadData::RunAndFinalizeOnMain(SystemInitializedCallback onSystemInitialized)
     {
         auto& self = *static_cast<ThreadDataImpl*>(this);
         CheckAlways(IsOnMainThread());
-        cb();
+        onSystemInitialized();
+        WindowModule* win = WindowModule::GetPtr();
+        if (win)
+            win->RunUILoop();
         ConcurrentWorkerThreadFunc(&self);
         System::GetSystem().Finalize();
     }

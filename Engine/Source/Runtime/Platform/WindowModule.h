@@ -12,9 +12,11 @@ namespace Omni
 		void Finalize() override;
 		void Finalizing() override;
 		static WindowModule& Get();
+		static WindowModule* GetPtr();
 
+		void RunUILoop();
 		void GetBackbufferSize(u32& width, u32& height);
-		void SetBackbufferSize(u32 width, u32 height);
+		void RequestSetBackbufferSize(u32 width, u32 height);
 	};
 }
 

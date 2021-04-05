@@ -72,3 +72,8 @@ namespace Omni
 #define OMNI_CLANG_DISABLE_WARNING(options)
 #define OMNI_RESET_WARNING()
 #endif
+
+//warnings
+#if OMNI_MSVC
+#pragma warning( error : 26495 )
+#endif

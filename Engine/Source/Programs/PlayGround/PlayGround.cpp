@@ -39,7 +39,7 @@ int main(int, const char** )
 	Omni::System& system = Omni::System::GetSystem();
 	const char* engineArgv[] =
 	{
-		"",
+		"LoadModule=Window",
 	};
 	system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv, Omni::MainThreadTest);
 	system.DestroySystem();

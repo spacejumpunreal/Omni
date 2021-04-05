@@ -6,6 +6,11 @@
 
 namespace Omni
 {
+#if OMNI_WINDOWS
+	void CheckWinAPI(int x);
+#endif
+	void OmniDebugBreak();
+
 	template<typename T>
 	inline void OmniCheck(const T& v, const char* fmt, ...)
 	{
@@ -16,6 +21,7 @@ namespace Omni
 			vprintf(fmt, args);
 			va_end(args);
 			fflush(0);
+			OmniDebugBreak();
 			assert(0);
 		}
 
@@ -25,9 +31,11 @@ namespace Omni
 	{
 		if (!v)
 		{
+			OmniDebugBreak();
 			assert(0);
 		}
 	}
+
 }
 
 #define CheckAlways(cond, ...) OmniCheck((cond), ##__VA_ARGS__)

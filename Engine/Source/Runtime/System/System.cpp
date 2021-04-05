@@ -75,7 +75,7 @@ namespace Omni
 		GSystem = nullptr;
 		UnregisterMainThread();
 	}
-	void System::InitializeAndJoin(u32 argc, const char** argv, SystemInitializedCallback cb)
+	void System::InitializeAndJoin(u32 argc, const char** argv, SystemInitializedCallback onSystemInitialized)
 	{
 		//parse args
 		EngineInitArgMap argMap;
@@ -108,7 +108,7 @@ namespace Omni
 		for (size_t i = 0; i < ARRAY_LENGTH(InternalModuleInfo); ++i)
 		{
 			auto info = InternalModuleInfo[i];
-			if (info->IsAlwaysLoad || loadModuleNames.count(InternalModuleInfo[i]->Name) != 0)
+			if (info->IsAlwaysLoad || (InternalModuleInfo[i]->Name != nullptr && loadModuleNames.count(InternalModuleInfo[i]->Name) != 0))
 			{
 				Module* m = info->Ctor(argMap);
 				self->mModules.push_back(m);
@@ -121,7 +121,7 @@ namespace Omni
 		for (usize i = 0; i < self->mExternalModuleInfo.size(); ++i)
 		{
 			const ModuleExportInfo& info = self->mExternalModuleInfo[i];
-			if (info.IsAlwaysLoad || loadModuleNames.count(InternalModuleInfo[i]->Name) != 0)
+			if (info.IsAlwaysLoad || loadModuleNames.count(info.Name) != 0)
 			{
 				Module* m = info.Ctor(argMap);
 				self->mModules.push_back(m);
@@ -166,7 +166,7 @@ namespace Omni
 			firstRound = false;
 		}
 		self->mStatus = SystemStatus::Ready;
-		ThreadData::GetThisThreadData().RunAndFinalizeOnMain(cb);
+		ThreadData::GetThisThreadData().RunAndFinalizeOnMain(onSystemInitialized);
 
 	}
 	void System::Finalize()
