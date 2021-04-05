@@ -24,7 +24,7 @@ namespace Omni
         WindowsWindowModulePrivate(const EngineInitArgMap& args);
         static RECT CalcNonClientWindowRect(u32 topLeftX, u32 topLeftY, u32 width, u32 height);
         void OnSizeChanged(u32 clientWidth, u32 clientHeight);
-        void SyncWindowSize(bool backbufferSizeValid);
+        void SyncWindowSize();
     public:
         HWND    mWindow;
         u32     mBackbufferWidth;
@@ -38,6 +38,7 @@ namespace Omni
     //globals
     WindowsWindowModuleImpl* gWindowsWindowModule;
 
+    //implementations
     static LRESULT CALLBACK OmniWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
         switch (uMsg)
@@ -49,7 +50,7 @@ namespace Omni
             break;
         }
         case WM_SIZING:
-        {
+        {//currently limiting windows width x height to OmniWindowResizeMinPixels alignment
             RECT* rect = (RECT*)lParam;
             u32 width = rect->right - rect->left;
             u32 height = rect->bottom - rect->top;
@@ -68,7 +69,9 @@ namespace Omni
             break;
         }
         case WM_DESTROY:
-        {
+        {//notify message loop to quit
+            WindowsWindowModuleImpl* self = (WindowsWindowModuleImpl*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+            self->mWindow = NULL;
             PostQuitMessage(0);
             break;
         }
@@ -77,9 +80,6 @@ namespace Omni
         }
         return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
-
-
-    //implementations
     void WindowModule::Initialize(const EngineInitArgMap& args)
     {
         MemoryModule::Get().Retain();
@@ -132,7 +132,7 @@ namespace Omni
             return;
 
         WindowsWindowModuleImpl* self = WindowsWindowModuleImpl::GetCombinePtr(this);
-        self->mWindow = NULL;
+        CheckAlways(self->mWindow == NULL);
         MemoryModule::Get().Release();
         Module::Finalize();
     }
@@ -148,7 +148,6 @@ namespace Omni
     {
         return gWindowsWindowModule;
     }
-
     void WindowModule::RunUILoop()
     {
         MSG msg;
@@ -159,6 +158,7 @@ namespace Omni
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
+        //PostQuitMessage(0) let us get here
         System::GetSystem().TriggerFinalization(true);
     }
     void WindowModule::GetBackbufferSize(u32& width, u32& height)
@@ -202,20 +202,13 @@ namespace Omni
         WindowsWindowModuleImpl* self = WindowsWindowModuleImpl::GetCombinePtr(this);
         self->mBackbufferWidth = clientWidth;
         self->mBackbufferHeight = clientHeight;
-        SyncWindowSize(true);
+        SyncWindowSize();
     }
-    void WindowsWindowModulePrivate::SyncWindowSize(bool backbufferSizeValid)
+    void WindowsWindowModulePrivate::SyncWindowSize()
     {
-        if (backbufferSizeValid)
-        {
-            RECT rect = CalcNonClientWindowRect(0, 0, mBackbufferWidth, mBackbufferHeight);
-            mWindowWidth = rect.right - rect.left;
-            mWindowHeight = rect.bottom - rect.top;
-        }
-        else
-        {
-            CheckAlways(false);
-        }
+        RECT rect = CalcNonClientWindowRect(0, 0, mBackbufferWidth, mBackbufferHeight);
+        mWindowWidth = rect.right - rect.left;
+        mWindowHeight = rect.bottom - rect.top;
     }
     static Module* WindowModuleCtor(const EngineInitArgMap& args)
     {

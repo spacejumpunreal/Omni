@@ -40,6 +40,7 @@ int main(int, const char** )
 	const char* engineArgv[] =
 	{
 		"LoadModule=Window",
+		"--window-size=1920x1080",
 	};
 	system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv, Omni::MainThreadTest);
 	system.DestroySystem();
