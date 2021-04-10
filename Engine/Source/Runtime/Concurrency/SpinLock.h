@@ -14,5 +14,21 @@ namespace Omni
     private:
         std::atomic<bool> mFlag;
     };
+
+    class LockGuard
+    {
+    public:
+        LockGuard(SpinLock& lock)
+            : mLock(lock)
+        {
+            lock.Lock();
+        }
+        ~LockGuard()
+        {
+            mLock.Unlock();
+        }
+    private:
+        SpinLock& mLock;
+    };
 }
 

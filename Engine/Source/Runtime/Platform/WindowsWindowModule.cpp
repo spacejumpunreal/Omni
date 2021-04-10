@@ -16,7 +16,6 @@ namespace Omni
     static constexpr u32 OmniWindowResizeMinPixels = 32;
     static const wchar_t* OmniWindowClassName = L"OmniWindowClass";
 
-    static int destroyTimes = 0;
     //declarations
     struct WindowsWindowModulePrivate
     {
@@ -131,6 +130,7 @@ namespace Omni
         if (GetUserCount() > 0)
             return;
 
+        gWindowsWindowModule = nullptr;
         WindowsWindowModuleImpl* self = WindowsWindowModuleImpl::GetCombinePtr(this);
         CheckAlways(self->mWindow == NULL);
         MemoryModule::Get().Release();
@@ -216,4 +216,4 @@ namespace Omni
     }
     ExportInternalModule(Window, ModuleExportInfo(WindowModuleCtor, false, "Window"));
 }
-#endif
+#endif//OMNI_WINDOWS

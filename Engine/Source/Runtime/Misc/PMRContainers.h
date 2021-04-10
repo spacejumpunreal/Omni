@@ -26,7 +26,7 @@ namespace Omni
 	template<typename T>
 	using PMRVector = std::pmr::vector<T>;
 
-	template<typename K, typename V, typename Hasher, typename KeyEqual>
+	template<typename K, typename V, typename Hasher = std::hash<K>, typename KeyEqual = std::equal_to<K>>
 	using PMRUnorderedMap = std::pmr::unordered_map<K, V, Hasher, KeyEqual>;
 
     template<typename K, typename Hasher, typename KeyEqual>
