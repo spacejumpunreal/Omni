@@ -26,6 +26,7 @@ namespace Omni
 	class InputModule : public Module
 	{
 	public:
+		void Destroy() override;
 		void Initialize(const EngineInitArgMap&) override;
 		void Finalize() override;
 		void Finalizing() override;

@@ -7,8 +7,9 @@
 #include "Runtime/Misc/Padding.h"
 #include "Runtime/Misc/PImplUtils.h"
 #include "Runtime/Misc/PMRContainers.h"
-#include "Runtime/System/ModuleExport.h"
 #include "Runtime/System/Module.h"
+#include "Runtime/System/ModuleExport.h"
+#include "Runtime/System/ModuleImplHelpers.h"
 
 #if OMNI_CLANG
 #else
@@ -166,10 +167,13 @@ namespace Omni
             } while(todo);
         }
     }
-
     static Module* ConcurrencyModuleCtor(const EngineInitArgMap&)
     {
-        return new ConcurrencyModuleImpl();
+        return ModuleFactory<ConcurrencyModuleImpl>::Construct();
+    }
+    void ConcurrencyModule::Destroy()
+    {
+        ModuleFactory<ConcurrencyModuleImpl>::Destroy((ConcurrencyModuleImpl*)this);
     }
     ExportInternalModule(Concurrency, ModuleExportInfo(ConcurrencyModuleCtor, true));
 }

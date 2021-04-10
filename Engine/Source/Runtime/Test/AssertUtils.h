@@ -6,6 +6,7 @@
 
 namespace Omni
 {
+	void BreakAndCrash(volatile int*);
 #if OMNI_WINDOWS
 	void CheckWinAPI(int x);
 #endif
@@ -22,7 +23,7 @@ namespace Omni
 			va_end(args);
 			fflush(0);
 			OmniDebugBreak();
-			assert(0);
+			BreakAndCrash(nullptr);
 		}
 
 	}
@@ -32,7 +33,7 @@ namespace Omni
 		if (!v)
 		{
 			OmniDebugBreak();
-			assert(0);
+			BreakAndCrash(nullptr);
 		}
 	}
 

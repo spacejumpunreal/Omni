@@ -20,6 +20,7 @@ namespace Omni
 	{
 	public:
 		Module();
+		virtual void Destroy() = 0;
 		virtual void Initialize(const EngineInitArgMap&);
 		virtual void Initializing();
 		virtual void Finalize();

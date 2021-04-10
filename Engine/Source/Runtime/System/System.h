@@ -3,6 +3,7 @@
 
 namespace Omni
 {
+	class MonotonicMemoryResource;
 	class Module;
 	enum class SystemStatus : u8
 	{
@@ -36,5 +37,6 @@ namespace Omni
 		//APIs for Modules
 		Module* GetModule(ModuleKey moduleKey) const;
 		Module* GetModule(const char* s) const;
+		MonotonicMemoryResource& GetInitMemResource();
 	};
 }

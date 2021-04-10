@@ -3,6 +3,13 @@
 #include <Windows.h>
 namespace Omni
 {
+    void BreakAndCrash(volatile int* p)
+    {
+        *p = 0;
+        if (p != nullptr)
+            BreakAndCrash(nullptr);
+    }
+
 #if OMNI_WINDOWS
     void CheckWinAPI(int x)
     {

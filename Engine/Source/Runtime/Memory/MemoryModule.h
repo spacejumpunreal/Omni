@@ -11,7 +11,7 @@ namespace Omni
 	class MemoryModule : public Module
 	{
 	public:
-		~MemoryModule();
+		void Destroy() override;
 		void Initialize(const EngineInitArgMap&) override;
 		void Finalize() override;
 

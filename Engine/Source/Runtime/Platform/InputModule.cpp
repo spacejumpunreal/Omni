@@ -6,6 +6,7 @@
 #include "Runtime/Misc/PImplUtils.h"
 #include "Runtime/Misc/PMRContainers.h"
 #include "Runtime/System/ModuleExport.h"
+#include "Runtime/System/ModuleImplHelpers.h"
 #include "Runtime/Test/AssertUtils.h"
 
 #include <Windows.h>
@@ -29,7 +30,8 @@ namespace Omni
     {
     public:
         InputModulePrivate()
-            : mCursor{}
+            : mKeys(MemoryModule::Get().GetPMRAllocator(MemoryKind::SystemInit))
+            , mCursor{}
         {
         }
     public:
@@ -153,7 +155,11 @@ namespace Omni
 
     static Module* InputModuleCtor(const EngineInitArgMap&)
     {
-        return new InputModule();
+        return ModuleFactory<InputModuleImpl>::Construct();
+    }
+    void InputModule::Destroy()
+    {
+        ModuleFactory<InputModuleImpl>::Destroy((InputModuleImpl*)this);
     }
     ExportInternalModule(Input, ModuleExportInfo(InputModuleCtor, true, "Input"));
 

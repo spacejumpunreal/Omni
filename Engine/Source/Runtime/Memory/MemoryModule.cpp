@@ -11,6 +11,7 @@
 #include "Runtime/Platform/PlatformAPIs.h"
 #include "Runtime/System/Module.h"
 #include "Runtime/System/ModuleExport.h"
+#include "Runtime/System/ModuleImplHelpers.h"
 #include "Runtime/Test/AssertUtils.h"
 
 #if OMNI_WINDOWS
@@ -131,9 +132,6 @@ namespace Omni
         CheckAlways(self->mMmappedSize == 0);
         Module::Finalize();
         gMemoryModule = nullptr;
-    }
-    MemoryModule::~MemoryModule()
-    {
     }
     MemoryModule& MemoryModule::Get()
     {
@@ -256,7 +254,11 @@ namespace Omni
     }
     static Module* MemoryModuleCtor(const EngineInitArgMap&)
     {
-        return new MemoryModuleImpl();
+        return ModuleFactory<MemoryModuleImpl>::Construct();
+    }
+    void MemoryModule::Destroy()
+    {
+        return ModuleFactory<MemoryModuleImpl>::Destroy((MemoryModuleImpl*)this);
     }
     ExportInternalModule(Memory, ModuleExportInfo(MemoryModuleCtor, true));
 }

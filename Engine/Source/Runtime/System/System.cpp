@@ -8,7 +8,7 @@
 #include "Runtime/Misc/ArrayUtils.h"
 #include "Runtime/Test/AssertUtils.h"
 #include "Runtime/Memory/MemoryModule.h"
-
+#include "Runtime/Memory/MonotonicMemoryResource.h"
 
 
 #include <array>
@@ -20,9 +20,10 @@
 
 namespace Omni
 {
+	static constexpr size_t SystemInitMemSize = 1024 * 1024;
+
 	//forward declarations
 	struct SystemPrivateData;
-
 	//definitions
 	using SystemImpl = PImplCombine<System, SystemPrivateData>;
 	struct SystemPrivateData
@@ -32,9 +33,11 @@ namespace Omni
 		std::unordered_map<ModuleKey, Module*>		mKey2Module;
 		std::unordered_map<std::string, Module*>	mName2Module;
 		std::vector<ModuleExportInfo>				mExternalModuleInfo;
+		MonotonicMemoryResource						mInitMem;
 
 		SystemPrivateData()
 			: mStatus(SystemStatus::Uninitialized)
+			, mInitMem(SystemInitMemSize)
 		{}
 	};
 
@@ -48,7 +51,6 @@ namespace Omni
 #include "Runtime/System/InternalModuleRegistry.inl"
 	};
 #undef ModuleItem
-
 
 	static const char* LoadModuleText = "LoadModule";
 
@@ -182,35 +184,34 @@ namespace Omni
 			todo = 0;
 			for (usize i = 0; i < nModules; ++i)
 			{
-				Module* mod = self->mModules[i];
-				if (firstRound || mod->GetStatus() == ModuleStatus::Finalizing)
+				Module*& mod = self->mModules[i];
+				if (mod != nullptr && (firstRound || mod->GetStatus() == ModuleStatus::Finalizing))
 				{
 					mod->Finalize();
-				}
-				ModuleStatus ms = mod->GetStatus();
-				switch (ms)
-				{
-				case ModuleStatus::Finalizing:
-					++todo;
-					break;
-				case ModuleStatus::Uninitialized:
-					break;
-				default:
-					CheckAlways(false, "unexpected init status");
-					break;
+					ModuleStatus ms = mod->GetStatus();
+					switch (ms)
+					{
+					case ModuleStatus::Finalizing:
+						++todo;
+						break;
+					case ModuleStatus::Uninitialized:
+						mod->Destroy();
+						mod = nullptr;
+						break;
+					default:
+						CheckAlways(false, "unexpected init status");
+						break;
+					}
 				}
 			}
 			firstRound = false;
-		}
-		for (Module* mod : self->mModules)
-		{
-			delete mod;
 		}
 		self->mStatus = SystemStatus::Uninitialized;
 		self->mModules.clear();
 		self->mKey2Module.clear();
 		self->mName2Module.clear();
 		self->mExternalModuleInfo.clear();
+		self->mInitMem.Reset();
 	}
 	SystemStatus System::GetStatus()
 	{
@@ -243,5 +244,10 @@ namespace Omni
 		if (it == self->mName2Module.end())
 			return nullptr;
 		return it->second;
+	}
+	MonotonicMemoryResource& System::GetInitMemResource()
+	{
+		SystemImpl* self = SystemImpl::GetCombinePtr(this);
+		return self->mInitMem;
 	}
 }

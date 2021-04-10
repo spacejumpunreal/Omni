@@ -3,6 +3,7 @@
 #include "Runtime/Memory/MemoryModule.h"
 #include "Runtime/Misc/PImplUtils.h"
 #include "Runtime/System/ModuleExport.h"
+#include "Runtime/System/ModuleImplHelpers.h"
 #include "Runtime/Test/AssertUtils.h"
 #include <Windows.h>
 
@@ -212,7 +213,11 @@ namespace Omni
     }
     static Module* WindowModuleCtor(const EngineInitArgMap& args)
     {
-        return new WindowsWindowModuleImpl(args);
+        return ModuleFactory<WindowsWindowModuleImpl>::Construct(args);
+    }
+    void WindowModule::Destroy()
+    {
+        ModuleFactory<WindowsWindowModuleImpl>::Destroy((WindowsWindowModuleImpl*)this);
     }
     ExportInternalModule(Window, ModuleExportInfo(WindowModuleCtor, false, "Window"));
 }
