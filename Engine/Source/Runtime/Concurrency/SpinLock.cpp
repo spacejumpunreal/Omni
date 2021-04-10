@@ -25,7 +25,7 @@ namespace Omni
 	void SpinLock::Unlock()
 	{
 		CheckDebug(mFlag.load(std::memory_order_relaxed), "can only unlock a locked lock");
-		mFlag.store(false);
+		mFlag.store(false, std::memory_order_release);
 	}
 }
 
