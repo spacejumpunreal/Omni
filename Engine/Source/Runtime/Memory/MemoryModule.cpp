@@ -68,11 +68,12 @@ namespace Omni
         LockfreeNodeCache::GlobalInitialize();
         LockfreeNodeCache::ThreadInitialize(); //cacheline allocator will use this, so init early for main thread
         size_t usedAllocators = 0;
-        IAllocator* primary = new SNAllocator();
+        
+        IAllocator* primary = InitMemFactory<SNAllocator>::New();
         self->mAllocators[usedAllocators++] = primary;
         self->mKind2PMRResources[(u32)MemoryKind::SystemInit] = primary->GetResource();
         
-        IAllocator* cacheline = self->mCacheLineAllocator = new CacheLineAllocator();
+        IAllocator* cacheline = self->mCacheLineAllocator = InitMemFactory<CacheLineAllocator>::New();
         self->mAllocators[usedAllocators++] = cacheline;
         self->mKind2PMRResources[(u32)MemoryKind::CacheLine] = cacheline->GetResource();
 
@@ -89,7 +90,7 @@ namespace Omni
                 PMRResource*& res = self->mKind2PMRResources[iKind];
                 if (res == nullptr)
                 {
-                    IAllocator* alloc = self->mAllocators[usedAllocators++] = new WrapperAllocator(*primary->GetResource(), MemoryKindNames[iKind]);
+                    IAllocator* alloc = self->mAllocators[usedAllocators++] = InitMemFactory<WrapperAllocator>::New(*primary->GetResource(), MemoryKindNames[iKind]);
                     res = alloc->GetResource();
                 }
             }
@@ -125,7 +126,7 @@ namespace Omni
             alloc->Shrink();
             MemoryStats ms = alloc->GetStats();
             CheckAlways(ms.Used == 0);
-            delete alloc;
+            InitMemFactory<WrapperAllocator>::Delete((WrapperAllocator*)alloc);
         }
         LockfreeNodeCache::ThreadFinalize();
         LockfreeNodeCache::GlobalFinalize();
@@ -254,11 +255,11 @@ namespace Omni
     }
     static Module* MemoryModuleCtor(const EngineInitArgMap&)
     {
-        return ModuleFactory<MemoryModuleImpl>::Construct();
+        return InitMemFactory<MemoryModuleImpl>::New();
     }
     void MemoryModule::Destroy()
     {
-        return ModuleFactory<MemoryModuleImpl>::Destroy((MemoryModuleImpl*)this);
+        return InitMemFactory<MemoryModuleImpl>::Delete((MemoryModuleImpl*)this);
     }
     ExportInternalModule(Memory, ModuleExportInfo(MemoryModuleCtor, true));
 }

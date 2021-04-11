@@ -213,11 +213,11 @@ namespace Omni
     }
     static Module* WindowModuleCtor(const EngineInitArgMap& args)
     {
-        return ModuleFactory<WindowsWindowModuleImpl>::Construct(args);
+        return InitMemFactory<WindowsWindowModuleImpl>::New(args);
     }
     void WindowModule::Destroy()
     {
-        ModuleFactory<WindowsWindowModuleImpl>::Destroy((WindowsWindowModuleImpl*)this);
+        InitMemFactory<WindowsWindowModuleImpl>::Delete((WindowsWindowModuleImpl*)this);
     }
     ExportInternalModule(Window, ModuleExportInfo(WindowModuleCtor, false, "Window"));
 }

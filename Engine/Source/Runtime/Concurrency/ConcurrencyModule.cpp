@@ -169,11 +169,11 @@ namespace Omni
     }
     static Module* ConcurrencyModuleCtor(const EngineInitArgMap&)
     {
-        return ModuleFactory<ConcurrencyModuleImpl>::Construct();
+        return InitMemFactory<ConcurrencyModuleImpl>::New();
     }
     void ConcurrencyModule::Destroy()
     {
-        ModuleFactory<ConcurrencyModuleImpl>::Destroy((ConcurrencyModuleImpl*)this);
+        InitMemFactory<ConcurrencyModuleImpl>::Delete((ConcurrencyModuleImpl*)this);
     }
     ExportInternalModule(Concurrency, ModuleExportInfo(ConcurrencyModuleCtor, true));
 }

@@ -22,7 +22,7 @@ namespace Omni
             : Pressed(false)
         {}
     public:
-        std::vector<KeyStateListener*>  Listeners;
+        PMRVector<KeyStateListener*>    Listeners;
         bool                            Pressed;
     };
 
@@ -100,7 +100,7 @@ namespace Omni
     {
         InputModuleImpl* self = InputModuleImpl::GetCombinePtr(this);
         LockGuard lk(self->Lock);
-        std::vector<KeyStateListener*> listeners = self->mKeys[key].Listeners;
+        PMRVector<KeyStateListener*>& listeners = self->mKeys[key].Listeners;
         size_t i = 0;
         for (; i < listeners.size(); ++i)
             if (listeners[i] == listener)
@@ -155,11 +155,11 @@ namespace Omni
 
     static Module* InputModuleCtor(const EngineInitArgMap&)
     {
-        return ModuleFactory<InputModuleImpl>::Construct();
+        return InitMemFactory<InputModuleImpl>::New();
     }
     void InputModule::Destroy()
     {
-        ModuleFactory<InputModuleImpl>::Destroy((InputModuleImpl*)this);
+        InitMemFactory<InputModuleImpl>::Delete((InputModuleImpl*)this);
     }
     ExportInternalModule(Input, ModuleExportInfo(InputModuleCtor, true, "Input"));
 

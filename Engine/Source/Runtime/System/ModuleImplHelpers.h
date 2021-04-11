@@ -6,10 +6,10 @@
 namespace Omni
 {
     template<typename ModuleT>
-    struct ModuleFactory
+    struct InitMemFactory
     {
         template<typename... Args>
-        static ModuleT* Construct(Args&&... args)
+        static ModuleT* New(Args&&... args)
         {
             MonotonicMemoryResource& initMem = System::GetSystem().GetInitMemResource();
             PMRAllocatorT<ModuleT> alloc(&initMem);
@@ -18,12 +18,12 @@ namespace Omni
             return ret;
         }
 
-        static void Destroy(ModuleT* _module)
+        static void Delete(ModuleT* _module)
         {
             MonotonicMemoryResource& initMem = System::GetSystem().GetInitMemResource();
             PMRAllocatorT<ModuleT> alloc(&initMem);
             std::allocator_traits<PMRAllocatorT<ModuleT>>::destroy(alloc, _module);
-            alloc.deallocate(_module, 1);
+            alloc.deallocate(_module, 1);//the size here is wrong, size doesn't matter for this allocator, allocator will figure it out
         }
     };
 }
