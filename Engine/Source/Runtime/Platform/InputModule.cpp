@@ -1,10 +1,11 @@
 #include "Runtime/Platform/InputModule.h"
 #if OMNI_WINDOWS
-#include "Runtime/Memory/MemoryModule.h"
 #include "Runtime/Concurrency/SpinLock.h"
+#include "Runtime/Memory/MemoryModule.h"
 #include "Runtime/Memory/MemoryArena.h"
 #include "Runtime/Misc/PImplUtils.h"
 #include "Runtime/Misc/PMRContainers.h"
+#include "Runtime/Platform/KeyMap.h"
 #include "Runtime/System/ModuleExport.h"
 #include "Runtime/System/ModuleImplHelpers.h"
 #include "Runtime/Test/AssertUtils.h"
@@ -19,7 +20,8 @@ namespace Omni
     {
     public:
         KeyState()
-            : Pressed(false)
+            : Listeners(MemoryModule::Get().GetPMRAllocator(MemoryKind::SystemInit))
+            , Pressed(false)
         {}
     public:
         PMRVector<KeyStateListener*>    Listeners;
@@ -29,15 +31,11 @@ namespace Omni
     struct InputModulePrivate
     {
     public:
-        InputModulePrivate()
-            : mKeys(MemoryModule::Get().GetPMRAllocator(MemoryKind::SystemInit))
-            , mCursor{}
-        {
-        }
+        InputModulePrivate();
     public:
-        SpinLock                                    Lock;
+        mutable SpinLock                            mLock;
         PMRUnorderedMap<KeyCode, KeyState>          mKeys;
-        CursorState                                 mCursor;
+        MousePos                                    mMousePos;
     };
 
     using InputModuleImpl = PImplCombine<InputModule, InputModulePrivate>;
@@ -46,8 +44,14 @@ namespace Omni
     InputModuleImpl* gInputModule;
 
     //impl
+    InputModulePrivate::InputModulePrivate()
+        : mKeys(MemoryModule::Get().GetPMRAllocator(MemoryKind::SystemInit))
+        , mMousePos{}
+    {}
+
     void InputModule::Initialize(const EngineInitArgMap& args)
     {
+        gInputModule = (InputModuleImpl*)this;
         MemoryModule& mm = MemoryModule::Get();
         mm.Retain();
 
@@ -59,6 +63,13 @@ namespace Omni
         if (GetUserCount() > 0)
             return;
 
+#if OMNI_DEBUG
+        const InputModuleImpl* self = InputModuleImpl::GetCombinePtr(this);
+        for (auto& ksp: self->mKeys)
+        {
+            CheckAlways(ksp.second.Listeners.size() == 0);
+        }
+#endif
         MemoryModule& mm = MemoryModule::Get();
         gInputModule = nullptr;
         Module::Finalize();
@@ -74,16 +85,16 @@ namespace Omni
     }
 
     //user
-    void InputModule::GetCursorState(CursorState& state)
+    void InputModule::GetMousePos(MousePos& state) const
     {
-        InputModuleImpl* self = InputModuleImpl::GetCombinePtr(this);
-        LockGuard lk(self->Lock);
-        state = self->mCursor;
+        const InputModuleImpl* self = InputModuleImpl::GetCombinePtr(this);
+        LockGuard lk(self->mLock);
+        state = self->mMousePos;
     }
-    void InputModule::GetKeyStates(u32 count, KeyCode* keys, bool* states) 
+    void InputModule::GetKeyStates(u32 count, KeyCode* keys, bool* states) const
     {
-        InputModuleImpl* self = InputModuleImpl::GetCombinePtr(this);
-        LockGuard lk(self->Lock);
+        const InputModuleImpl* self = InputModuleImpl::GetCombinePtr(this);
+        LockGuard lk(self->mLock);
         for (u32 i = 0; i < count; ++i)
         {
             auto it = self->mKeys.find(keys[i]);
@@ -93,13 +104,13 @@ namespace Omni
     void InputModule::RegisterListener(KeyCode key, KeyStateListener* listener) 
     {
         InputModuleImpl* self = InputModuleImpl::GetCombinePtr(this);
-        LockGuard lk(self->Lock);
+        LockGuard lk(self->mLock);
         self->mKeys[key].Listeners.push_back(listener);
     }
     void InputModule::UnRegisterlistener(KeyCode key, KeyStateListener* listener) 
     {
         InputModuleImpl* self = InputModuleImpl::GetCombinePtr(this);
-        LockGuard lk(self->Lock);
+        LockGuard lk(self->mLock);
         PMRVector<KeyStateListener*>& listeners = self->mKeys[key].Listeners;
         size_t i = 0;
         for (; i < listeners.size(); ++i)
@@ -109,11 +120,15 @@ namespace Omni
             listeners.erase(listeners.begin() + i);
     }
     //source
-    void InputModule::UpdateCursorState(CursorState& newState) 
+    void InputModule::UpdateMouse(MousePos& newPos, bool leftButton, bool rightButton)
     {
         InputModuleImpl* self = InputModuleImpl::GetCombinePtr(this);
-        LockGuard lk(self->Lock);
-        self->mCursor = newState;
+        {
+            LockGuard lk(self->mLock);
+            self->mMousePos = newPos;
+        }
+        OnKeyEvent(KeyMap::MouseLeft, leftButton);
+        OnKeyEvent(KeyMap::MouseRight, rightButton);
     }
     void InputModule::OnKeyEvent(KeyCode key, bool pressed) 
     {
@@ -123,7 +138,7 @@ namespace Omni
         KeyStateListener** listeners = nullptr;
         u32 toCall = 0;
         {
-            LockGuard lk(self->Lock);
+            LockGuard lk(self->mLock);
             KeyState& ks = self->mKeys[key];
             if (ks.Pressed != pressed)
             {

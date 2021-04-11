@@ -1,27 +1,13 @@
 #pragma once
 #include "Runtime/Omni.h"
+#include "Runtime/Platform/InputDefs.h"
 #include "Runtime/System/Module.h"
-
 
 namespace Omni
 {
-	
-	using KeyCode = u16;
-
-	struct CursorState
-	{//origin is at bottom left, x go right, y go up
-		u16 X;
-		u16 Y;
-	};
-	struct KeyStateListener
-	{
-		virtual void OnKeyEvent(KeyCode key, bool pressed) = 0;
-	};
+	struct MousePos;
+	class KeyStateListener;
 	using KeyStateCallback = void (*)(KeyCode code, void* userData);
-
-	constexpr KeyCode OmniKeyLButton = (KeyCode )-1;
-	constexpr KeyCode OmniKeyRButton = (KeyCode)-2;
-
 
 	class InputModule : public Module
 	{
@@ -33,13 +19,13 @@ namespace Omni
 		static InputModule& Get();
 
 		//user
-		void GetCursorState(CursorState& state);
-		void GetKeyStates(u32 count, KeyCode* keys, bool* states);
+		void GetMousePos(MousePos& state) const;
+		void GetKeyStates(u32 count, KeyCode* keys, bool* states) const;
 		void RegisterListener(KeyCode key, KeyStateListener* listener);
 		void UnRegisterlistener(KeyCode key, KeyStateListener* listener);
 
 		//source
-		void UpdateCursorState(CursorState& newState);
+		void UpdateMouse(MousePos& newPos, bool leftButton, bool rightButton);
 		void OnKeyEvent(KeyCode key, bool pressed);
 
 		//replay related

@@ -1,4 +1,3 @@
-#include "Runtime/System/System.h"
 #include "Programs/PlayGround/PlayGroundExperiment.h"
 #include "Programs/PlayGround/PlayGroundTests.h"
 #include "Runtime/Concurrency/ConcurrencyModule.h"
@@ -10,6 +9,10 @@
 #include "Runtime/Memory/MemoryModule.h"
 #include "Runtime/Misc/ArrayUtils.h"
 #include "Runtime/Platform/PlatformAPIs.h"
+#include "Runtime/Platform/InputDefs.h"
+#include "Runtime/Platform/InputModule.h"
+#include "Runtime/Platform/KeyMap.h"
+#include "Runtime/System/System.h"
 #include "Runtime/Test/AssertUtils.h"
 #include "Runtime/Test/PerfUtils.h"
 
@@ -26,7 +29,25 @@ namespace Omni
 {
 	void MainThreadTest()
 	{
+		struct KeyStateLogger : public KeyStateListener
+		{
+			void OnKeyEvent(KeyCode key, bool pressed) override
+			{
+				printf("Key[%x] is %s\n", key, pressed ? "down" : "up");
+				count++;
+				if (count > 40)
+				{
+					InputModule::Get().UnRegisterlistener(key, this);
+					delete this;
+				}
+			}
+			int count = 0;
+		};
 
+		auto pleft = new KeyStateLogger();
+		auto pright = new KeyStateLogger();
+		InputModule::Get().RegisterListener(KeyMap::MouseLeft, pleft);
+		InputModule::Get().RegisterListener(KeyMap::MouseRight, pright);
 		//TestAll();
 		//ExperimentAll();
 		//System::GetSystem().TriggerFinalization(true);

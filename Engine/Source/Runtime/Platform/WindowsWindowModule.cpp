@@ -2,10 +2,12 @@
 #if OMNI_WINDOWS
 #include "Runtime/Memory/MemoryModule.h"
 #include "Runtime/Misc/PImplUtils.h"
+#include "Runtime/Platform/InputModule.h"
 #include "Runtime/System/ModuleExport.h"
 #include "Runtime/System/ModuleImplHelpers.h"
 #include "Runtime/Test/AssertUtils.h"
 #include <Windows.h>
+#include <WinUser.h>
 
 namespace Omni
 {
@@ -73,6 +75,29 @@ namespace Omni
             WindowsWindowModuleImpl* self = (WindowsWindowModuleImpl*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
             self->mWindow = NULL;
             PostQuitMessage(0);
+            break;
+        }
+        case WM_MOUSEMOVE:
+        case WM_LBUTTONUP:
+        case WM_LBUTTONDOWN:
+        case WM_RBUTTONUP:
+        case WM_RBUTTONDOWN:
+        {
+            POINT lp;
+            bool ldown, rdown;
+            CheckDebug(GetCursorPos(&lp));
+            SHORT bs;
+            bs = GetKeyState(VK_LBUTTON);
+            ldown = (bs & 0x8000) != 0;
+            bs = GetKeyState(VK_RBUTTON);
+            rdown = (bs & 0x8000) != 0;
+
+            WindowsWindowModuleImpl* self = (WindowsWindowModuleImpl*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+            CheckDebug(ScreenToClient(self->mWindow, &lp));
+            MousePos mpos { .X = (i16)lp.x, .Y = (i16)lp.y };
+
+            InputModule& inputModule = InputModule::Get();
+            inputModule.UpdateMouse(mpos, ldown, rdown);
             break;
         }
         default:
