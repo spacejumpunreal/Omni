@@ -44,10 +44,14 @@ namespace Omni
 			int count = 0;
 		};
 
-		auto pleft = new KeyStateLogger();
-		auto pright = new KeyStateLogger();
-		InputModule::Get().RegisterListener(KeyMap::MouseLeft, pleft);
-		InputModule::Get().RegisterListener(KeyMap::MouseRight, pright);
+		if constexpr (false)
+		{
+			auto pleft = new KeyStateLogger();
+			auto pright = new KeyStateLogger();
+			InputModule::Get().RegisterListener(KeyMap::MouseLeft, pleft);
+			InputModule::Get().RegisterListener(KeyMap::MouseRight, pright);
+		}
+		
 		//TestAll();
 		//ExperimentAll();
 		//System::GetSystem().TriggerFinalization(true);
