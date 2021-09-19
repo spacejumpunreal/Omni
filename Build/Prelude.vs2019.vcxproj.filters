@@ -7,10 +7,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ClInclude Include="..\Engine\Source\Runtime\Prelude\APIDefine.h">
+      <Filter></Filter>
+    </ClInclude>
     <ClInclude Include="..\Engine\Source\Runtime\Prelude\MacroUtils.h">
       <Filter></Filter>
     </ClInclude>
     <ClInclude Include="..\Engine\Source\Runtime\Prelude\Omni.h">
+      <Filter></Filter>
+    </ClInclude>
+    <ClInclude Include="..\Engine\Source\Runtime\Prelude\PreludeAPI.h">
       <Filter></Filter>
     </ClInclude>
     <ClInclude Include="..\Engine\Source\Runtime\Prelude\SuppressWarning.h">

@@ -131,6 +131,15 @@ class VS2019Generator(base_generator.BaseGenerator):
         target_type = target.target_type \
             if target.target_type != build_target.TARGET_TYPE_DEFAULT_LIBRARY \
             else global_states.default_library_type
+
+        config_type = {
+            build_target.TARGET_TYPE_NO_BUILD: "Utility",
+            build_target.TARGET_TYPE_STATIC_LIBRARY: "StaticLibrary",
+            build_target.TARGET_TYPE_DYNAMIC_LIBRARY: "DynamicLibrary",
+            build_target.TARGET_TYPE_CONSOLE_APP: "Application",
+            build_target.TARGET_TYPE_WINDOW_APP: "Application",
+        }[target_type]
+
         all_deps = self.get_all_dependencies(target)
 
         for c in Configurations:
@@ -150,15 +159,15 @@ class VS2019Generator(base_generator.BaseGenerator):
                     XmlNode(
                         "PropertyGroup",
                         (
-                            XmlNode("ConfigurationType", target_type),
+                            XmlNode("ConfigurationType", config_type),
                             XmlNode("UseDebugLibraries", is_debug),
                             XmlNode("PlatformToolset", PlatformToolset),
                             XmlNode("WholeProgramOptimization", is_not_debug),
                             XmlNode("CharacterSet", "Unicode"),
-                            XmlNode("OutDir", os.path.join(global_states.install_root, "$(Platform)",
-                                                           "$(Configuration)") + "\\"),
+                            XmlNode("OutDir", global_states.install_root + "\\"),
                             XmlNode("IntDir", os.path.join("Intermediate", "$(ProjectName)",
                                                            "$(Platform)", "$(Configuration)") + "\\"),
+                            XmlNode("TargetName", "%s.%s.%s" % (target.get_name(), c, p))
                         ),
                         {"Condition": "'$(Configuration)|$(Platform)'=='%s|%s'" % (c, p)}))
 
@@ -174,8 +183,10 @@ class VS2019Generator(base_generator.BaseGenerator):
                 # ItemDefinitionGroup
                 is_debug = c == "Debug"
                 cp = {"Condition": "'$(Configuration)|$(Platform)'=='%s|%s'" % (c, p)}
-                macros = ["_DEBUG" if is_debug else "NDEBUG", "%(PreprocessorDefinitions)"]
-                abs_inc_dirs = self.get_dependent_include_paths(target)
+                macros = self.get_dependent_properties(target, "defines", build_target.PRIVATE_ITEMS) + [
+                    "_DEBUG" if is_debug else "NDEBUG",
+                    "%(PreprocessorDefinitions)"]
+                abs_inc_dirs = self.get_dependent_properties(target, "includes", build_target.PRIVATE_ITEMS)
                 additional_include_directories = [os.path.relpath(d, global_states.build_root) for d in abs_inc_dirs]
                 additional_include_directories.append("%(AdditionalIncludeDirectories)")
                 additional_link_libs = ["mincore.lib", "d3d12.lib", "dxgi.lib", "d3dcompiler.lib", "%(AdditionalDependencies)"]
@@ -190,10 +201,17 @@ class VS2019Generator(base_generator.BaseGenerator):
                     XmlNode("LanguageStandard", "stdcpplatest"),
                     XmlNode("EnableEnhancedInstructionSet", "AdvancedVectorExtensions2"),
                     XmlNode("TreatWarningAsError", "true"),))
+
+                subsystem = {
+                    build_target.TARGET_TYPE_CONSOLE_APP: "Console",
+                    build_target.TARGET_TYPE_WINDOW_APP: "Window",
+                }.get(target_type, "NotSet")
+
                 link = XmlNode("Link", (
                     XmlNode("EnableCOMDATFolding", "false" if is_debug else "true"),
                     XmlNode("OptimizeReferences", "false" if is_debug else "true"),
-                    XmlNode("AdditionalDependencies", ";".join(additional_link_libs))
+                    XmlNode("AdditionalDependencies", ";".join(additional_link_libs)),
+                    XmlNode("SubSystem", subsystem),
                 ))
                 item_definition_group_configs.append(XmlNode("ItemDefinitionGroup", (clcompile, link), cp))
 

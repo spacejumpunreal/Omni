@@ -1,5 +1,6 @@
 # -*- encoding: utf-8 -*-
 import os
+import build_target
 
 
 class BaseGenerator(object):
@@ -22,20 +23,25 @@ class BaseGenerator(object):
         ret.sort()
         return ret
 
-    def get_dependent_include_paths(self, target):
-        paths = set()
+    def get_dependent_properties(self, target, prop_name, self_option):
+        ret = set()
 
-        def handle_target_pub_paths(atarget):
-            for pub_inc in atarget.public_includes:
-                if not os.path.isabs(pub_inc):
-                    paths.add(os.path.join(atarget.base_dir, pub_inc))
-        handle_target_pub_paths(target)
-        for priv_inc in target.private_includes:
-            if not os.path.isabs(priv_inc):
-                paths.add(os.path.join(target.base_dir, priv_inc))
+        def handle_target_items(pub_priv, atarget):
+            for x_item in getattr(atarget, pub_priv + prop_name):
+                if prop_name == "includes" and not os.path.isabs(x_item):
+                    ret.add(os.path.join(atarget.base_dir, x_item))
+                else:
+                    ret.add(x_item)
+        if self_option & build_target.PUBLIC_ITEMS:
+            handle_target_items("private_", target)
+        if self_option & build_target.PRIVATE_ITEMS:
+            handle_target_items("private_", target)
+
         for p in target.dependencies:
-            handle_target_pub_paths(self._targets[p])
-        return paths
+            handle_target_items("public_", self._targets[p])
+        ret = list(ret)
+        ret.sort()
+        return ret
 
     @staticmethod
     def format_guid(guid):

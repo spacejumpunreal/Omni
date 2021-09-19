@@ -25,6 +25,7 @@ class TargetCollector(object):
             if module_name in self.targets:
                 raise DuplicatedTargetError(module_name)
             rule_instance = clz(file_path)
+            rule_instance.complete()
             if rule_instance.target_type != build_target.TARGET_TYPE_DUMMY:
                 self.targets[module_name] = rule_instance
 

@@ -13,13 +13,21 @@ FILE_TYPE_RESOURCE = "FILE_TYPE_RESOURCE"
 FILE_TYPE_OTHER = "FILE_TYPE_OTHER"
 FILE_TYPE_IGNORED = None
 
+TARGET_TYPE_DUMMY = "Dummy"
+TARGET_TYPE_NO_BUILD = "NoBuild"
 TARGET_TYPE_STATIC_LIBRARY = "StaticLibrary"
 TARGET_TYPE_DYNAMIC_LIBRARY = "DynamicLibrary"
 TARGET_TYPE_DEFAULT_LIBRARY = "Library"
-TARGET_TYPE_DUMMY = "Dummy"
-TARGET_TYPE_APP = "Application"
+
+TARGET_TYPE_CONSOLE_APP = "ConsoleApp"
+TARGET_TYPE_WINDOW_APP = "WindowApp"
+
+ALL_LIBRARY_TYPES = { TARGET_TYPE_DYNAMIC_LIBRARY, TARGET_TYPE_STATIC_LIBRARY }
 
 BUILD_RULES_NAME = "BUILD_RULES"
+
+PUBLIC_ITEMS = 1
+PRIVATE_ITEMS = 2
 
 
 def enumerate_input_files(base_dir, rule_func):
@@ -80,8 +88,27 @@ class BuildTarget(object):
         self.public_includes = ["."]
         self.private_includes = []
         self.files = []
+        self.public_defines = []
+        self.private_defines = []
+        self.custom_export_define = None
+        self.custom_import_define = None
         self.guid = uuid.uuid5(uuid.NAMESPACE_URL, build_file_path + self.__class__.__name__)
         print("%s's guid:%s" % (self.get_name(), self.guid))
+
+    def complete(self):
+        self_name = self.get_name().upper()
+        if self.target_type == TARGET_TYPE_DEFAULT_LIBRARY:
+            self.target_type = global_states.default_library_type
+        if self.target_type in ALL_LIBRARY_TYPES:
+            if self.custom_export_define is None:
+                self.custom_export_define = "EXPORT_" + self_name
+            if self.custom_import_define is None:
+                self.custom_import_define = "IMPORT_" + self_name
+
+            is_dynamic = 0 if self.target_type == TARGET_TYPE_STATIC_LIBRARY else 1
+            if is_dynamic:
+                self._set_api_export_import_defines(self.custom_export_define, self.custom_import_define)
+            self.add_macro_define("%s_IS_DYNAMIC_LIBRARY=%d" % (self_name, is_dynamic))
 
     def get_relative_path(self, p):
         return os.path.relpath(p, self.base_dir)
@@ -101,5 +128,26 @@ class BuildTarget(object):
 
     def setup_build_files(self, rule_func):
         self.files = enumerate_input_files(self.base_dir, rule_func)
+
+    def add_include_path(self, path, acl=PUBLIC_ITEMS | PRIVATE_ITEMS):
+        if acl & PUBLIC_ITEMS:
+            self.public_includes.append(path)
+        if acl & PRIVATE_ITEMS:
+            self.private_includes.append(path)
+
+    def add_macro_define(self, kv_pair, acl=PUBLIC_ITEMS | PRIVATE_ITEMS):
+        if acl & PUBLIC_ITEMS:
+            self.public_defines.append(kv_pair)
+        if acl & PRIVATE_ITEMS:
+            self.private_defines.append(kv_pair)
+
+    def set_custom_export_import_defines(self, export_def, import_def):
+        self.custom_export_define = export_def
+        self.custom_import_define = import_def
+
+    def _set_api_export_import_defines(self, export_def, import_def):
+        if global_states.default_library_type == TARGET_TYPE_DYNAMIC_LIBRARY:
+            self.add_macro_define(export_def, PRIVATE_ITEMS)
+            self.add_macro_define(import_def, PUBLIC_ITEMS)
 
 
