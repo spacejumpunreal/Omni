@@ -16,19 +16,9 @@
 #define OMNI_8(_1, _2, _3, _4, _5, _6, _7, _8, ...) _8
 #define OMNI_9(_1, _2, _3, _4, _5, _6, _7, _8, _9, ...) _9
 
-//#if _MSC_VER
-//#define OMNI_DUMMY_VA(...) dummy, __VA_ARGS__
-//#define OMNI_IS(...) OMNI_INDIRECT(OMNI_2(__VA__ARGS__, 0))
-//#else
-//#define OMNI_DUMMY_VA(...) dummy,##__VA_ARGS__
-//#define OMNI_IS(...) OMNI_2(__VA__ARGS__, 0)
-//#endif
-
 #define OMNI_DUMMY_VA(...) dummy,##__VA_ARGS__
 #define OMNI_IS(...) OMNI_INDIRECT(OMNI_2(__VA_ARGS__, 0))
-
 #define OMNI_PROBE() ~, 1
-
 #define OMNI_NOT(x) OMNI_IS(OMNI_CONCAT(OMNI_NOT_, x)) //for x == 0, OMNI_NOT_0 will be a special case which expand to 2 other, for others, 0
 #define OMNI_NOT_0 OMNI_PROBE()
 #define OMNI_BOOL(x) OMNI_NOT(OMNI_NOT(x))

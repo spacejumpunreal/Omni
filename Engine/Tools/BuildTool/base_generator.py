@@ -18,15 +18,23 @@ class BaseGenerator(object):
                 dd = self._targets[d]
                 if dd not in all_deps:
                     q.append(dd)
-        return all_deps
+        ret = list(all_deps)
+        ret.sort()
+        return ret
 
     def get_dependent_include_paths(self, target):
         paths = set()
+
+        def handle_target_pub_paths(atarget):
+            for pub_inc in atarget.public_includes:
+                if not os.path.isabs(pub_inc):
+                    paths.add(os.path.join(atarget.base_dir, pub_inc))
+        handle_target_pub_paths(target)
+        for priv_inc in target.private_includes:
+            if not os.path.isabs(priv_inc):
+                paths.add(os.path.join(target.base_dir, priv_inc))
         for p in target.dependencies:
-            dependent_target = self._targets[p]
-            for pinclude in dependent_target.public_includes:
-                if not os.path.isabs(pinclude):
-                    paths.add(os.path.join(target.base_dir, pinclude))
+            handle_target_pub_paths(self._targets[p])
         return paths
 
     @staticmethod

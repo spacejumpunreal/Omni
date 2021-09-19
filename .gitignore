@@ -11,8 +11,8 @@ Omni.xcworkspace
 *.log
 *.pyc
 *.pyo
-Engine/Build
-Engine/Binaries
+/Build
+/Engine/Binaries
 .idea
 contents.xcworkspacedata
 *.zip

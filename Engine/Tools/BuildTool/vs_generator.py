@@ -157,8 +157,8 @@ class VS2019Generator(base_generator.BaseGenerator):
                             XmlNode("CharacterSet", "Unicode"),
                             XmlNode("OutDir", os.path.join(global_states.install_root, "$(Platform)",
                                                            "$(Configuration)") + "\\"),
-                            XmlNode("IntDir", os.path.join("Intermediate", "$(Platform)", "$(Configuration)",
-                                                           "$(ProjectName)") + "\\"),
+                            XmlNode("IntDir", os.path.join("Intermediate", "$(ProjectName)",
+                                                           "$(Platform)", "$(Configuration)") + "\\"),
                         ),
                         {"Condition": "'$(Configuration)|$(Platform)'=='%s|%s'" % (c, p)}))
 
@@ -292,7 +292,7 @@ class VS2019Generator(base_generator.BaseGenerator):
                         "PropertyGroup",
                         (
                             XmlNode("DebuggerFlavor", "WindowsLocalDebugger"),
-                            XmlNode("LocalDebuggerWorkingDirectory", ""),
+                            XmlNode("LocalDebuggerWorkingDirectory", global_states.install_root),
                         ),
                         {"Condition": cond_str},
                     )

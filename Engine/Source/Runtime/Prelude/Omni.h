@@ -16,7 +16,7 @@
 #endif
 
 
-////compiler
+////////////////////////////////compiler
 #define OMNI_CLANG __clang__
 #define OMNI_MSVC (!OMNI_CLANG) && _MSC_VER
 #if !(OMNI_CLANG || OMNI_MSVC)

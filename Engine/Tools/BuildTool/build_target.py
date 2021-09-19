@@ -4,8 +4,8 @@ import uuid
 import global_states
 
 BUILD_RULE_SUFFIX = ".Build.py"
-SOURCE_CXX_SUFFIXES = {".c", ".cpp", "cxx"}
-HEADER_CXX_SUFFIXES = {".h", ".hpp", "hxx"}
+SOURCE_CXX_SUFFIXES = {".c", ".cpp", ".cxx", ".cc"}
+HEADER_CXX_SUFFIXES = {".h", ".hpp", ".hxx", ".hh"}
 
 FILE_TYPE_SOURCE = "FILE_TYPE_SOURCE"
 FILE_TYPE_HEADER = "FILE_TYPE_HEADER"
@@ -57,6 +57,19 @@ def default_cpp_rule(relative_path):
     return FILE_TYPE_IGNORED
 
 
+def default_runtime_rule(relative_path):
+    if relative_path.find("_UnitTest") != -1:
+        return FILE_TYPE_IGNORED
+    return default_cpp_rule(relative_path)
+
+
+def default_unittest_rule(relative_path):
+    if relative_path.find("_UnitTest") != -1:
+        return default_cpp_rule(relative_path)
+    else:
+        return FILE_TYPE_IGNORED
+
+
 class BuildTarget(object):
     def __init__(self, build_file_path):
         self.build_file_path = build_file_path
@@ -67,16 +80,14 @@ class BuildTarget(object):
         self.public_includes = ["."]
         self.private_includes = []
         self.files = []
-        self.guid = uuid.uuid5(uuid.NAMESPACE_URL, build_file_path)
+        self.guid = uuid.uuid5(uuid.NAMESPACE_URL, build_file_path + self.__class__.__name__)
+        print("%s's guid:%s" % (self.get_name(), self.guid))
 
     def get_relative_path(self, p):
         return os.path.relpath(p, self.base_dir)
 
     def get_name(self):
         return self.__class__.__name__
-
-    def get_build_file_path(self):
-        return self.build_file_path
 
     def add_target(self, relative_path):
         global_states.collector.add_target(os.path.join(self.base_dir, relative_path))
@@ -88,7 +99,7 @@ class BuildTarget(object):
         relative_path = os.path.relpath(self.base_dir + self.get_lib_name(), global_states.source_root)
         return os.path.join(root, relative_path)
 
-    def setup_build_files(self, rule_func=None):
-        rule_func = default_cpp_rule if rule_func is None else rule_func
+    def setup_build_files(self, rule_func):
         self.files = enumerate_input_files(self.base_dir, rule_func)
+
 
