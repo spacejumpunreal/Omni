@@ -1,14 +1,13 @@
 # -*- encoding: utf-8 -*-
 import global_states
 import build_target
-import re
 
 
 class PlayGround(build_target.BuildTarget):
-    def __init__(self, base_dir):
-        super(PlayGround, self).__init__(base_dir)
-        self.is_library = False
+    def __init__(self, build_file_path):
+        super(PlayGround, self).__init__(build_file_path)
+        self.target_type = build_target.TARGET_TYPE_DEFAULT_LIBRARY
+        self.group = "Program"
         self.dependencies.append("Runtime")
-        self.order = -1
-        if global_states.target_platform == global_states.TARGET_IOS:
-            self.source_suffixes.append(build_target.OBJC_SOURCE_SUFFIXES)
+        self.setup_build_files()
+

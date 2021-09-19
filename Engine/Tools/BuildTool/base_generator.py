@@ -1,15 +1,10 @@
 # -*- encoding: utf-8 -*-
 import os
-import shutil
 
 
 class BaseGenerator(object):
-    def __init__(self, collector, launch_dir, build_dir, solution_path):
+    def __init__(self, collector):
         self._targets = collector.targets
-        self._source_root_dir = collector.root_dir
-        self._launch_dir = launch_dir
-        self._build_dir = build_dir
-        self._solution_path = solution_path
 
     def get_all_dependencies(self, target):
         q = [target]
@@ -26,11 +21,12 @@ class BaseGenerator(object):
         return all_deps
 
     def get_dependent_include_paths(self, target):
-        paths = []
+        paths = set()
         for p in target.dependencies:
-            paths += self._targets[p].exported_dirs
-        if target.include_source_dir:
-            paths.append(self._source_root_dir)
+            dependent_target = self._targets[p]
+            for pinclude in dependent_target.public_includes:
+                if not os.path.isabs(pinclude):
+                    paths.add(os.path.join(target.base_dir, pinclude))
         return paths
 
     @staticmethod

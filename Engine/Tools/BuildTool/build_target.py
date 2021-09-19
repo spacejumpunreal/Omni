@@ -1,60 +1,73 @@
 # -*- encoding: utf-8 -*-
 import os
-import re
 import uuid
-
+import global_states
 
 BUILD_RULE_SUFFIX = ".Build.py"
-DEFAULT_SOURCE_SUFFIXES = re.compile(r".*\.(c|(cpp))$"),
-DEFAULT_HEADER_SUFFIXES = re.compile(r".*\.h"),
-OBJC_SOURCE_SUFFIXES = re.compile(r".*\.((mm)|m)$")
+SOURCE_CXX_SUFFIXES = {".c", ".cpp", "cxx"}
+HEADER_CXX_SUFFIXES = {".h", ".hpp", "hxx"}
+
+FILE_TYPE_SOURCE = "FILE_TYPE_SOURCE"
+FILE_TYPE_HEADER = "FILE_TYPE_HEADER"
+FILE_TYPE_RESOURCE = "FILE_TYPE_RESOURCE"
+FILE_TYPE_OTHER = "FILE_TYPE_OTHER"
+FILE_TYPE_IGNORED = None
+
+TARGET_TYPE_STATIC_LIBRARY = "StaticLibrary"
+TARGET_TYPE_DYNAMIC_LIBRARY = "DynamicLibrary"
+TARGET_TYPE_DEFAULT_LIBRARY = "Library"
+TARGET_TYPE_DUMMY = "Dummy"
+TARGET_TYPE_APP = "Application"
+
+BUILD_RULES_NAME = "BUILD_RULES"
 
 
-def is_parent_of(directory, path):
-    return os.path.join(path, "").startswith(os.path.join(directory, ""))
+def enumerate_input_files(base_dir, rule_func):
+    ret = {FILE_TYPE_SOURCE: [], FILE_TYPE_HEADER: [], FILE_TYPE_RESOURCE: []}
+    for root, _, files in os.walk(base_dir):
+        for filename in files:
+            full_path = os.path.join(root, filename)
+            rpath = os.path.relpath(full_path, base_dir)
+            tp = rule_func(rpath)
+            if tp is not FILE_TYPE_IGNORED:
+                file_list = ret.get(tp)
+                if file_list:
+                    file_list.append(full_path)
+                else:
+                    ret[tp] = [full_path]
+    return ret
+
+
+def exclude_regex(path, reg):
+    return reg.match(path) is not None
+
+
+def path_ends_with_any_of(filepath, suffixes):
+    splits = os.path.splitext(filepath)
+    return splits[1] in suffixes
+
+
+def default_cpp_rule(relative_path):
+    splits = os.path.splitext(relative_path)
+    ext = splits[1]
+    if ext in SOURCE_CXX_SUFFIXES:
+        return FILE_TYPE_SOURCE
+    if ext in HEADER_CXX_SUFFIXES:
+        return FILE_TYPE_HEADER
+    return FILE_TYPE_IGNORED
 
 
 class BuildTarget(object):
-    def __init__(self, base_dir):
-        self.is_library = True
-        self.include_source_dir = True
-        self.base_dir = base_dir
+    def __init__(self, build_file_path):
+        self.build_file_path = build_file_path
+        self.target_type = TARGET_TYPE_DUMMY
+        self.group = ""
+        self.base_dir = os.path.dirname(build_file_path)
         self.dependencies = []
-        self.exported_dirs = []
-        self.excluded_paths = []
-        self.guid = uuid.uuid4()
-        self.order = 0
-        self.source_suffixes = list(DEFAULT_SOURCE_SUFFIXES)
-        self.header_suffixes = list(DEFAULT_HEADER_SUFFIXES)
-
-    def collect_source_files(self):
-        headers = []
-        source = []
-        full_exclude_paths = map(lambda p: os.path.join(self.base_dir, p), self.excluded_paths)
-        for root, _, files in os.walk(self.base_dir):
-            skip = False
-            for epath in full_exclude_paths:
-                if is_parent_of(epath, root):
-                    skip = True
-                    break
-            if skip:
-                continue
-            for fn in files:
-                full_path = os.path.join(root, fn)
-                ok = False
-                for pat in self.source_suffixes:
-                    if pat.match(fn):
-                        source.append(full_path)
-                        ok = True
-                        break
-                if ok:
-                    continue
-
-                for pat in self.header_suffixes:
-                    if pat.match(fn):
-                        headers.append(full_path)
-                        break
-        return source, headers
+        self.public_includes = ["."]
+        self.private_includes = []
+        self.files = []
+        self.guid = uuid.uuid5(uuid.NAMESPACE_URL, build_file_path)
 
     def get_relative_path(self, p):
         return os.path.relpath(p, self.base_dir)
@@ -63,4 +76,19 @@ class BuildTarget(object):
         return self.__class__.__name__
 
     def get_build_file_path(self):
-        return os.path.join(self.base_dir, ("%s." + BUILD_RULE_SUFFIX) % self.get_name())
+        return self.build_file_path
+
+    def add_target(self, relative_path):
+        global_states.collector.add_target(os.path.join(self.base_dir, relative_path))
+
+    def get_lib_name(self):
+        return "lib" + self.get_name()
+
+    def get_lib_path(self, root):
+        relative_path = os.path.relpath(self.base_dir + self.get_lib_name(), global_states.source_root)
+        return os.path.join(root, relative_path)
+
+    def setup_build_files(self, rule_func=None):
+        rule_func = default_cpp_rule if rule_func is None else rule_func
+        self.files = enumerate_input_files(self.base_dir, rule_func)
+

@@ -1,0 +1,17 @@
+# Dependency Levels
+## Prelude
+- definition: global headers expected to be included by everyone(internal or external)
+- examples: typedefs, platform configs, util macro definitions(disable warning)
+## Base
+- definition: utils function/types, must be global stateless, no static nonconsts
+- examples: lock, containers
+## Core
+- definition: leaf level singletons that provides service
+- examples: allocator module, concurrent module, system
+## Hosted
+- definition: non leaf level singletons that provides service
+- example: animation, GpuApi
+
+# Platform
+- platform-agnostic: containers
+- platform-specific: NativeFileOps, GUIWindow, warning

@@ -13,9 +13,8 @@ class XcodeGenerator(base_generator.BaseGenerator):
     EXT_XCODEPROJ = ".xcodeproj"
     app_storyboard_files = ["LaunchScreen.storyboard", "Main.storyboard"]
 
-    def __init__(self, collector, launch_dir, build_dir, solution_path, ios_resource_dir):
-        super(XcodeGenerator, self).__init__(collector, launch_dir, build_dir, solution_path)
-        self._ios_resource_dir = ios_resource_dir
+    def __init__(self, collector):
+        super(XcodeGenerator, self).__init__(collector)
 
     def run(self):
         if os.path.exists(self._build_dir):

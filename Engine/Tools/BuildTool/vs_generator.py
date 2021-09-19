@@ -5,6 +5,8 @@ import shutil
 import _winreg
 import base_generator
 from xml_utils import XmlNode
+import global_states
+import build_target
 
 
 VCXPROJ_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
@@ -106,30 +108,29 @@ def get_latest_windows_sdk_version():
 
 
 class VS2019Generator(base_generator.BaseGenerator):
+    def __init__(self, collector):
+        super(VS2019Generator, self).__init__(collector)
+        self._solution_path = os.path.join(global_states.project_root, global_states.project_name + ".vs2019.sln")
+        self._intermediate_dir = os.path.join(global_states.build_root, "Intermediate")
+
     def run(self):
-        if not os.path.exists(self._build_dir):
-            os.makedirs(self._build_dir)
-        # this is where VS place all intermediate binary files, clean them to avoid warning
-        # since we create random GUIDs on every run
-        intermediate_dir = os.path.join(self._build_dir, "Intermediate")
-        if os.path.exists(intermediate_dir):
-            shutil.rmtree(intermediate_dir, True)
         generated_vcxproj_files = []
         for _, target in self._targets.iteritems():
-            vcxproj_file = os.path.join(self._build_dir, self._get_vcxproj_file_name(target))
+            vcxproj_file = os.path.join(global_states.build_root, self._get_vcxproj_file_name(target))
             generated_vcxproj_files.append((target, vcxproj_file))
-            source, headers = target.collect_source_files()
-            self._generate_vcxproj_file(target, source, headers, vcxproj_file)
-            self._generate_filter_file(target, source, headers)
+            self._generate_vcxproj_file(target, vcxproj_file)
+            self._generate_filter_file(target)
             self._generate_user_file(target)
         self._generate_sln(generated_vcxproj_files)
 
-    def _generate_vcxproj_file(self, target, source, headers, vcxproj_file_path):
+    def _generate_vcxproj_file(self, target, vcxproj_file_path):
         prj_config = XmlNode("ItemGroup", (), {"Label": "ProjectConfigurations"})
         property_group_configs = []
         import_group_infos = []
         item_definition_group_configs = []
-        target_type = "StaticLibrary" if target.is_library else "Application"
+        target_type = target.target_type \
+            if target.target_type != build_target.TARGET_TYPE_DEFAULT_LIBRARY \
+            else global_states.default_library_type
         all_deps = self.get_all_dependencies(target)
 
         for c in Configurations:
@@ -154,7 +155,8 @@ class VS2019Generator(base_generator.BaseGenerator):
                             XmlNode("PlatformToolset", PlatformToolset),
                             XmlNode("WholeProgramOptimization", is_not_debug),
                             XmlNode("CharacterSet", "Unicode"),
-                            XmlNode("OutDir", os.path.join("..", "Binaries", p) + '\\'),
+                            XmlNode("OutDir", os.path.join(global_states.install_root, "$(Platform)",
+                                                           "$(Configuration)") + "\\"),
                             XmlNode("IntDir", os.path.join("Intermediate", "$(Platform)", "$(Configuration)",
                                                            "$(ProjectName)") + "\\"),
                         ),
@@ -172,10 +174,9 @@ class VS2019Generator(base_generator.BaseGenerator):
                 # ItemDefinitionGroup
                 is_debug = c == "Debug"
                 cp = {"Condition": "'$(Configuration)|$(Platform)'=='%s|%s'" % (c, p)}
-                macros = ["_DEBUG" if is_debug else "NDEBUG"]
-                macros.append("%(PreprocessorDefinitions)")
+                macros = ["_DEBUG" if is_debug else "NDEBUG", "%(PreprocessorDefinitions)"]
                 abs_inc_dirs = self.get_dependent_include_paths(target)
-                additional_include_directories = [os.path.relpath(d, self._build_dir) for d in abs_inc_dirs]
+                additional_include_directories = [os.path.relpath(d, global_states.build_root) for d in abs_inc_dirs]
                 additional_include_directories.append("%(AdditionalIncludeDirectories)")
                 additional_link_libs = ["mincore.lib", "d3d12.lib", "dxgi.lib", "d3dcompiler.lib", "%(AdditionalDependencies)"]
                 clcompile = XmlNode("ClCompile", (
@@ -199,13 +200,14 @@ class VS2019Generator(base_generator.BaseGenerator):
         def create_item_group(tag, files):
             root = XmlNode("ItemGroup", ())
             for f in files:
-                root.append(XmlNode(tag, (), {"Include": os.path.relpath(f, self._build_dir)}))
+                root.append(XmlNode(tag, (), {"Include": os.path.relpath(f, global_states.build_root)}))
             return root
 
-        item_group_clcompile = create_item_group("ClCompile", source)
-        item_group_clinclude = create_item_group("ClInclude", headers)
+        item_group_clcompile = create_item_group("ClCompile", target.files[build_target.FILE_TYPE_SOURCE])
+        item_group_clinclude = create_item_group("ClInclude", target.files[build_target.FILE_TYPE_HEADER])
+        # TODO: add resources
 
-        nones = [target.get_build_file_path()]
+        nones = [target.build_file_path]
         item_group_none = create_item_group("None", nones)
 
         item_group_project_reference = XmlNode("ItemGroup", ())
@@ -235,7 +237,7 @@ class VS2019Generator(base_generator.BaseGenerator):
         with open(vcxproj_file_path, "wb") as wf:
             wf.write(content)
 
-    def _generate_filter_file(self, target, source, headers):
+    def _generate_filter_file(self, target):
         used_filters = set()
 
         def add_all_parents_for_path(pth, st):
@@ -252,22 +254,22 @@ class VS2019Generator(base_generator.BaseGenerator):
                     add_all_parents_for_path(rp, used_filters)
                 children.append(XmlNode(tag, (
                     XmlNode("Filter", rp),
-                ), {"Include": os.path.relpath(f, self._build_dir)}))
+                ), {"Include": os.path.relpath(f, global_states.build_root)}))
             return XmlNode("ItemGroup", children)
-        item_group_sources = create_item_group_and_collect_filter("ClCompile", source)
-        item_group_filters = create_item_group_and_collect_filter("ClInclude", headers)
+        item_group_sources = create_item_group_and_collect_filter("ClCompile", target.files[build_target.FILE_TYPE_SOURCE])
+        item_group_filters = create_item_group_and_collect_filter("ClInclude", target.files[build_target.FILE_TYPE_HEADER])
 
         def create_item_group_filters():
             children = []
             for f in used_filters:
                 child = XmlNode("Filter", (
-                    XmlNode("UniqueIdentifier", "{%s}" % uuid.uuid4()),
+                    XmlNode("UniqueIdentifier", "{%s}" % uuid.uuid5(uuid.NAMESPACE_URL, f)),
                 ), {"Include": f})
                 children.append(child)
             return XmlNode("ItemGroup", children)
         item_group_includes = create_item_group_filters()
         item_group_build_file = XmlNode("ItemGroup", (
-                XmlNode("None", "", {"Include": os.path.relpath(self._build_dir, target.get_build_file_path())}),
+                XmlNode("None", "", {"Include": os.path.relpath(global_states.build_root, target.build_file_path)}),
             ))
 
         content = FILTER_TEMPLATE.format(
@@ -276,7 +278,7 @@ class VS2019Generator(base_generator.BaseGenerator):
             ItemGroupIncludes=item_group_includes.format(Indent, 1),
             ItemGroupBuildFile=item_group_build_file.format(Indent, 1),
         )
-        filter_file = os.path.join(self._build_dir, self._get_filter_file_name(target))
+        filter_file = os.path.join(global_states.build_root, self._get_filter_file_name(target))
         with open(filter_file, "wb") as wf:
             wf.write(content)
 
@@ -290,7 +292,7 @@ class VS2019Generator(base_generator.BaseGenerator):
                         "PropertyGroup",
                         (
                             XmlNode("DebuggerFlavor", "WindowsLocalDebugger"),
-                            XmlNode("LocalDebuggerWorkingDirectory", self._launch_dir),
+                            XmlNode("LocalDebuggerWorkingDirectory", ""),
                         ),
                         {"Condition": cond_str},
                     )
@@ -300,12 +302,11 @@ class VS2019Generator(base_generator.BaseGenerator):
         content = USER_TEMPLATE.format(
             PropertyGroups=create_item_group_users()
         )
-        user_file_name = os.path.join(self._build_dir, self.get_user_file_name(target))
+        user_file_name = os.path.join(global_states.build_root, self.get_user_file_name(target))
         with open(user_file_name, "wb") as wf:
             wf.write(content)
 
     def _generate_sln(self, generated_projects):
-
         # SolutionConfigurationPlatforms
         frags = []
         for c in Configurations:
@@ -329,11 +330,13 @@ class VS2019Generator(base_generator.BaseGenerator):
         path2guid = {}
         nested_projects = []
         for t in self._targets.itervalues():
-            target_dir_rp = os.path.relpath(os.path.dirname(t.base_dir), self._source_root_dir)
+            if t.group == "":
+                t.group = os.path.relpath(os.path.dirname(t.base_dir), global_states.source_root)
+            target_dir_rp = t.group
             if target_dir_rp and target_dir_rp != '.':
                 guid = path2guid.get(target_dir_rp, None)
                 if guid is None:
-                    guid = uuid.uuid4()  # a directory, assign guid for it
+                    guid = uuid.uuid5(uuid.NAMESPACE_URL, target_dir_rp)  # a directory, assign guid for it
                     path2guid[target_dir_rp] = guid
                 nested_projects.append("\t\t{%s} = {%s}\n" % (str(t.guid).upper(), str(guid).upper()))
 
@@ -342,13 +345,12 @@ class VS2019Generator(base_generator.BaseGenerator):
             s = 'Project("{%s}") = "%s", "%s", "{%s}"\nEndProject\n' % (
                 "2150E333-8FDC-42A3-9474-1A3956D46DE8", path, path, str(guid).upper())
             frags.append(s)
-        solution_parent = os.path.dirname(self._solution_path)
         sorted_prj_files = sorted(generated_projects, key=lambda x: x[1])
         for target, vcxproj_file in sorted_prj_files:
             s = 'Project("{ProjectType}") = "{TargetName}", "{VCXProjPath}", "{PrjGUID}"\nEndProject\n'.format(
                 ProjectType="{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}",
                 TargetName=self.get_target_name(target),
-                VCXProjPath=os.path.relpath(vcxproj_file, solution_parent),
+                VCXProjPath=os.path.relpath(vcxproj_file, global_states.project_root),
                 PrjGUID="{%s}" % str(target.guid).upper()
             )
             frags.append(s)
@@ -359,7 +361,7 @@ class VS2019Generator(base_generator.BaseGenerator):
             SolutionConfigurationPlatforms=solution_config_platform_block,
             ProjectConfigurationPlatforms=project_config_platform_block,
             NestedProjects="".join(nested_projects),
-            SolutionGUID="{%s}" % uuid.uuid4(),
+            SolutionGUID="{%s}" % uuid.uuid5(uuid.NAMESPACE_URL, global_states.project_name),
         )
         with open(self._solution_path, "wb") as wf:
             wf.write(content)

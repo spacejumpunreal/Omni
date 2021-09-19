@@ -1,21 +1,22 @@
 # -*- encoding: utf-8 -*-
 import os
-import collector
+import target_collector
+import platform_utils
+import global_states
+import build_target
 
 
-def generate_vs_project(root_dir, debug_dir, build_dir, solution_path):
-    import vs_generator
-    c = collector.Collector(root_dir)
-    c.run()
-    g = vs_generator.VS2019Generator(c, debug_dir, build_dir, solution_path)
-    g.run()
-
-
-def generate_xcode_project(root_dir, debug_dir, build_dir, solution_path):
-    import xcode_generator
-    c = collector.Collector(root_dir)
-    c.run()
-    tool_dir = os.path.dirname(os.path.abspath(__file__))
-    g = xcode_generator.XcodeGenerator(c, debug_dir, build_dir, solution_path, os.path.join(tool_dir, "ToolResources"))
-    g.run()
+def generate_project():
+    c = target_collector.TargetCollector(global_states.source_root)
+    global_states.collector = c
+    top_file = os.path.join(global_states.source_root, global_states.project_name + build_target.BUILD_RULE_SUFFIX)
+    c.run(top_file)
+    if global_states.target_platform == platform_utils.PLATFORM_WINDOWS:
+        import vs_generator
+        generator = vs_generator.VS2019Generator(c)
+        generator.run()
+    elif global_states.target_platform == platform_utils.PLATFORM_IOS:
+        import xcode_generator
+        generator = xcode_generator.XcodeGenerator(c)
+        generator.run()
 

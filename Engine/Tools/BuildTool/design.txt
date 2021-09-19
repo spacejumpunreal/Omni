@@ -1,0 +1,4 @@
+# procedure
+- 1st phase: enumerate all targets
+- 2nd phase: each target config itself without refering to other targets, can only read some global flags
+- 3rd phase: each target generates it's build files
