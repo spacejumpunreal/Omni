@@ -93,7 +93,6 @@ class BuildTarget(object):
         self.custom_export_define = None
         self.custom_import_define = None
         self.guid = uuid.uuid5(uuid.NAMESPACE_URL, build_file_path + self.__class__.__name__)
-        print("%s's guid:%s" % (self.get_name(), self.guid))
 
     def complete(self):
         self_name = self.get_name().upper()

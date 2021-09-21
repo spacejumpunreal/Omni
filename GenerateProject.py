@@ -20,7 +20,7 @@ def main():
     is_win = platform_utils.calc_target_platform(None) == platform_utils.PLATFORM_WINDOWS
     default_library_type = build_target.TARGET_TYPE_DYNAMIC_LIBRARY if is_win \
         else build_target.TARGET_TYPE_STATIC_LIBRARY
-    default_library_type = build_target.TARGET_TYPE_STATIC_LIBRARY  # force all library
+    # default_library_type = build_target.TARGET_TYPE_STATIC_LIBRARY  # force all library
     global_states.setup(project_name, source_root, build_root, pwd, install_root, force_platform, default_library_type)
     build_tool.generate_project()
 
