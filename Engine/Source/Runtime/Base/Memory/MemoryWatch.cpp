@@ -1,3 +1,4 @@
+#include "BasePCH.h"
 #include "Memory/MemoryWatch.h"
 
 namespace Omni

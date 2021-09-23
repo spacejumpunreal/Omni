@@ -29,6 +29,8 @@ BUILD_RULES_NAME = "BUILD_RULES"
 PUBLIC_ITEMS = 1
 PRIVATE_ITEMS = 2
 
+PCH_SUFFIX = ".pch"
+
 
 def enumerate_input_files(base_dir, rule_func):
     ret = {FILE_TYPE_SOURCE: [], FILE_TYPE_HEADER: [], FILE_TYPE_RESOURCE: []}
@@ -92,6 +94,7 @@ class BuildTarget(object):
         self.private_defines = []
         self.custom_export_define = None
         self.custom_import_define = None
+        self.pch = None
         self.guid = uuid.uuid5(uuid.NAMESPACE_URL, build_file_path + self.__class__.__name__)
 
     def complete(self):
@@ -148,5 +151,10 @@ class BuildTarget(object):
         if global_states.default_library_type == TARGET_TYPE_DYNAMIC_LIBRARY:
             self.add_macro_define(export_def, PRIVATE_ITEMS)
             self.add_macro_define(import_def, PUBLIC_ITEMS)
+
+    def use_pch(self, header, source):
+        self.pch = header, source
+
+
 
 

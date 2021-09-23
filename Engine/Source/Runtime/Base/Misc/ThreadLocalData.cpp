@@ -1,3 +1,4 @@
+#include "BasePCH.h"
 #include "ThreadLocalData.h"
 #include "AssertUtils.h"
 

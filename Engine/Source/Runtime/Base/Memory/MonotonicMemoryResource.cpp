@@ -1,4 +1,4 @@
-#pragma once
+#include "BasePCH.h"
 #include "Memory/MonotonicMemoryResource.h"
 #include "Misc/ArrayUtils.h"
 #include "Misc/AssertUtils.h"

@@ -200,7 +200,10 @@ class VS2019Generator(base_generator.BaseGenerator):
                     XmlNode("AdditionalIncludeDirectories", ";".join(additional_include_directories)),
                     XmlNode("LanguageStandard", "stdcpplatest"),
                     XmlNode("EnableEnhancedInstructionSet", "AdvancedVectorExtensions2"),
-                    XmlNode("TreatWarningAsError", "true"),))
+                    XmlNode("TreatWarningAsError", "true"),
+                    XmlNode("PrecompiledHeader", "Use" if target.pch else "NotUsing"),
+                    XmlNode("PrecompiledHeaderFile", "" if target.pch is None else target.pch[0]),
+                ))
 
                 subsystem = {
                     build_target.TARGET_TYPE_CONSOLE_APP: "Console",
@@ -217,8 +220,12 @@ class VS2019Generator(base_generator.BaseGenerator):
 
         def create_item_group(tag, files):
             root = XmlNode("ItemGroup", ())
-            for f in files:
-                root.append(XmlNode(tag, (), {"Include": os.path.relpath(f, global_states.build_root)}))
+            for group_file in files:
+                inner_value = ()
+                if target.pch is not None and group_file.endswith(target.pch[1]):
+                    inner_value = XmlNode("PrecompiledHeader", "Create"), XmlNode("PrecompiledHeaderFile", "")
+                root.append(XmlNode(tag, inner_value,
+                                    {"Include": os.path.relpath(group_file, global_states.build_root)}))
             return root
 
         item_group_clcompile = create_item_group("ClCompile", target.files[build_target.FILE_TYPE_SOURCE])

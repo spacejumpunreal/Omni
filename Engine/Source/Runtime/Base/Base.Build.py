@@ -7,6 +7,7 @@ class Base(build_target.BuildTarget):
         super(Base, self).__init__(build_file_path)
         self.target_type = build_target.TARGET_TYPE_DEFAULT_LIBRARY
         self.setup_build_files(build_target.default_runtime_rule)
+        self.use_pch("BasePCH.h", "BasePCH.cpp")
         self.dependencies = ["Prelude"]
         
 
