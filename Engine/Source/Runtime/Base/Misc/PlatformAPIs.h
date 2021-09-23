@@ -1,10 +1,11 @@
 #pragma once
-#include "Runtime/Omni.h"
-#include "Runtime/Test/AssertUtils.h"
+#include "Omni.h"
+#include "BaseAPI.h"
+#include "Misc/AssertUtils.h"
 
 namespace Omni
 {
-	void PauseThread();
+	void BASE_API PauseThread();
 
 	static constexpr u64 TaggedPointerTagBegin = 48;
 	static constexpr u64 TaggedPointerTagRange = 16;

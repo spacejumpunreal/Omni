@@ -1,11 +1,11 @@
 #pragma once
-#include "Runtime/Omni.h"
+#include "BaseAPI.h"
 
 namespace Omni
 {
     struct SListNode;
 
-    class Queue
+    class BASE_API Queue
     {
     public:
         Queue();

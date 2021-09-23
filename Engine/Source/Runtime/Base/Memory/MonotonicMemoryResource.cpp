@@ -1,8 +1,9 @@
 #pragma once
-#include "Runtime/Memory/MonotonicMemoryResource.h"
-#include "Runtime/Misc/ArrayUtils.h"
-#include "Runtime/Test/AssertUtils.h"
+#include "Memory/MonotonicMemoryResource.h"
+#include "Misc/ArrayUtils.h"
+#include "Misc/AssertUtils.h"
 #include <cstdlib>
+#include <cstring>
 
 namespace Omni
 {
@@ -38,7 +39,7 @@ namespace Omni
     {
         --mUseCount;
     }
-    bool MonotonicMemoryResource::do_is_equal(const STD_PMR_NS::memory_resource& other) const noexcept
+    bool MonotonicMemoryResource::do_is_equal(const StdPmr::memory_resource& other) const noexcept
     {
         return this == &other;
     }

@@ -1,11 +1,11 @@
 #pragma once
-
+#include "Omni.h"
 #define ARRAY_LENGTH(a) (sizeof(a) / sizeof(a[0]))
 
 namespace Omni
 {
 	template<typename T>
-	static FORCEINLINE T AlignUpSize(T size, T align)
+	static constexpr FORCEINLINE T AlignUpSize(T size, T align)
 	{
 		return (size + align - 1) & (~(align - 1));
 	}

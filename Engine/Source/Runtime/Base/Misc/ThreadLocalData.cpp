@@ -1,9 +1,8 @@
-#include "Runtime/Misc/ThreadLocalData.h"
-#include "Runtime/Test/AssertUtils.h"
+#include "ThreadLocalData.h"
+#include "AssertUtils.h"
 
 #if OMNI_WINDOWS
 #include <windows.h> 
-#else
 #endif
 
 namespace Omni

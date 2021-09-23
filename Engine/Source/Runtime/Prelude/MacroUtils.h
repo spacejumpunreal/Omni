@@ -63,18 +63,22 @@
 #define OMNI_EMPTY()
 #define OMNI_DEFER(m) m OMNI_EMPTY()
 #define OMNI_DEFER2(m) m OMNI_EMPTY OMNI_EMPTY()()
-#define OMNI_MAP(m, first, ...)\
+#define OMNI_DEFER4(m) m OMNI_EMPTY OMNI_EMPTY OMNI_EMPTY OMNI_EMPTY()()()()
+
+
+#define OMNI_MAP(...) __OMNI_MAP(__VA_ARGS__)
+#define __OMNI_MAP(m, first, ...)\
     m(first)\
     OMNI_IF(OMNI_HAS_VA(__VA_ARGS__))(\
         OMNI_DEFER2(_OMNI_MAP)()(m, __VA_ARGS__))
+#define _OMNI_MAP() __OMNI_MAP
 
-#define _OMNI_MAP() OMNI_MAP
 
-#define OMNI_CONFIG_LIST(condition, value, ...)\
+#define OMNI_CONFIG_LIST(...) OMNI_EVAL(__OMNI_CONFIG_LIST(__VA_ARGS__))
+#define __OMNI_CONFIG_LIST(condition, value, ...)\
     OMNI_IF_ELSE(condition)(value)(\
         OMNI_IF(OMNI_HAS_VA(__VA_ARGS__))(\
             OMNI_DEFER2(_OMNI_CONFIG_LIST)()(__VA_ARGS__)\
     ))
-
-#define _OMNI_CONFIG_LIST() OMNI_CONFIG_LIST
+#define _OMNI_CONFIG_LIST() __OMNI_CONFIG_LIST
 

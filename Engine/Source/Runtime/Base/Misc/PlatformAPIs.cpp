@@ -1,5 +1,5 @@
-#include "Runtime/Platform/PlatformAPIs.h"
-#include "Runtime/Misc/ArrayUtils.h"
+#include "Misc/PlatformAPIs.h"
+#include "Misc/ArrayUtils.h"
 
 #if OMNI_WINDOWS
 #include <Windows.h>

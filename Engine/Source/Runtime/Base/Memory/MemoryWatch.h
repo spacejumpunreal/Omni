@@ -1,6 +1,6 @@
 #pragma once
-#include "Runtime/Omni.h"
-#include "Runtime/Memory/MemoryDefs.h"
+#include "Omni.h"
+#include "Memory/MemoryDefs.h"
 #include <atomic>
 
 namespace Omni

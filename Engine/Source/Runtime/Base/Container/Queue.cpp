@@ -1,5 +1,5 @@
-#include "Runtime/Misc/ContainerUtils.h"
-#include "Runtime/Misc/LinkedListUtils.h"
+#include "Queue.h"
+#include "LinkedList.h"
 
 namespace Omni
 {

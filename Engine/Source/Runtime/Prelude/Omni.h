@@ -27,8 +27,12 @@
 
 
 ////////////////////////////////configs
-#define OMNI_DEFAULT_ALIGNMENT 16
-#define OMNI_DEBUG NDEBUG
+#if _DEBUG
+#define OMNI_DEBUG 1
+#else
+#define OMNI_DEBUG 0
+#endif
+
 
 ////////////////////////////////aliases
 namespace Omni
@@ -43,7 +47,5 @@ namespace Omni
 	using i8 = int8_t;
 	using f32 = float;
 	using f64 = double;
-	using usize = size_t;
 }
-#define StdPMR OMNI_CONFIG_LIST(OMNI_CLANG, std::experiemntal::pmr, OMNI_ANY, std::pmr)
 

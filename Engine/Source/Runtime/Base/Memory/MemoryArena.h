@@ -1,7 +1,8 @@
 #pragma once
-#include "Runtime/Omni.h"
-#include "Runtime/Misc/ArrayUtils.h"
-#include "Runtime/Test/AssertUtils.h"
+#include "Omni.h"
+#include "PlatformDefs.h"
+#include "Misc/ArrayUtils.h"
+#include "Misc/AssertUtils.h"
 
 namespace Omni
 {
@@ -21,8 +22,8 @@ namespace Omni
 	class ScratchStack
 	{
 	public:
-		static const u32 MaxDepth = 16;
-		static const u32 Alignment = OMNI_DEFAULT_ALIGNMENT;
+		static constexpr u32 MaxDepth = 16;
+		static constexpr u32 Alignment = OMNI_DEFAULT_ALIGNMENT;
 	public:
 		ScratchStack();
 		void Reset(u8* ptr, u32 size);

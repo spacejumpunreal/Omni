@@ -1,7 +1,7 @@
-#include "Runtime/Memory/WrapperAllocator.h"
-#include "Runtime/Memory/MemoryWatch.h"
-#include "Runtime/Misc/ArrayUtils.h"
-#include "Runtime/Misc/PrivateData.h"
+#include "Memory/WrapperAllocator.h"
+#include "Memory/MemoryWatch.h"
+#include "Misc/ArrayUtils.h"
+#include "Misc/PrivateData.h"
 
 #include <atomic>
 
@@ -30,7 +30,7 @@ namespace Omni
 		}
 	public:
 		MemoryWatch						mWatch;
-		STD_PMR_NS::memory_resource&		mFallback;
+		STD_PMR_NS::memory_resource&	mFallback;
 		const char*						mName;
 	};
 	WrapperAllocator::WrapperAllocator(STD_PMR_NS::memory_resource& memResource, const char* name)

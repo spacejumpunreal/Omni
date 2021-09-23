@@ -86,7 +86,7 @@ class BuildTarget(object):
         self.base_dir = os.path.dirname(build_file_path)
         self.dependencies = []
         self.public_includes = ["."]
-        self.private_includes = []
+        self.private_includes = ["."]
         self.files = []
         self.public_defines = []
         self.private_defines = []

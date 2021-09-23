@@ -1,5 +1,5 @@
-#include "Runtime/Omni.h"
-#include "Runtime/Memory/MemoryArena.h"
+#include "Omni.h"
+#include "Memory/MemoryArena.h"
 #include <cstring>
 namespace Omni
 {

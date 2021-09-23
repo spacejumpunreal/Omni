@@ -1,6 +1,10 @@
-#include "Runtime/Omni.h"
-#include "Runtime/Test/AssertUtils.h"
+#include "Omni.h"
+#include "Misc/AssertUtils.h"
+#include <cassert>
+#if OMNI_WINDOWS
 #include <Windows.h>
+#endif
+
 namespace Omni
 {
     void BreakAndCrash(volatile int* p)

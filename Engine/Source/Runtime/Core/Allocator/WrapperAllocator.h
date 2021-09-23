@@ -1,7 +1,7 @@
 #pragma once
-#include "Runtime/Omni.h"
-#include "Runtime/Memory/IAllocator.h"
-#include "Runtime/Misc/PrivateData.h"
+#include "Omni.h"
+#include "Allocator/IAllocator.h"
+#include "Misc/PrivateData.h"
 
 
 namespace Omni

@@ -10,20 +10,20 @@ namespace Omni
 		static PImplCombine* GetCombinePtr(TInterface* tp) 
 		{ 
 			PImplCombine* p = (PImplCombine*)0x10000;
-			ptrdiff_t diff = ((u8*)p) - ((u8*)static_cast<TInterface*>(p));
-			return (PImplCombine*)((u8*)tp + diff);
+			ptrdiff_t diff = ((unsigned char*)p) - ((unsigned char*)static_cast<TInterface*>(p));
+			return (PImplCombine*)((unsigned char*)tp + diff);
 		}
 		static const PImplCombine* GetCombinePtr(const TInterface* tp)
 		{
 			PImplCombine* p = (PImplCombine*)0x10000;
-			ptrdiff_t diff = ((u8*)p) - ((u8*)static_cast<TInterface*>(p));
-			return (const PImplCombine*)((u8*)tp + diff);
+			ptrdiff_t diff = ((unsigned char*)p) - ((unsigned char*)static_cast<TInterface*>(p));
+			return (const PImplCombine*)((unsigned char*)tp + diff);
 		}
 		static PImplCombine* GetCombinePtr(TData* tp)
 		{
 			PImplCombine* p = (PImplCombine*)0x10000;
-			ptrdiff_t diff = ((u8*)p) - ((u8*)static_cast<TData*>(p));
-			return (PImplCombine*)((u8*)tp + diff);
+			ptrdiff_t diff = ((unsigned char*)p) - ((unsigned char*)static_cast<TData*>(p));
+			return (PImplCombine*)((unsigned char*)tp + diff);
 		}
 
 		static TData* GetData(TInterface* api) { return GetCombinePtr(api); }

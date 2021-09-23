@@ -1,4 +1,4 @@
-#include "Runtime/Memory/MemoryWatch.h"
+#include "Memory/MemoryWatch.h"
 
 namespace Omni
 {

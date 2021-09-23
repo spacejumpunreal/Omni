@@ -1,6 +1,8 @@
 #pragma once
-#include "Runtime/Omni.h"
-#include "Runtime/Test/AssertUtils.h"
+#include "Omni.h"
+#include "PlatformDefs.h"
+#include "SuppressWarning.h"
+#include "Misc/AssertUtils.h"
 
 namespace Omni
 {
@@ -11,7 +13,6 @@ namespace Omni
 		static constexpr size_t Size = TSize;
 	};
 
-	OMNI_MSVC_DISABLE_WARNING(4324);
 
 	template<size_t Size, size_t Align = OMNI_DEFAULT_ALIGNMENT>
 	struct alignas(Align) PrivateData
@@ -62,7 +63,6 @@ namespace Omni
 #endif
 	};
 
-	OMNI_RESET_WARNING();
 
 }
 
