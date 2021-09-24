@@ -9,6 +9,7 @@ namespace Omni
 {
     void BreakAndCrash(volatile int* p)
     {
+        OmniDebugBreak();
         *p = 0;
         if (p != nullptr)
             BreakAndCrash(nullptr);

@@ -1,6 +1,7 @@
-#include "Runtime/Concurrency/SpinLock.h"
-#include "Runtime/Test/AssertUtils.h"
-#include "Runtime/Platform/PlatformAPIs.h"
+#include "BasePCH.h"
+#include "MultiThread/SpinLock.h"
+#include "Misc/AssertUtils.h"
+#include "Misc/PlatformAPIs.h"
 
 namespace Omni
 {

@@ -19,7 +19,7 @@ namespace Omni
 		u32 mDepth;
 		friend class ScratchStack;
 	};
-	class ScratchStack
+	class BASE_API ScratchStack
 	{
 	public:
 		static constexpr u32 MaxDepth = 16;

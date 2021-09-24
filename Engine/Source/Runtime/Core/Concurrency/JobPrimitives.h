@@ -1,9 +1,9 @@
 #pragma once
-#include "Runtime/Omni.h"
-#include "Runtime/Concurrency/IShared.h"
-#include "Runtime/Misc/LinkedListUtils.h"
-#include "Runtime/Misc/PrivateData.h"
-#include "Runtime/Platform/PlatformDefs.h"
+#include "Omni.h"
+#include "MultiThread/IShared.h"
+#include "Container/LinkedList.h"
+#include "Misc/PrivateData.h"
+#include "PlatformDefs.h"
 
 namespace Omni
 {

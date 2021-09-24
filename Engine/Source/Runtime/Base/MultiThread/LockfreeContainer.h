@@ -1,6 +1,6 @@
 #pragma once
-#include "Runtime/Omni.h"
-#include "Runtime/Platform/PlatformDefs.h"
+#include "Omni.h"
+#include "PlatformDefs.h"
 #include <atomic>
 
 namespace Omni
@@ -13,18 +13,6 @@ namespace Omni
         void*           Data[MaxDataSlots];
     };
     static_assert(sizeof(LockfreeNode) <= CPU_CACHE_LINE_SIZE);
-    
-
-    struct LockfreeNodeCache
-    {
-    public:
-        static void GlobalInitialize();
-        static void GlobalFinalize();
-        static void ThreadInitialize();
-        static void ThreadFinalize();
-        static LockfreeNode* Alloc();
-        static void Free(LockfreeNode* node);
-    };
 
     struct alignas(sizeof(u64) * 2) TaggedPointer
     {
@@ -34,6 +22,7 @@ namespace Omni
         LockfreeNode*       Ptr;
     };
 
+    
     class LockfreeStack
     {
     public:
@@ -45,17 +34,36 @@ namespace Omni
         TaggedPointer       mHead;
     };
 
-    template<u32 NodeDataCount>
-    class LockfreeQueue
+    class LockfreeQueueBase
     {
     public:
-        LockfreeQueue();
-        ~LockfreeQueue();
         void Enqueue(LockfreeNode* first, LockfreeNode* last);
         void Enqueue(LockfreeNode* node) { Enqueue(node, node); }
         LockfreeNode* Dequeue();
-    private:
-        TaggedPointer      mHead;
-        LockfreeNode*      mTail;
+    protected:
+        void CheckOnDestroy();
+    protected:
+        TaggedPointer       mHead;
+        LockfreeNode*       mTail;
+        u32                 mNodeDataCount;
+    };
+
+    template<typename TNodeCache>
+    class LockfreeQueue :LockfreeQueueBase
+    {
+    public:
+        LockfreeQueue()
+        {
+#if OMNI_WINDOWS
+            mHead.Tag = 0;
+#endif
+            mTail = mHead.Ptr = TNodeCache::Alloc();
+            mHead.Ptr->Next = nullptr;
+        }
+        ~LockfreeQueue()
+        {
+            CheckOnDestroy();
+            TNodeCache::Free(mHead.Ptr);
+        }
     };
 }

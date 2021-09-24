@@ -1,9 +1,9 @@
 #pragma once
-#include "Runtime/Omni.h"
-#include "Runtime/Misc/Padding.h"
-#include "Runtime/Concurrency/SpinLock.h"
-#include "Runtime/Misc/LinkedListUtils.h"
-#include "Runtime/Test/AssertUtils.h"
+#include "Omni.h"
+#include "Misc/Padding.h"
+#include "MultiThread/SpinLock.h"
+#include "Container/LinkedList.h"
+#include "Misc/AssertUtils.h"
 #include <condition_variable>
 #include <mutex>
 

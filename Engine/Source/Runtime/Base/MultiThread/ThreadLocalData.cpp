@@ -1,6 +1,6 @@
 #include "BasePCH.h"
 #include "ThreadLocalData.h"
-#include "AssertUtils.h"
+#include "Misc/AssertUtils.h"
 
 #if OMNI_WINDOWS
 #include <windows.h> 

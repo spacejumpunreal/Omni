@@ -1,9 +1,10 @@
-#include "Runtime/Concurrency/IThreadLocal.h"
-#include "Runtime/Test/AssertUtils.h"
+#include "BasePCH.h"
+#include "MultiThread/IThreadLocal.h"
+#include "Misc/AssertUtils.h"
 
 namespace Omni
 {
-    static thread_local IThreadLocal* gIThreadLocalHead; //only raw thread_local that is allowed
+    static thread_local IThreadLocal* gIThreadLocalHead; //the only raw thread_local that is allowed
     IThreadLocal::IThreadLocal()
         : mNext(gIThreadLocalHead)
     {

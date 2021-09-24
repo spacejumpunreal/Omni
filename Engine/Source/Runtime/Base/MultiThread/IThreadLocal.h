@@ -1,10 +1,11 @@
 #pragma once
-#include "Runtime/Omni.h"
+#include "Omni.h"
+#include "BaseAPI.h"
 #include <type_traits>
 
 namespace Omni
 {
-    class IThreadLocal
+    class BASE_API IThreadLocal
     {
     public:
         IThreadLocal();

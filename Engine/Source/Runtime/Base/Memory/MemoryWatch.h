@@ -15,7 +15,7 @@ namespace Omni
 		MemoryWatch();
 		FORCEINLINE void Add(size_t size);
 		FORCEINLINE void Sub(size_t size);
-		void Dump(MemoryStats& stats);
+		FORCEINLINE void Dump(MemoryStats& stats);
 	private:
 		std::atomic<size_t>		mUsed;
 		std::atomic<size_t>		mPeak;
@@ -23,6 +23,12 @@ namespace Omni
 		std::atomic<size_t>		mThroughput;
 	};
 
+	MemoryWatch::MemoryWatch()
+		: mUsed(0)
+		, mPeak(0)
+		, mTotal(0)
+		, mThroughput(0)
+	{}
 	FORCEINLINE void MemoryWatch::Add(size_t size)
 	{
 		if constexpr (WatchMemoryUsed)
@@ -48,6 +54,13 @@ namespace Omni
 		{
 			mUsed.fetch_sub(size, std::memory_order_relaxed);
 		}
+	}
+	void MemoryWatch::Dump(MemoryStats& stats)
+	{
+		stats.Used = mUsed.load(std::memory_order_relaxed);
+		stats.Peak = mPeak.load(std::memory_order_relaxed);
+		stats.Total = mTotal.load(std::memory_order_relaxed);
+		stats.Throughput = mThroughput.load(std::memory_order_relaxed);
 	}
 }
 

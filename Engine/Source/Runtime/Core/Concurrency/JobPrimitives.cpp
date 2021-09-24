@@ -1,10 +1,10 @@
-#include "Runtime/Concurrency/JobPrimitives.h"
-#include "Runtime/Concurrency/ConcurrencyModule.h"
-#include "Runtime/Concurrency/ThreadUtils.h"
-#include "Runtime/Concurrency/SpinLock.h"
-#include "Runtime/Memory/MemoryModule.h"
-#include "Runtime/Misc/ContainerUtils.h"
-#include "Runtime/Misc/Padding.h"
+#include "MultiThread/JobPrimitives.h"
+#include "MultiThread/ConcurrencyModule.h"
+#include "MultiThread/ThreadUtils.h"
+#include "MultiThread/SpinLock.h"
+#include "Memory/MemoryModule.h"
+#include "Misc/ContainerUtils.h"
+#include "Misc/Padding.h"
 
 
 namespace Omni
@@ -14,8 +14,8 @@ namespace Omni
 	struct DispatchQueuePrivate
 	{
 	public:
-		CacheAlign<SpinLock>					mQueueLock;
-		CacheAlign<SpinLock>					mExecLock;
+		CacheAligned<SpinLock>					mQueueLock;
+		CacheAligned<SpinLock>					mExecLock;
 		Queue									mQueue;
 		const char*								mName;
 	public:

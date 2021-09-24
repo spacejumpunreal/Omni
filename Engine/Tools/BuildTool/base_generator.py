@@ -33,12 +33,14 @@ class BaseGenerator(object):
                 else:
                     ret.add(x_item)
         if self_option & build_target.PUBLIC_ITEMS:
-            handle_target_items("private_", target)
+            handle_target_items("public_", target)
         if self_option & build_target.PRIVATE_ITEMS:
             handle_target_items("private_", target)
 
-        for p in target.dependencies:
-            handle_target_items("public_", self._targets[p])
+        all_deps = self.get_all_dependencies(target)
+        all_deps.remove(target)
+        for p in all_deps:
+            handle_target_items("public_", p)
         ret = list(ret)
         ret.sort()
         return ret

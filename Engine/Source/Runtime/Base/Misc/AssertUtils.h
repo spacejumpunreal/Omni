@@ -4,11 +4,11 @@
 
 namespace Omni
 {
-	void BreakAndCrash(volatile int*);
+	void BASE_API BreakAndCrash(volatile int*);
 #if OMNI_WINDOWS
-	void CheckWinAPI(int x);
+	void BASE_API CheckWinAPI(int x);
 #endif
-	void OmniDebugBreak();
+	void BASE_API OmniDebugBreak();
 
 	template<typename T>
 	inline void OmniCheck(const T& v, const char* fmt, ...)
@@ -33,6 +33,10 @@ namespace Omni
 			OmniDebugBreak();
 			BreakAndCrash(nullptr);
 		}
+	}
+	inline void NotImplemented()
+	{
+		BreakAndCrash(nullptr);
 	}
 
 }

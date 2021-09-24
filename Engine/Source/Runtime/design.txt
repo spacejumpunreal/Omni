@@ -1,7 +1,7 @@
 # Dependency Levels
 ## Prelude
-- definition: global headers expected to be included by everyone(internal or external)
-- examples: typedefs, platform configs, util macro definitions(disable warning)
+- definition: global headers expected to be included by everyone(internal and external)
+- examples: typedefs, platform configs, utility macro definitions(like disable warning macroutils)
 ## Base
 - definition: utils function/types, must be global stateless, no static nonconsts
 - examples: lock, containers

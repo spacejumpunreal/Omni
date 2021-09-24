@@ -1,5 +1,5 @@
 #pragma once
-#include "Runtime/Omni.h"
+#include "Omni.h"
 
 namespace Omni
 {
@@ -11,8 +11,8 @@ namespace Omni
 			, Next(nullptr)
 			, ABA(0)
 		{}
-		FORCEINLINE void InsertBefore(ConcurrentNode* n);
-		FORCEINLINE void InsertAfter(ConcurrentNode* n);
+		//FORCEINLINE void InsertBefore(ConcurrentNode* n);
+		//FORCEINLINE void InsertAfter(ConcurrentNode* n);
 	public:
 		void*				Data;
 	private:
