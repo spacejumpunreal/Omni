@@ -1,5 +1,7 @@
-#include "Runtime/System/Module.h"
-#include "Runtime/Test/AssertUtils.h"
+#include "CorePCH.h"
+#include "System/Module.h"
+#include "Misc/AssertUtils.h"
+
 namespace Omni
 {
 	Module::Module()

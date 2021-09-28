@@ -1,6 +1,10 @@
-#include "Omni.h"
+#include "CorePCH.h"
+#include "Concurrency/LockfreeNodeCache.h"
 #include "MultiThread/LockfreeContainer.h"
 #include "MultiThread/IThreadLocal.h"
+#include "Misc/AssertUtils.h"
+#include "Allocator/MemoryModule.h"
+#include "Math/CompileTime.h"
 
 namespace Omni
 {

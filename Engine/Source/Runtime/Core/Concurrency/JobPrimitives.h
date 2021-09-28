@@ -4,6 +4,7 @@
 #include "Container/LinkedList.h"
 #include "Misc/PrivateData.h"
 #include "PlatformDefs.h"
+#include "CoreAPI.h"
 
 namespace Omni
 {
@@ -12,10 +13,10 @@ namespace Omni
 	class DispatchQueue
 	{
 	public:
-		DispatchQueue();
-		~DispatchQueue();
-		void SetName(const char* name);
-		void Enqueue(DispatchWorkItem* head, DispatchWorkItem* tail);
+		CORE_API DispatchQueue();
+		CORE_API ~DispatchQueue();
+		CORE_API void SetName(const char* name);
+		CORE_API void Enqueue(DispatchWorkItem* head, DispatchWorkItem* tail);
 	private:
 		PrivateData<CPU_CACHE_LINE_SIZE * 3, CPU_CACHE_LINE_SIZE>	mData;
 	};
@@ -42,15 +43,15 @@ namespace Omni
 			DispatchWorkItem& r = CreatePrivate((void*)func, 0);
 			return r;
 		}
-		void Perform();
-		void Destroy();
+		CORE_API void Perform();
+		CORE_API void Destroy();
 	private:
-		static DispatchWorkItem& CreatePrivate(void* f, size_t aSize);
+		CORE_API static DispatchWorkItem& CreatePrivate(void* f, size_t aSize);
 		FORCEINLINE static void* GetArgPtr(DispatchWorkItem* item)
 		{
 			return ((u8*)item) + sizeof(DispatchWorkItem);
 		}
-		DispatchWorkItem(void* fptr);
+		CORE_API DispatchWorkItem(void* fptr);
 	private:
 		void*				mFPtr;
 	};
@@ -58,14 +59,14 @@ namespace Omni
 	class DispatchGroup
 	{
 	public:
-		static DispatchGroup& Create(size_t enterCount);
-		~DispatchGroup();
-		void Destroy();
-		void Enter();
-		void Leave();
-		void Notify(DispatchWorkItem& item, DispatchQueue* queue);
+		CORE_API static DispatchGroup& Create(size_t enterCount);
+		CORE_API ~DispatchGroup();
+		CORE_API void Destroy();
+		CORE_API void Enter();
+		CORE_API void Leave();
+		CORE_API void Notify(DispatchWorkItem& item, DispatchQueue* queue);
 	private:
-		DispatchGroup(size_t enterCount);
+		CORE_API DispatchGroup(size_t enterCount);
 		PrivateData<CPU_CACHE_LINE_SIZE>	mData;
 	};
 }

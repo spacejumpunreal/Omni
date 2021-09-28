@@ -1,5 +1,6 @@
 #pragma once
 #include "Omni.h"
+#include "BaseAPI.h"
 #include "Memory/StdMemoryResource.h"
 
 namespace Omni
@@ -7,12 +8,12 @@ namespace Omni
     class MonotonicMemoryResource final :public StdPmr::memory_resource
     {
     public:
-        MonotonicMemoryResource(size_t capacity);
-        ~MonotonicMemoryResource();
-        void Reset();
-        void* do_allocate(std::size_t bytes, std::size_t alignment) override;
-        void do_deallocate(void* p, std::size_t bytes, std::size_t alignment) override;
-        bool do_is_equal(const StdPmr::memory_resource& other) const noexcept override;
+        BASE_API MonotonicMemoryResource(size_t capacity);
+        BASE_API ~MonotonicMemoryResource();
+        BASE_API void Reset();
+        BASE_API void* do_allocate(std::size_t bytes, std::size_t alignment) override;
+        BASE_API void do_deallocate(void* p, std::size_t bytes, std::size_t alignment) override;
+        BASE_API bool do_is_equal(const StdPmr::memory_resource& other) const noexcept override;
     private:
         size_t      mUsed;
         size_t      mCapacity;

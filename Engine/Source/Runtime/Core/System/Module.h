@@ -1,6 +1,6 @@
 #pragma once
-#include "Runtime/Omni.h"
-#include "Runtime/System/System.h"
+#include "Omni.h"
+#include "System/System.h"
 
 namespace Omni
 {
@@ -16,7 +16,7 @@ namespace Omni
 		Finalizing,
 	};
 
-	class Module
+	class CORE_API Module
 	{
 	public:
 		Module();

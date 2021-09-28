@@ -1,5 +1,7 @@
 #pragma once
 #include "Omni.h"
+#include "BaseAPI.h"
+#include "Misc/PrivateData.h"
 #include <atomic>
 
 namespace Omni
@@ -7,23 +9,23 @@ namespace Omni
     class SpinLock
     {
     public:
-        SpinLock();
-        void Lock();
-        bool TryLock();
-        void Unlock();
+        BASE_API SpinLock();
+        void BASE_API Lock();
+        bool BASE_API TryLock();
+        void BASE_API Unlock();
     private:
-        std::atomic<bool> mFlag;
+        std::atomic_bool mData;
     };
 
     class LockGuard
     {
     public:
-        LockGuard(SpinLock& lock)
+        FORCEINLINE LockGuard(SpinLock& lock)
             : mLock(lock)
         {
             lock.Lock();
         }
-        ~LockGuard()
+        FORCEINLINE ~LockGuard()
         {
             mLock.Unlock();
         }

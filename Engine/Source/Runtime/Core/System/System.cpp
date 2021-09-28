@@ -1,14 +1,16 @@
-#include "Runtime/System/System.h"
-#include "Runtime/Concurrency/ConcurrencyModule.h"
-#include "Runtime/Concurrency/ThreadUtils.h"
-#include "Runtime/System/Module.h"
-#include "Runtime/System/ModuleExport.h"
-#include "Runtime/System/InternalModuleRegistry.h"
-#include "Runtime/Misc/PImplUtils.h"
-#include "Runtime/Misc/ArrayUtils.h"
-#include "Runtime/Test/AssertUtils.h"
-#include "Runtime/Memory/MemoryModule.h"
-#include "Runtime/Memory/MonotonicMemoryResource.h"
+#include "CorePCH.h"
+#include "System/System.h"
+#include "Allocator/MemoryModule.h"
+#include "Concurrency/ConcurrencyModule.h"
+#include "Concurrency/ThreadUtils.h"
+#include "System/Module.h"
+#include "System/ModuleExport.h"
+#include "System/InternalModuleRegistry.h"
+#include "Misc/PImplUtils.h"
+#include "Misc/ArrayUtils.h"
+#include "Misc/AssertUtils.h"
+
+#include "Memory/MonotonicMemoryResource.h"
 
 
 #include <array>
@@ -43,12 +45,12 @@ namespace Omni
 
 	//constants
 #define ModuleItem(name) extern ModuleExportInfo ModuleCreationStubName(name);
-#include "Runtime/System/InternalModuleRegistry.inl"
+#include "System/InternalModuleRegistry.inl"
 #undef ModuleItem
 
 #define ModuleItem(name) &ModuleCreationStubName(name),
 	static const ModuleExportInfo* InternalModuleInfo[] = {
-#include "Runtime/System/InternalModuleRegistry.inl"
+#include "System/InternalModuleRegistry.inl"
 	};
 #undef ModuleItem
 
@@ -83,7 +85,7 @@ namespace Omni
 		EngineInitArgMap argMap;
 		for (u32 i = 0; i < argc; ++i)
 		{
-			usize b = 0;
+			size_t b = 0;
 			const char* arg = argv[i];
 			while (arg[b] != 0 && arg[b] != '=')
 				++b;
@@ -92,7 +94,7 @@ namespace Omni
 			if (arg[b] == '=')
 			{
 				++b;
-				usize bb = b;
+				size_t bb = b;
 				while (arg[b] != 0)
 					++b;
 				v = std::string(arg + bb, arg + b);
@@ -120,7 +122,7 @@ namespace Omni
 			}
 		}
 		//create external modules
-		for (usize i = 0; i < self->mExternalModuleInfo.size(); ++i)
+		for (size_t i = 0; i < self->mExternalModuleInfo.size(); ++i)
 		{
 			const ModuleExportInfo& info = self->mExternalModuleInfo[i];
 			if (info.IsAlwaysLoad || loadModuleNames.count(info.Name) != 0)
@@ -139,13 +141,13 @@ namespace Omni
 				}
 			}
 		}
-		usize nModules = self->mModules.size();
-		usize todo = 1;//make sure we enter the first round
+		size_t nModules = self->mModules.size();
+		size_t todo = 1;//make sure we enter the first round
 		bool firstRound = true;
 		while (todo > 0)
 		{
 			todo = 0;
-			for (usize i = 0; i < nModules; ++i)
+			for (size_t i = 0; i < nModules; ++i)
 			{
 				Module* mod = self->mModules[i];
 				if (firstRound || mod->GetStatus() == ModuleStatus::Initializing)
@@ -177,12 +179,12 @@ namespace Omni
 		CheckAlways(self->mStatus == SystemStatus::ToBeFinalized);
 		self->mStatus = SystemStatus::Finalizing;
 		bool firstRound = true;
-		usize nModules = self->mModules.size();
-		usize todo = 1;
+		size_t nModules = self->mModules.size();
+		size_t todo = 1;
 		while (todo > 0)
 		{
 			todo = 0;
-			for (usize i = 0; i < nModules; ++i)
+			for (size_t i = 0; i < nModules; ++i)
 			{
 				Module*& mod = self->mModules[i];
 				if (mod != nullptr && (firstRound || mod->GetStatus() == ModuleStatus::Finalizing))

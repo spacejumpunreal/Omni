@@ -1,5 +1,6 @@
 #pragma once
-#include "Runtime/Omni.h"
+#include "Omni.h"
+#include "CoreAPI.h"
 
 namespace Omni
 {
@@ -17,10 +18,10 @@ namespace Omni
 	using ModuleKey = i32;
 	using SystemInitializedCallback = void(*)();
 
-	class System
+	class CORE_API System
 	{
 	public:
-		//APIs for Engine owenr
+		//APIs for Engine user
 		static void CreateSystem();
 		static System& GetSystem();
 		void DestroySystem();

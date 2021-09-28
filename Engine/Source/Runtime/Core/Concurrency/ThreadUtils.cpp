@@ -1,9 +1,10 @@
-#include "Runtime/Concurrency/ThreadUtils.h"
-#include "Runtime/Concurrency/IThreadLocal.h"
-#include "Runtime/Concurrency/LockfreeContainer.h"
-#include "Runtime/Memory/MemoryModule.h"
-#include "Runtime/Platform/WindowModule.h"
-#include "Runtime/Test/AssertUtils.h"
+#include "CorePCH.h"
+#include "Concurrency/ThreadUtils.h"
+#include "MultiThread/IThreadLocal.h"
+#include "MultiThread/LockfreeContainer.h"
+#include "Allocator/MemoryModule.h"
+#include "Platform/WindowModule.h"
+#include "Misc/AssertUtils.h"
 #include <atomic>
 #include <thread>
 

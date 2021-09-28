@@ -9,7 +9,7 @@ namespace Omni
 	class WrapperAllocator : public IAllocator
 	{
 	public:
-		WrapperAllocator(STD_PMR_NS::memory_resource& memResource, const char* name);
+		WrapperAllocator(StdPmr::memory_resource& memResource, const char* name);
 		~WrapperAllocator();
 		PMRResource* GetResource() override;
 		MemoryStats GetStats() override;

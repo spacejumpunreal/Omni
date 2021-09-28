@@ -1,13 +1,15 @@
-#include "Runtime/Memory/CacheLineAllocator.h"
-#include "Runtime/Concurrency/IThreadLocal.h"
-#include "Runtime/Concurrency/LockfreeContainer.h"
-#include "Runtime/Math/CompileTime.h"
-#include "Runtime/Memory/MemoryModule.h"
-#include "Runtime/Memory/MemoryWatch.h"
-#include "Runtime/Misc/ArrayUtils.h"
-#include "Runtime/Misc/Padding.h"
-#include "Runtime/Platform/PlatformAPIs.h"
-#include "Runtime/Platform/PlatformDefs.h"
+#include "CorePCH.h"
+#include "Allocator/CacheLineAllocator.h"
+#include "Concurrency/LockfreeNodeCache.h"
+#include "MultiThread/IThreadLocal.h"
+#include "MultiThread/LockfreeContainer.h"
+#include "Math/CompileTime.h"
+#include "Allocator/MemoryModule.h"
+#include "Memory/MemoryWatch.h"
+#include "Misc/ArrayUtils.h"
+#include "Misc/Padding.h"
+#include "Misc/PlatformAPIs.h"
+#include "PlatformDefs.h"
 
 #include <atomic>
 
@@ -33,12 +35,14 @@ namespace Omni
 		static FORCEINLINE CacheLinePageHeader& GetHeader(void* p);
 		bool IsAvailable() { return AcquireCount.Data.load(std::memory_order_relaxed) == ReleaseCount.Data.load(std::memory_order_relaxed); }
 	public:
-		CacheAlign<std::atomic<size_t>>		AcquireCount;
-		CacheAlign<std::atomic<size_t>>		ReleaseCount;
+		CacheAligned<std::atomic<size_t>>		AcquireCount;
+		CacheAligned<std::atomic<size_t>>		ReleaseCount;
 	};
 
-	OMNI_MSVC_DISABLE_WARNING(4324);
-	struct CacheLineAllocatorPrivate final : public STD_PMR_NS::memory_resource
+	OMNI_PUSH_WARNING()
+	OMNI_SUPPRESS_WARNING_PADDED_DUE_TO_ALIGNMENT()
+
+	struct CacheLineAllocatorPrivate final : public StdPmr::memory_resource
 	{
 	public:
 		static constexpr u32 PageSize = CPU_CACHE_LINE_SIZE * 1024;
@@ -46,16 +50,17 @@ namespace Omni
 		static constexpr u32 CacheLineSizeShift = (u32)CompileTimeLog2(CPU_CACHE_LINE_SIZE);
 		static constexpr u32 HeaderCacheLines = sizeof(CacheLinePageHeader) / CPU_CACHE_LINE_SIZE;
 	public:
+		CacheLineAllocatorPrivate();
 		FORCEINLINE static u32 Size2Cachelines(size_t sz);
 		void Shrink();
 		void* do_allocate(std::size_t bytes, std::size_t alignment) override;
 		void do_deallocate(void* p, std::size_t bytes, std::size_t alignment) override;
-		bool do_is_equal(const STD_PMR_NS::memory_resource& other) const noexcept override;
+		bool do_is_equal(const StdPmr::memory_resource& other) const noexcept override;
 	public:
-		LockfreeQueue<1>					mPendingPages;
-		CacheAlign<MemoryWatch>				mWatch;
+		LockfreeQueue<LockfreeNodeCache>		mPendingPages;
+		CacheAligned<MemoryWatch>				mWatch;
 	};
-	OMNI_RESET_WARNING();
+	OMNI_POP_WARNING()
 
 	//global
 	OMNI_DECLARE_THREAD_LOCAL(CacheLinePerThreadData, gCacheLinePerThreadData);
@@ -66,6 +71,9 @@ namespace Omni
 		u64 p64 = addr64 & ~(u64)(CacheLineAllocatorPrivate::PageSize - 1);
 		return *(CacheLinePageHeader*)p64;
 	}
+	CacheLineAllocatorPrivate::CacheLineAllocatorPrivate()
+		: mPendingPages(1)
+	{}
 	u32 CacheLineAllocatorPrivate::Size2Cachelines(size_t sz)
 	{
 		return ((u32)AlignUpSize(sz, CPU_CACHE_LINE_SIZE)) >> CacheLineSizeShift;
@@ -153,7 +161,7 @@ namespace Omni
 		CacheLinePageHeader& header = CacheLinePageHeader::GetHeader(p);
 		header.ReleaseCount.Data.fetch_add(1, std::memory_order_release);
 	}
-	bool CacheLineAllocatorPrivate::do_is_equal(const STD_PMR_NS::memory_resource& other) const noexcept
+	bool CacheLineAllocatorPrivate::do_is_equal(const StdPmr::memory_resource& other) const noexcept
 	{
 		return this == &other;
 	}

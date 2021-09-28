@@ -1,4 +1,5 @@
 #pragma once
+#include "BaseAPI.h"
 #include <cstdarg>
 #include <cstdio>
 

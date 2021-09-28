@@ -1,14 +1,17 @@
-#include "Runtime/Platform/InputModule.h"
+#include "CorePCH.h"
 #if OMNI_WINDOWS
-#include "Runtime/Concurrency/SpinLock.h"
-#include "Runtime/Memory/MemoryModule.h"
-#include "Runtime/Memory/MemoryArena.h"
-#include "Runtime/Misc/PImplUtils.h"
-#include "Runtime/Misc/PMRContainers.h"
-#include "Runtime/Platform/KeyMap.h"
-#include "Runtime/System/ModuleExport.h"
-#include "Runtime/System/ModuleImplHelpers.h"
-#include "Runtime/Test/AssertUtils.h"
+#include "Platform/InputModule.h"
+#include "MultiThread/SpinLock.h"
+#include "Allocator/MemoryModule.h"
+#include "Memory/MemoryArena.h"
+#include "Misc/AssertUtils.h"
+#include "Misc/PImplUtils.h"
+#include "Container/PMRContainers.h"
+#include "Platform/KeyMap.h"
+#include "System/ModuleExport.h"
+#include "System/ModuleImplHelpers.h"
+#include "Misc/PImplUtils.h"
+
 
 #include <Windows.h>
 
@@ -28,14 +31,15 @@ namespace Omni
         bool                            Pressed;
     };
 
+    using KeyStateMap = PMRUnorderedMap<KeyCode, KeyState, std::hash<KeyCode>, std::equal_to<KeyCode>>;
     struct InputModulePrivate
     {
     public:
         InputModulePrivate();
     public:
-        mutable SpinLock                            mLock;
-        PMRUnorderedMap<KeyCode, KeyState>          mKeys;
-        MousePos                                    mMousePos;
+        mutable SpinLock        mLock;
+        KeyStateMap             mKeys;
+        MousePos                mMousePos;
     };
 
     using InputModuleImpl = PImplCombine<InputModule, InputModulePrivate>;

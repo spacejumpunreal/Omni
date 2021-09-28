@@ -1,18 +1,20 @@
-#include "Runtime/Memory/MemoryModule.h"
-#include "Runtime/Concurrency/IThreadLocal.h"
-#include "Runtime/Concurrency/LockfreeContainer.h"
-#include "Runtime/Concurrency/ThreadUtils.h"
-#include "Runtime/Memory/CacheLineAllocator.h"
-#include "Runtime/Memory/MemoryArena.h"
-#include "Runtime/Memory/SNAllocator.h"
-#include "Runtime/Memory/WrapperAllocator.h"
-#include "Runtime/Misc/PImplUtils.h"
-#include "Runtime/Misc/ThreadLocalData.h"
-#include "Runtime/Platform/PlatformAPIs.h"
-#include "Runtime/System/Module.h"
-#include "Runtime/System/ModuleExport.h"
-#include "Runtime/System/ModuleImplHelpers.h"
-#include "Runtime/Test/AssertUtils.h"
+#include "CorePCH.h"
+#include "Allocator/MemoryModule.h"
+#include "MultiThread/IThreadLocal.h"
+#include "MultiThread/LockfreeContainer.h"
+#include "Concurrency/LockfreeNodeCache.h"
+#include "Concurrency/ThreadUtils.h"
+#include "Allocator/CacheLineAllocator.h"
+#include "Memory/MemoryArena.h"
+#include "Allocator/SNAllocator.h"
+#include "Allocator/WrapperAllocator.h"
+#include "Misc/PImplUtils.h"
+#include "MultiThread/ThreadLocalData.h"
+#include "Misc/PlatformAPIs.h"
+#include "System/Module.h"
+#include "System/ModuleExport.h"
+#include "System/ModuleImplHelpers.h"
+#include "Misc/AssertUtils.h"
 
 #if OMNI_WINDOWS
 #include <Windows.h>
@@ -82,7 +84,7 @@ namespace Omni
             const char* MemoryKindNames[] =
             {
 #define MEMORY_KIND(X) #X,
-#include "Runtime/Memory/MemoryKind.inl"
+#include "Memory/MemoryKind.inl"
 #undef MEMORY_KIND
             };
             for (u32 iKind = 0; iKind < (u32)MemoryKind::Max; ++iKind)
@@ -235,7 +237,7 @@ namespace Omni
         CheckAlways(p != nullptr);
         self->GetPMRAllocator(MemoryKind::ThreadScratchStack).resource()->deallocate(p, self->mThreadArenaSize, OMNI_DEFAULT_ALIGNMENT);
     }
-    void MemoryModule::GetStats(STD_PMR_NS::vector<MemoryStats>& ret)
+    void MemoryModule::GetStats(StdPmr::vector<MemoryStats>& ret)
     {
         MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
         for (IAllocator* a : self->mAllocators)

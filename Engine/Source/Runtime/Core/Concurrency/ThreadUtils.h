@@ -1,6 +1,6 @@
 #pragma once
-#include "Runtime/Omni.h"
-#include "Runtime/System/System.h"
+#include "Omni.h"
+#include "System/System.h"
 
 namespace Omni
 {
@@ -9,7 +9,7 @@ namespace Omni
     static constexpr ThreadIndex MainThreadIndex = 0;
     static constexpr ThreadIndex InvalidThreadIndex = -1;
 
-    class ThreadData
+    class CORE_API ThreadData
     {
     public:
         //for ConcurrencyModule
@@ -31,9 +31,9 @@ namespace Omni
         ThreadData() = default;
     };
 
-    bool IsOnMainThread();
-    void RegisterMainThread();
-    void UnregisterMainThread();
+    CORE_API bool IsOnMainThread();
+    CORE_API void RegisterMainThread();
+    CORE_API void UnregisterMainThread();
 }
 
 /* sequence
@@ -50,7 +50,7 @@ namespace Omni
 *   - finalize other modules
 *   - finalize concurrency module
 *       - mark all worker threads destroy
-*       - finalize destroy main
+*       - finalize main(wont this be a problem if main or other threads still use some thread utils when main is already finalized?)
 *       - join and delete other threads
 *   - done
 * 

@@ -1,5 +1,6 @@
 #pragma once
 #include "Omni.h"
+#include "BaseAPI.h"
 #include "PlatformDefs.h"
 #include <atomic>
 
@@ -23,7 +24,7 @@ namespace Omni
     };
 
     
-    class LockfreeStack
+    class BASE_API LockfreeStack
     {
     public:
         LockfreeStack();
@@ -34,7 +35,7 @@ namespace Omni
         TaggedPointer       mHead;
     };
 
-    class LockfreeQueueBase
+    class BASE_API LockfreeQueueBase
     {
     public:
         void Enqueue(LockfreeNode* first, LockfreeNode* last);
@@ -49,16 +50,17 @@ namespace Omni
     };
 
     template<typename TNodeCache>
-    class LockfreeQueue :LockfreeQueueBase
+    class LockfreeQueue : public LockfreeQueueBase
     {
     public:
-        LockfreeQueue()
+        LockfreeQueue(u32 dataCount)
         {
 #if OMNI_WINDOWS
             mHead.Tag = 0;
 #endif
             mTail = mHead.Ptr = TNodeCache::Alloc();
             mHead.Ptr->Next = nullptr;
+            mNodeDataCount = dataCount;
         }
         ~LockfreeQueue()
         {

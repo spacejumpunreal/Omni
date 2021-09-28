@@ -1,8 +1,8 @@
 #pragma once
-#include "Runtime/Omni.h"
-#include "Runtime/Concurrency/ConcurrencyModule.h"
-#include "Runtime/Concurrency/JobPrimitives.h"
-#include "Runtime/Concurrency/ThreadUtils.h"
+#include "Omni.h"
+#include "Concurrency/ConcurrencyModule.h"
+#include "Concurrency/JobPrimitives.h"
+#include "Concurrency/ThreadUtils.h"
 #include <mutex>
 #include <chrono>
 

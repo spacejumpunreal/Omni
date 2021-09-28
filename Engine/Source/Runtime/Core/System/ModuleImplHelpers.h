@@ -1,7 +1,7 @@
 #pragma once
-#include "Runtime/Omni.h"
-#include "Runtime/System/System.h"
-#include "Runtime/Memory/MonotonicMemoryResource.h"
+#include "Omni.h"
+#include "System/System.h"
+#include "Memory/MonotonicMemoryResource.h"
 
 namespace Omni
 {

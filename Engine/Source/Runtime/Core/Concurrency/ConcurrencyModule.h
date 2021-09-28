@@ -1,15 +1,15 @@
 #pragma once
-#include "Runtime/Omni.h"
-#include "Runtime/Concurrency/ConcurrentDefs.h"
-#include "Runtime/Concurrency/JobPrimitives.h"
-#include "Runtime/System/Module.h"
+#include "Omni.h"
+#include "Concurrency/ConcurrentDefs.h"
+#include "Concurrency/JobPrimitives.h"
+#include "System/Module.h"
 
 
 namespace Omni
 {
 	enum class QueueKind : u32;
 
-	class ConcurrencyModule : public Module
+	class CORE_API ConcurrencyModule : public Module
 	{
 	public:
 		void Destroy() override;

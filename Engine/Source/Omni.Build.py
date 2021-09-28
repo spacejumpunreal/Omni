@@ -8,5 +8,6 @@ class Omni(build_target.BuildTarget):
         self.target_type = build_target.TARGET_TYPE_DUMMY
         #self.add_target("Programs/PlayGround")
         self.add_target("Runtime")
+        self.add_target("Programs")
         self.add_target("External/googletest/GTest.Build.py")
 

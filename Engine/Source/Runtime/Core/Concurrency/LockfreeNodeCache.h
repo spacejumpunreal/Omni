@@ -1,10 +1,11 @@
 #pragma once
+#include "CoreAPI.h"
 
 namespace Omni
 {
     struct LockfreeNode;
 
-    struct LockfreeNodeCache
+    struct CORE_API LockfreeNodeCache
     {
     public:
         static void GlobalInitialize();

@@ -1,3 +1,5 @@
+#include "Omni.h"
+#if OMNI_IOS
 #import <UIKit/UIKit.h>
 
 @interface IOSViewController : UIViewController
@@ -12,4 +14,4 @@
 
 int IOSMain(int argc, char* _Nullable * _Nonnull argv);
 
-
+#endif

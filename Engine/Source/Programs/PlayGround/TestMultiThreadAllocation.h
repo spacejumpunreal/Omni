@@ -1,9 +1,9 @@
 #pragma once
-#include "Runtime/Omni.h"
-#include "Runtime/Concurrency/ConcurrencyModule.h"
-#include "Runtime/Concurrency/JobPrimitives.h"
-#include "Runtime/Memory/MemoryModule.h"
-#include "Runtime/Test/AssertUtils.h"
+#include "Omni.h"
+#include "Concurrency/ConcurrencyModule.h"
+#include "Concurrency/JobPrimitives.h"
+#include "Allocator/MemoryModule.h"
+#include "Misc/AssertUtils.h"
 #include <random>
 
 namespace Omni

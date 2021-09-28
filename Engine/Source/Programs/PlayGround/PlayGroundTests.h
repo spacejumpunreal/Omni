@@ -1,5 +1,5 @@
 #pragma once
-#include "Runtime/Omni.h"
+#include "Omni.h"
 namespace Omni
 {
 	void TestLockfreeStackSingleThread();

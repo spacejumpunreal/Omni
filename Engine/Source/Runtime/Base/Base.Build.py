@@ -18,4 +18,5 @@ class BaseUnitTest(build_target.BuildTarget):
         self.setup_build_files(build_target.default_unittest_rule)
         self.dependencies = ["Base", "GTest"]
 
+
 BUILD_RULES = (Base, BaseUnitTest)

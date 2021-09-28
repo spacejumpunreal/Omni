@@ -12,7 +12,7 @@ namespace Omni
 	class MemoryWatch
 	{
 	public:
-		MemoryWatch();
+		FORCEINLINE MemoryWatch();
 		FORCEINLINE void Add(size_t size);
 		FORCEINLINE void Sub(size_t size);
 		FORCEINLINE void Dump(MemoryStats& stats);
@@ -23,7 +23,7 @@ namespace Omni
 		std::atomic<size_t>		mThroughput;
 	};
 
-	MemoryWatch::MemoryWatch()
+	FORCEINLINE MemoryWatch::MemoryWatch()
 		: mUsed(0)
 		, mPeak(0)
 		, mTotal(0)

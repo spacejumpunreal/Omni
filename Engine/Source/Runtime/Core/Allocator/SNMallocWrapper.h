@@ -1,7 +1,10 @@
 #pragma once
-#include "Runtime/Omni.h"
+#include "Omni.h"
+#include "SuppressWarning.h"
 
-OMNI_MSVC_DISABLE_WARNING(4324 4127);
-#include "External/snmalloc/src/snmalloc.h"
-OMNI_RESET_WARNING();
+OMNI_PUSH_WARNING()
+OMNI_SUPPRESS_WARNING_PADDED_DUE_TO_ALIGNMENT()
+OMNI_SUPPRESS_WARNING_COND_EXPR_IS_CONSTANT()
+#include "../../External/snmalloc/src/snmalloc.h"
+OMNI_POP_WARNING()
 

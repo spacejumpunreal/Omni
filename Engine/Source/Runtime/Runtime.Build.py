@@ -8,4 +8,6 @@ class Runtime(build_target.BuildTarget):
         self.target_type = build_target.TARGET_TYPE_DUMMY
         self.add_target("Prelude")
         self.add_target("Base")
-        #self.add_target("Core")
+        self.add_target("Core")
+
+

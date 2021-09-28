@@ -1,15 +1,16 @@
-#include "Runtime/Concurrency/ConcurrencyModule.h"
-#include "Runtime/Concurrency/ConcurrentContainers.h"
-#include "Runtime/Concurrency/ConcurrentDefs.h"
-#include "Runtime/Concurrency/SpinLock.h"
-#include "Runtime/Concurrency/ThreadUtils.h"
-#include "Runtime/Memory/MemoryModule.h"
-#include "Runtime/Misc/Padding.h"
-#include "Runtime/Misc/PImplUtils.h"
-#include "Runtime/Misc/PMRContainers.h"
-#include "Runtime/System/Module.h"
-#include "Runtime/System/ModuleExport.h"
-#include "Runtime/System/ModuleImplHelpers.h"
+#include "CorePCH.h"
+#include "Concurrency/ConcurrencyModule.h"
+#include "Multithread/MultithreadContainers.h"
+#include "Concurrency/ConcurrentDefs.h"
+#include "Multithread/SpinLock.h"
+#include "Concurrency/ThreadUtils.h"
+#include "Allocator/MemoryModule.h"
+#include "Misc/Padding.h"
+#include "Misc/PImplUtils.h"
+#include "Container/PMRContainers.h"
+#include "System/Module.h"
+#include "System/ModuleExport.h"
+#include "System/ModuleImplHelpers.h"
 
 #if OMNI_CLANG
 #else
@@ -49,7 +50,7 @@ namespace Omni
         //1. init serial queues
         const char* queueNames[] = {
 #define QUEUE_KIND(x) #x,
-#include "Runtime/Concurrency/QueueKind.inl"
+#include "Concurrency/QueueKind.inl"
 #undef QUEUE_KIND
         };
         for (u32 iQueue = 0; iQueue < (u32)QueueKind::Max; ++iQueue)

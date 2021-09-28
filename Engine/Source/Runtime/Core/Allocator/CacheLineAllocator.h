@@ -1,13 +1,16 @@
 #pragma once
-#include "Runtime/Omni.h"
-#include "Runtime/Memory/IAllocator.h"
-#include "Runtime/Misc/PrivateData.h"
+#include "Omni.h"
+#include "Allocator/IAllocator.h"
+#include "Misc/PrivateData.h"
+#include "PlatformDefs.h"
+#include "SuppressWarning.h"
 
 namespace Omni
 {
 	struct CacheLinePerThreadData;
 
-	OMNI_MSVC_DISABLE_WARNING(4324);
+	OMNI_PUSH_WARNING()
+	OMNI_SUPPRESS_WARNING_PADDED_DUE_TO_ALIGNMENT()
 	class CacheLineAllocator : public IAllocator
 	{
 	public:
@@ -20,8 +23,8 @@ namespace Omni
 		void ThreadInitialize();
 		void ThreadFinalize();
 	private:
-		PrivateData<256, 128> mData;
+		PrivateData<256, CPU_CACHE_LINE_SIZE> mData;
 	};
-	OMNI_RESET_WARNING();
+	OMNI_POP_WARNING()
 }
 

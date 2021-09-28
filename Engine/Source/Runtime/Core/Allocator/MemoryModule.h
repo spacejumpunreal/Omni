@@ -1,14 +1,16 @@
 #pragma once
-#include "Runtime/Omni.h"
-#include "Runtime/Memory/MemoryDefs.h"
-#include "Runtime/Memory/MemoryWatch.h"
-#include "Runtime/System/Module.h"
-#include "Runtime/Misc/PMRContainers.h"
+#include "Omni.h"
+#include "PlatformDefs.h"
+#include "Container/PMRContainers.h"
+#include "Memory/MemoryDefs.h"
+#include "Memory/MemoryWatch.h"
+#include "System/Module.h"
+
 
 namespace Omni
 {
 	class ScratchStack;
-	class MemoryModule : public Module
+	class CORE_API MemoryModule : public Module
 	{
 	public:
 		void Destroy() override;
@@ -30,7 +32,7 @@ namespace Omni
 		static ScratchStack& GetThreadScratchStack();
 		static void ThreadInitialize();
 		static void ThreadFinalize();
-		void GetStats(STD_PMR_NS::vector<MemoryStats>& stats);
+		void GetStats(StdPmr::vector<MemoryStats>& stats);
 		void Shrink();
 	};
 

@@ -1,4 +1,5 @@
-#include "Memory/WrapperAllocator.h"
+#include "CorePCH.h"
+#include "Allocator/WrapperAllocator.h"
 #include "Memory/MemoryWatch.h"
 #include "Misc/ArrayUtils.h"
 #include "Misc/PrivateData.h"
@@ -7,10 +8,10 @@
 
 namespace Omni
 {
-	struct WrapperAllocatorImpl final : public STD_PMR_NS::memory_resource
+	struct WrapperAllocatorImpl final : public StdPmr::memory_resource
 	{
 	public:
-		WrapperAllocatorImpl(STD_PMR_NS::memory_resource& fallback, const char* name)
+		WrapperAllocatorImpl(StdPmr::memory_resource& fallback, const char* name)
 			: mFallback(fallback)
 			, mName(name)
 		{}
@@ -24,16 +25,16 @@ namespace Omni
 			mWatch.Sub(AlignUpSize(bytes, alignment));
 			mFallback.deallocate(p, bytes, alignment);
 		}
-		bool do_is_equal(const STD_PMR_NS::memory_resource& other) const noexcept override
+		bool do_is_equal(const StdPmr::memory_resource& other) const noexcept override
 		{
 			return this == &other;
 		}
 	public:
 		MemoryWatch						mWatch;
-		STD_PMR_NS::memory_resource&	mFallback;
+		StdPmr::memory_resource&		mFallback;
 		const char*						mName;
 	};
-	WrapperAllocator::WrapperAllocator(STD_PMR_NS::memory_resource& memResource, const char* name)
+	WrapperAllocator::WrapperAllocator(StdPmr::memory_resource& memResource, const char* name)
 		: mData(PrivateDataType<WrapperAllocatorImpl>{}, memResource, name)
 	{
 	}

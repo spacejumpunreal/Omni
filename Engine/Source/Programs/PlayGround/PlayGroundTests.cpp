@@ -1,13 +1,15 @@
-#include "Programs/PlayGround/PlayGroundTests.h"
-#include "Programs/PlayGround/TestAsync.h"
-#include "Programs/PlayGround/TestDispatchQueue.h"
-#include "Programs/PlayGround/TestMultiThreadAllocation.h"
-#include "Runtime/Concurrency/LockfreeContainer.h"
-#include "Runtime/Concurrency/SpinLock.h"
-#include "Runtime/Memory/MemoryArena.h"
-#include "Runtime/Memory/MemoryModule.h"
-#include "Runtime/Test/AssertUtils.h"
-#include "Runtime/Test/MultiThreadTest.h"
+#include "PlayGroundPCH.h"
+#include "PlayGroundTests.h"
+#include "TestAsync.h"
+#include "TestDispatchQueue.h"
+#include "TestMultiThreadAllocation.h"
+#include "MultiThread/LockfreeContainer.h"
+#include "Concurrency/LockfreeNodeCache.h"
+#include "Concurrency/RunOnEveryWorker.h"
+#include "MultiThread/SpinLock.h"
+#include "Memory/MemoryArena.h"
+#include "Allocator/MemoryModule.h"
+#include "Misc/AssertUtils.h"
 #include <random>
 #include <array>
 #include <thread>
@@ -37,7 +39,7 @@ namespace Omni
 	void TestLockfreeQueueSingleThread()
 	{
 		constexpr int TestCount = 1024;
-		LockfreeQueue<1> queue;
+		LockfreeQueue<LockfreeNodeCache> queue(1);
 		for (u64 i = 0; i < TestCount; ++i)
 		{
 			LockfreeNode* n = LockfreeNodeCache::Alloc();
@@ -75,7 +77,7 @@ namespace Omni
 			constexpr int TestSize = 1024 * 16;
 			constexpr int QueueLength = 8;
 			constexpr size_t LocalMaxKeep = 4;
-			LockfreeQueue<1> queue;
+			LockfreeQueue<LockfreeNodeCache> queue(1);
 			for (int i = 0; i < QueueLength; ++i)
 			{
 				LockfreeNode* node = LockfreeNodeCache::Alloc();
@@ -84,7 +86,7 @@ namespace Omni
 			}
 			struct Tester
 			{
-				static void DoTest(u64 idx, LockfreeQueue<1>* queue)
+				static void DoTest(u64 idx, LockfreeQueue<LockfreeNodeCache>* queue)
 				{
 					std::random_device rd;  //Will be used to obtain a seed for the random number engine
 					std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()

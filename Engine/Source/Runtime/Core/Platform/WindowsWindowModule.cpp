@@ -1,11 +1,12 @@
-#include "Runtime/Platform/WindowModule.h"
+#include "CorePCH.h"
 #if OMNI_WINDOWS
-#include "Runtime/Memory/MemoryModule.h"
-#include "Runtime/Misc/PImplUtils.h"
-#include "Runtime/Platform/InputModule.h"
-#include "Runtime/System/ModuleExport.h"
-#include "Runtime/System/ModuleImplHelpers.h"
-#include "Runtime/Test/AssertUtils.h"
+#include "Platform/WindowModule.h"
+#include "Allocator/MemoryModule.h"
+#include "Misc/PImplUtils.h"
+#include "Platform/InputModule.h"
+#include "System/ModuleExport.h"
+#include "System/ModuleImplHelpers.h"
+#include "Misc/AssertUtils.h"
 #include <Windows.h>
 #include <WinUser.h>
 

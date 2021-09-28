@@ -1,6 +1,6 @@
 #pragma once
-#include "Runtime/Omni.h"
-#include "Runtime/System/Module.h"
+#include "Omni.h"
+#include "System/Module.h"
 
 
 namespace Omni
