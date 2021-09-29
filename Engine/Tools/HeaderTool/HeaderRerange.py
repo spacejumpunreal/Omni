@@ -29,7 +29,7 @@ def reorganize_includes(lines, self_name):
     def sort_paths(a, b):
 
         def check_special_case(target):
-            if target.endsnwith("PCH.h"):
+            if target.endswith("PCH.h"):
                 return True
             n = os.path.basename(target)
             if os.path.splitext(n)[0] == self_name:
@@ -41,13 +41,12 @@ def reorganize_includes(lines, self_name):
                 return -1 if x == a else 1
         return cmp(a, b)
 
-
     # reorganize
     for range_pair in include_ranges:
         part_paths = map(lambda idx: re_begin_with_include.match(lines[idx]).group(1), xrange(range_pair[0], range_pair[1]))
         part_paths.sort(sort_paths)
-        for idx in xrange(range_pair[0], range_pair[1]):
-            lines[idx] = "#include " + part_paths[idx]
+        for idx, range_idx in enumerate(xrange(range_pair[0], range_pair[1])):
+            lines[range_idx] = "#include " + part_paths[idx]
 
 
 def main():
