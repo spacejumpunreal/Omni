@@ -28,19 +28,18 @@ def reorganize_includes(lines, self_name):
 
     def sort_paths(a, b):
 
-        def check_special_case(target):
-            if target == '"Omni.h"':
-                return True
+        def calc_special_case_weight(target):
             if target.endswith('PCH.h"'):
-                return True
+                return -10
+            if target == '"Omni.h"':
+                return -9
             n = os.path.basename(target)
             if os.path.splitext(n)[0] == self_name:
-                return True
-            return False
-        for x in (a, b):
-            r = check_special_case(x)
-            if r:
-                return -1 if x == a else 1
+                return -8
+            return 1
+        av, bv = map(calc_special_case_weight, (a, b))
+        if av != bv:
+            return cmp(av, bv)
         return cmp(a, b)
 
     # reorganize
