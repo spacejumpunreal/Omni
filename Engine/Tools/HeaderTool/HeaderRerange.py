@@ -64,7 +64,7 @@ def main():
                 self_name = os.path.splitext(self_name)[0]
                 reorganize_includes(lines, self_name)
         with open(in_file, "w") as wf:
-            u8lines = map(lambda line: line.encode('u8'), lines)
+            u8lines = map(lambda line: line.encode('u8') + os.linesep, lines)
             wf.writelines(u8lines)
 
 
