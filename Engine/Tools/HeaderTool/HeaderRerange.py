@@ -29,7 +29,9 @@ def reorganize_includes(lines, self_name):
     def sort_paths(a, b):
 
         def check_special_case(target):
-            if target.endswith("PCH.h"):
+            if target == '"Omni.h"':
+                return True
+            if target.endswith('PCH.h"'):
                 return True
             n = os.path.basename(target)
             if os.path.splitext(n)[0] == self_name:
@@ -64,7 +66,7 @@ def main():
                 self_name = os.path.splitext(self_name)[0]
                 reorganize_includes(lines, self_name)
         with open(in_file, "w") as wf:
-            u8lines = map(lambda line: line.encode('u8') + os.linesep, lines)
+            u8lines = map(lambda line: line.encode('u8') + "\n", lines)
             wf.writelines(u8lines)
 
 
