@@ -1,8 +1,8 @@
 #pragma once
 #include "Runtime/Prelude/Omni.h"
-#include "Runtime/Prelude/PlatformDefs.h"
 #include "Runtime/Base/Misc/ArrayUtils.h"
 #include "Runtime/Base/Misc/AssertUtils.h"
+#include "Runtime/Prelude/PlatformDefs.h"
 
 namespace Omni
 {

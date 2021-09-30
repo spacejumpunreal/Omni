@@ -1,10 +1,10 @@
 #pragma once
 #include "Runtime/Prelude/Omni.h"
-#include "Runtime/Prelude/PlatformDefs.h"
 #include "Runtime/Base/Container/PMRContainers.h"
 #include "Runtime/Base/Memory/MemoryDefs.h"
 #include "Runtime/Base/Memory/MemoryWatch.h"
 #include "Runtime/Core/System/Module.h"
+#include "Runtime/Prelude/PlatformDefs.h"
 
 
 namespace Omni

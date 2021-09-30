@@ -1,24 +1,24 @@
 #include "Runtime/Core/CorePCH.h"
 #include "Runtime/Core/System/System.h"
+#include "Runtime/Base/Misc/ArrayUtils.h"
+#include "Runtime/Base/Misc/AssertUtils.h"
+#include "Runtime/Base/Misc/PImplUtils.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/Concurrency/ConcurrencyModule.h"
 #include "Runtime/Core/Concurrency/ThreadUtils.h"
+#include "Runtime/Core/System/InternalModuleRegistry.h"
 #include "Runtime/Core/System/Module.h"
 #include "Runtime/Core/System/ModuleExport.h"
-#include "Runtime/Core/System/InternalModuleRegistry.h"
-#include "Runtime/Base/Misc/PImplUtils.h"
-#include "Runtime/Base/Misc/ArrayUtils.h"
-#include "Runtime/Base/Misc/AssertUtils.h"
 
 #include "Runtime/Base/Memory/MonotonicMemoryResource.h"
 
 
 #include <array>
-#include <set>
-#include <unordered_set>
-#include <unordered_map>
-#include <vector>
 #include <atomic>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 namespace Omni
 {

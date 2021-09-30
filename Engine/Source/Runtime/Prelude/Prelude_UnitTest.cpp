@@ -1,7 +1,7 @@
 #include "Runtime/Prelude/Omni.h"
+#include "External/googletest/include/gtest/gtest.h"
 #include "Runtime/Prelude/MacroUtils.h"
 #include <cstdio>
-#include "External/googletest/include/gtest/gtest.h"
 
 TEST(Prelude, Macro)
 {

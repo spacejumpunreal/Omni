@@ -31,7 +31,7 @@ def reorganize_includes(lines, self_name):
         def calc_special_case_weight(target):
             if target.endswith('PCH.h"'):
                 return -10
-            if target == '"Omni.h"':
+            if target.endswith('Omni.h"'):
                 return -9
             n = os.path.basename(target)
             if os.path.splitext(n)[0] == self_name:

@@ -3,13 +3,13 @@
 #include "Runtime/Base/Memory/StdMemoryResource.h"
 
 #if OMNI_CLANG
-#include <experimental/vector>
 #include <experimental/unordered_map>
 #include <experimental/unordered_set>
+#include <experimental/vector>
 #else
-#include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 #endif
 
 namespace Omni

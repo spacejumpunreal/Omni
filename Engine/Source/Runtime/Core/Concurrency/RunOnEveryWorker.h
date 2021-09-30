@@ -3,8 +3,8 @@
 #include "Runtime/Core/Concurrency/ConcurrencyModule.h"
 #include "Runtime/Core/Concurrency/JobPrimitives.h"
 #include "Runtime/Core/Concurrency/ThreadUtils.h"
-#include <mutex>
 #include <chrono>
+#include <mutex>
 
 namespace Omni
 {
