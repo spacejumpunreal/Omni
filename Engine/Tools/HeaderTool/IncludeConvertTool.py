@@ -17,7 +17,9 @@ def convert_includes(lines, self_name, mp):
                 if base_name in mp:
                     lines[line_idx] = '#include "%s"' % mp[base_name]
                 else:
-                    print "found unknown include at line:%d of %s" % (line_idx, self_name)
+                    print "found unknown include at line:%d of %s, can't find included file:%s" % \
+                          (line_idx, self_name, base_name)
+                    assert(False)
 
 
 def main():
