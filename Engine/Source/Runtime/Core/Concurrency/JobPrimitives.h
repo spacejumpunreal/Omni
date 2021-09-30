@@ -1,10 +1,10 @@
 #pragma once
-#include "Omni.h"
-#include "MultiThread/IShared.h"
-#include "Container/LinkedList.h"
-#include "Misc/PrivateData.h"
-#include "PlatformDefs.h"
-#include "CoreAPI.h"
+#include "Runtime/Prelude/Omni.h"
+#include "Runtime/Base/MultiThread/IShared.h"
+#include "Runtime/Base/Container/LinkedList.h"
+#include "Runtime/Base/Misc/PrivateData.h"
+#include "Runtime/Prelude/PlatformDefs.h"
+#include "Runtime/Core/CoreAPI.h"
 
 namespace Omni
 {

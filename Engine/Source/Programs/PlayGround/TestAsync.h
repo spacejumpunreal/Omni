@@ -1,7 +1,7 @@
 #pragma once
-#include "Omni.h"
-#include "Concurrency/ConcurrencyModule.h"
-#include "Misc/PlatformAPIs.h"
+#include "Runtime/Prelude/Omni.h"
+#include "Runtime/Core/Concurrency/ConcurrencyModule.h"
+#include "Runtime/Base/Misc/PlatformAPIs.h"
 #include <mutex>
 
 namespace Omni

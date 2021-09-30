@@ -1,5 +1,5 @@
 #pragma once
-#include "APIDefine.h"
+#include "Runtime/Prelude/APIDefine.h"
 
 #if PRELUDE_IS_DYNAMIC_LIBRARY
 #if EXPORT_PRELUDE

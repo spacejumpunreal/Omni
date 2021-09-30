@@ -1,8 +1,8 @@
 #pragma once
-#include "Omni.h"
-#include "Concurrency/ConcurrentDefs.h"
-#include "Concurrency/JobPrimitives.h"
-#include "System/Module.h"
+#include "Runtime/Prelude/Omni.h"
+#include "Runtime/Core/Concurrency/ConcurrentDefs.h"
+#include "Runtime/Core/Concurrency/JobPrimitives.h"
+#include "Runtime/Core/System/Module.h"
 
 
 namespace Omni

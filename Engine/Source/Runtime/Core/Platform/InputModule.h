@@ -1,7 +1,7 @@
 #pragma once
-#include "Omni.h"
-#include "Platform/InputDefs.h"
-#include "System/Module.h"
+#include "Runtime/Prelude/Omni.h"
+#include "Runtime/Core/Platform/InputDefs.h"
+#include "Runtime/Core/System/Module.h"
 
 namespace Omni
 {

@@ -1,5 +1,5 @@
-#include "Omni.h"
-#include "gtest/gtest.h"
+#include "Runtime/Prelude/Omni.h"
+#include "External/googletest/include/gtest/gtest.h"
 
 int main(int argc, char** argv) {
     printf("Running main() from %s\n", __FILE__);

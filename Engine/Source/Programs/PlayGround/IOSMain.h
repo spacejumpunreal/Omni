@@ -1,4 +1,4 @@
-#include "Omni.h"
+#include "Runtime/Prelude/Omni.h"
 #if OMNI_IOS
 #import <UIKit/UIKit.h>
 

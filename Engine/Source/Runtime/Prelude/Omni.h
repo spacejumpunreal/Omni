@@ -3,7 +3,7 @@
 #define NOMINMAX
 #include <stddef.h>
 #include <stdint.h>
-#include "MacroUtils.h"
+#include "Runtime/Prelude/MacroUtils.h"
 
 ////////////////////////////////platform
 #define OMNI_WINDOWS _WIN64

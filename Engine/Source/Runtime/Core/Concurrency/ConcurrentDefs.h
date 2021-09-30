@@ -1,12 +1,12 @@
 #pragma once
-#include "Omni.h"
+#include "Runtime/Prelude/Omni.h"
 
 namespace Omni
 {
     enum class QueueKind : u32
     {
 #define QUEUE_KIND(x) x,
-#include "Concurrency/QueueKind.inl"
+#include "Runtime/Core/Concurrency/QueueKind.inl"
 #undef QUEUE_KIND
     };
 }

@@ -1,6 +1,6 @@
-#include "CorePCH.h"
-#include "System/Module.h"
-#include "Misc/AssertUtils.h"
+#include "Runtime/Core/CorePCH.h"
+#include "Runtime/Core/System/Module.h"
+#include "Runtime/Base/Misc/AssertUtils.h"
 
 namespace Omni
 {

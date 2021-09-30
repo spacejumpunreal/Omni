@@ -1,5 +1,5 @@
 #pragma once
-#include "Omni.h"
+#include "Runtime/Prelude/Omni.h"
 
 namespace Omni
 {
@@ -9,7 +9,7 @@ namespace Omni
 #define ModuleItem(ModuleName) ModuleName,
 	enum class EngineModuleKeys : u8
 	{
-		#include "System/InternalModuleRegistry.inl"
+#include "Runtime/Core/System/InternalModuleRegistry.inl"
 		EngineModuleCount,
 	};
 #undef ModuleItem

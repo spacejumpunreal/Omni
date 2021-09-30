@@ -1,16 +1,16 @@
-#include "CorePCH.h"
-#include "System/System.h"
-#include "Allocator/MemoryModule.h"
-#include "Concurrency/ConcurrencyModule.h"
-#include "Concurrency/ThreadUtils.h"
-#include "System/Module.h"
-#include "System/ModuleExport.h"
-#include "System/InternalModuleRegistry.h"
-#include "Misc/PImplUtils.h"
-#include "Misc/ArrayUtils.h"
-#include "Misc/AssertUtils.h"
+#include "Runtime/Core/CorePCH.h"
+#include "Runtime/Core/System/System.h"
+#include "Runtime/Core/Allocator/MemoryModule.h"
+#include "Runtime/Core/Concurrency/ConcurrencyModule.h"
+#include "Runtime/Core/Concurrency/ThreadUtils.h"
+#include "Runtime/Core/System/Module.h"
+#include "Runtime/Core/System/ModuleExport.h"
+#include "Runtime/Core/System/InternalModuleRegistry.h"
+#include "Runtime/Base/Misc/PImplUtils.h"
+#include "Runtime/Base/Misc/ArrayUtils.h"
+#include "Runtime/Base/Misc/AssertUtils.h"
 
-#include "Memory/MonotonicMemoryResource.h"
+#include "Runtime/Base/Memory/MonotonicMemoryResource.h"
 
 
 #include <array>
@@ -45,12 +45,12 @@ namespace Omni
 
 	//constants
 #define ModuleItem(name) extern ModuleExportInfo ModuleCreationStubName(name);
-#include "System/InternalModuleRegistry.inl"
+#include "Runtime/Core/System/InternalModuleRegistry.inl"
 #undef ModuleItem
 
 #define ModuleItem(name) &ModuleCreationStubName(name),
 	static const ModuleExportInfo* InternalModuleInfo[] = {
-#include "System/InternalModuleRegistry.inl"
+#include "Runtime/Core/System/InternalModuleRegistry.inl"
 	};
 #undef ModuleItem
 

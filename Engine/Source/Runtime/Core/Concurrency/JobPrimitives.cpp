@@ -1,11 +1,11 @@
-#include "CorePCH.h"
-#include "Allocator/MemoryModule.h"
-#include "Concurrency/JobPrimitives.h"
-#include "Concurrency/ConcurrencyModule.h"
-#include "Concurrency/ThreadUtils.h"
-#include "Container/Queue.h"
-#include "Misc/Padding.h"
-#include "MultiThread/SpinLock.h"
+#include "Runtime/Core/CorePCH.h"
+#include "Runtime/Core/Allocator/MemoryModule.h"
+#include "Runtime/Core/Concurrency/JobPrimitives.h"
+#include "Runtime/Core/Concurrency/ConcurrencyModule.h"
+#include "Runtime/Core/Concurrency/ThreadUtils.h"
+#include "Runtime/Base/Container/Queue.h"
+#include "Runtime/Base/Misc/Padding.h"
+#include "Runtime/Base/MultiThread/SpinLock.h"
 
 
 namespace Omni

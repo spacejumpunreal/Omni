@@ -1,8 +1,8 @@
-#include "CorePCH.h"
-#include "Allocator/WrapperAllocator.h"
-#include "Memory/MemoryWatch.h"
-#include "Misc/ArrayUtils.h"
-#include "Misc/PrivateData.h"
+#include "Runtime/Core/CorePCH.h"
+#include "Runtime/Core/Allocator/WrapperAllocator.h"
+#include "Runtime/Base/Memory/MemoryWatch.h"
+#include "Runtime/Base/Misc/ArrayUtils.h"
+#include "Runtime/Base/Misc/PrivateData.h"
 
 #include <atomic>
 

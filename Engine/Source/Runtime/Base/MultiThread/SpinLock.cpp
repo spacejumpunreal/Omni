@@ -1,7 +1,7 @@
-#include "BasePCH.h"
-#include "MultiThread/SpinLock.h"
-#include "Misc/AssertUtils.h"
-#include "Misc/PlatformAPIs.h"
+#include "Runtime/Base/BasePCH.h"
+#include "Runtime/Base/MultiThread/SpinLock.h"
+#include "Runtime/Base/Misc/AssertUtils.h"
+#include "Runtime/Base/Misc/PlatformAPIs.h"
 
 namespace Omni
 {

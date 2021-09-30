@@ -1,20 +1,20 @@
-#include "CorePCH.h"
-#include "Allocator/MemoryModule.h"
-#include "MultiThread/IThreadLocal.h"
-#include "MultiThread/LockfreeContainer.h"
-#include "Concurrency/LockfreeNodeCache.h"
-#include "Concurrency/ThreadUtils.h"
-#include "Allocator/CacheLineAllocator.h"
-#include "Memory/MemoryArena.h"
-#include "Allocator/SNAllocator.h"
-#include "Allocator/WrapperAllocator.h"
-#include "Misc/PImplUtils.h"
-#include "MultiThread/ThreadLocalData.h"
-#include "Misc/PlatformAPIs.h"
-#include "System/Module.h"
-#include "System/ModuleExport.h"
-#include "System/ModuleImplHelpers.h"
-#include "Misc/AssertUtils.h"
+#include "Runtime/Core/CorePCH.h"
+#include "Runtime/Core/Allocator/MemoryModule.h"
+#include "Runtime/Base/MultiThread/IThreadLocal.h"
+#include "Runtime/Base/MultiThread/LockfreeContainer.h"
+#include "Runtime/Core/Concurrency/LockfreeNodeCache.h"
+#include "Runtime/Core/Concurrency/ThreadUtils.h"
+#include "Runtime/Core/Allocator/CacheLineAllocator.h"
+#include "Runtime/Base/Memory/MemoryArena.h"
+#include "Runtime/Core/Allocator/SNAllocator.h"
+#include "Runtime/Core/Allocator/WrapperAllocator.h"
+#include "Runtime/Base/Misc/PImplUtils.h"
+#include "Runtime/Base/MultiThread/ThreadLocalData.h"
+#include "Runtime/Base/Misc/PlatformAPIs.h"
+#include "Runtime/Core/System/Module.h"
+#include "Runtime/Core/System/ModuleExport.h"
+#include "Runtime/Core/System/ModuleImplHelpers.h"
+#include "Runtime/Base/Misc/AssertUtils.h"
 
 #if OMNI_WINDOWS
 #include <Windows.h>
@@ -84,7 +84,7 @@ namespace Omni
             const char* MemoryKindNames[] =
             {
 #define MEMORY_KIND(X) #X,
-#include "Memory/MemoryKind.inl"
+#include "Runtime/Base/Memory/MemoryKind.inl"
 #undef MEMORY_KIND
             };
             for (u32 iKind = 0; iKind < (u32)MemoryKind::Max; ++iKind)

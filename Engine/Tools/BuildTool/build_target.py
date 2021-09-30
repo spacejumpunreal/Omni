@@ -87,8 +87,8 @@ class BuildTarget(object):
         self.group = ""
         self.base_dir = os.path.dirname(build_file_path)
         self.dependencies = []
-        self.public_includes = [".", global_states.source_root]
-        self.private_includes = ["."]
+        self.public_includes = []
+        self.private_includes = [global_states.source_root]
         self.files = []
         self.public_defines = []
         self.private_defines = []
@@ -153,7 +153,16 @@ class BuildTarget(object):
             self.add_macro_define(import_def, PUBLIC_ITEMS)
 
     def use_pch(self, header, source):
-        self.pch = header, source
+        def handle_local_file(file_path):
+            if os.path.isabs(file_path):
+                return file_path
+            else:
+                return os.path.join(self.base_dir, file_path)
+
+        def get_source_root_path(file_path):
+            jp = os.path.join(self.base_dir, file_path)
+            return os.path.relpath(jp, global_states.source_root)
+        self.pch = get_source_root_path(header), handle_local_file(source)
 
 
 

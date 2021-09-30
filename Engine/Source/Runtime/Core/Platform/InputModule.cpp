@@ -1,16 +1,16 @@
-#include "CorePCH.h"
+#include "Runtime/Core/CorePCH.h"
 #if OMNI_WINDOWS
-#include "Platform/InputModule.h"
-#include "MultiThread/SpinLock.h"
-#include "Allocator/MemoryModule.h"
-#include "Memory/MemoryArena.h"
-#include "Misc/AssertUtils.h"
-#include "Misc/PImplUtils.h"
-#include "Container/PMRContainers.h"
-#include "Platform/KeyMap.h"
-#include "System/ModuleExport.h"
-#include "System/ModuleImplHelpers.h"
-#include "Misc/PImplUtils.h"
+#include "Runtime/Core/Platform/InputModule.h"
+#include "Runtime/Base/MultiThread/SpinLock.h"
+#include "Runtime/Core/Allocator/MemoryModule.h"
+#include "Runtime/Base/Memory/MemoryArena.h"
+#include "Runtime/Base/Misc/AssertUtils.h"
+#include "Runtime/Base/Misc/PImplUtils.h"
+#include "Runtime/Base/Container/PMRContainers.h"
+#include "Runtime/Core/Platform/KeyMap.h"
+#include "Runtime/Core/System/ModuleExport.h"
+#include "Runtime/Core/System/ModuleImplHelpers.h"
+#include "Runtime/Base/Misc/PImplUtils.h"
 
 
 #include <Windows.h>

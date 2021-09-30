@@ -1,6 +1,6 @@
 #pragma once
-#include "Omni.h"
-#include "MacroUtils.h"
+#include "Runtime/Prelude/Omni.h"
+#include "Runtime/Prelude/MacroUtils.h"
 #if OMNI_CLANG
 #include <experimental/memory_resource>
 #else

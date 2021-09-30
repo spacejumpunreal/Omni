@@ -1,6 +1,6 @@
-#include "BasePCH.h"
-#include "Misc/PlatformAPIs.h"
-#include "Misc/ArrayUtils.h"
+#include "Runtime/Base/BasePCH.h"
+#include "Runtime/Base/Misc/PlatformAPIs.h"
+#include "Runtime/Base/Misc/ArrayUtils.h"
 
 #if OMNI_WINDOWS
 #include <Windows.h>

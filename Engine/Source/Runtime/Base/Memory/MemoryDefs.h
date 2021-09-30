@@ -1,7 +1,7 @@
 #pragma once
-#include "Omni.h"
-#include "Container/PMRContainers.h"
-#include "Memory/StdMemoryResource.h"
+#include "Runtime/Prelude/Omni.h"
+#include "Runtime/Base/Container/PMRContainers.h"
+#include "Runtime/Base/Memory/StdMemoryResource.h"
 
 namespace Omni
 {
@@ -22,7 +22,7 @@ namespace Omni
 	enum class MemoryKind : u32
 	{
 #define MEMORY_KIND(X) X,
-#include "Memory/MemoryKind.inl"
+#include "Runtime/Base/Memory/MemoryKind.inl"
 #undef MEMORY_KIND
 	};
 }

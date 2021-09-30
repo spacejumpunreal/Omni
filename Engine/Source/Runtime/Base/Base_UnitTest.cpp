@@ -1,9 +1,9 @@
-#include "Omni.h"
-#include "Container/Queue.h"
-#include "Container/LinkedList.h"
-#include "Memory/MemoryArena.h"
-#include "Misc/PrivateData.h"
-#include "gtest/gtest.h"
+#include "Runtime/Prelude/Omni.h"
+#include "Runtime/Base/Container/Queue.h"
+#include "Runtime/Base/Container/LinkedList.h"
+#include "Runtime/Base/Memory/MemoryArena.h"
+#include "Runtime/Base/Misc/PrivateData.h"
+#include "External/googletest/include/gtest/gtest.h"
 #include <deque>
 
 TEST(Base, Queue)

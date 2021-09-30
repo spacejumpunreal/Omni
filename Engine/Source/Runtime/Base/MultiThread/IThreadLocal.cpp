@@ -1,6 +1,6 @@
-#include "BasePCH.h"
-#include "MultiThread/IThreadLocal.h"
-#include "Misc/AssertUtils.h"
+#include "Runtime/Base/BasePCH.h"
+#include "Runtime/Base/MultiThread/IThreadLocal.h"
+#include "Runtime/Base/Misc/AssertUtils.h"
 
 namespace Omni
 {

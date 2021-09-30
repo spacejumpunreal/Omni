@@ -1,5 +1,5 @@
 #pragma once
-#include "Omni.h"
-#include "BaseAPI.h"
-#include "StdLibHeaders.h"
-#include "Memory/StdMemoryResource.h"
+#include "Runtime/Prelude/Omni.h"
+#include "Runtime/Base/BaseAPI.h"
+#include "Runtime/Prelude/StdLibHeaders.h"
+#include "Runtime/Base/Memory/StdMemoryResource.h"

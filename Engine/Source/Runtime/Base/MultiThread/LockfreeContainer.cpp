@@ -1,7 +1,7 @@
-#include "BasePCH.h"
-#include "MultiThread/LockfreeContainer.h"
-#include "Math/CompileTime.h"
-#include "Misc/AssertUtils.h"
+#include "Runtime/Base/BasePCH.h"
+#include "Runtime/Base/MultiThread/LockfreeContainer.h"
+#include "Runtime/Base/Math/CompileTime.h"
+#include "Runtime/Base/Misc/AssertUtils.h"
 
 namespace Omni
 {

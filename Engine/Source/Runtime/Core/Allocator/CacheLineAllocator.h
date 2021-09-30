@@ -1,9 +1,9 @@
 #pragma once
-#include "Omni.h"
-#include "Allocator/IAllocator.h"
-#include "Misc/PrivateData.h"
-#include "PlatformDefs.h"
-#include "SuppressWarning.h"
+#include "Runtime/Prelude/Omni.h"
+#include "Runtime/Core/Allocator/IAllocator.h"
+#include "Runtime/Base/Misc/PrivateData.h"
+#include "Runtime/Prelude/PlatformDefs.h"
+#include "Runtime/Prelude/SuppressWarning.h"
 
 namespace Omni
 {

@@ -1,7 +1,7 @@
 #pragma once
-#include "Omni.h"
-#include "BaseAPI.h"
-#include "PlatformDefs.h"
+#include "Runtime/Prelude/Omni.h"
+#include "Runtime/Base/BaseAPI.h"
+#include "Runtime/Prelude/PlatformDefs.h"
 #include <atomic>
 
 namespace Omni

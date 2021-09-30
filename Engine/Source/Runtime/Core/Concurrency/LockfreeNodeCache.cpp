@@ -1,10 +1,10 @@
-#include "CorePCH.h"
-#include "Concurrency/LockfreeNodeCache.h"
-#include "MultiThread/LockfreeContainer.h"
-#include "MultiThread/IThreadLocal.h"
-#include "Misc/AssertUtils.h"
-#include "Allocator/MemoryModule.h"
-#include "Math/CompileTime.h"
+#include "Runtime/Core/CorePCH.h"
+#include "Runtime/Core/Concurrency/LockfreeNodeCache.h"
+#include "Runtime/Base/MultiThread/LockfreeContainer.h"
+#include "Runtime/Base/MultiThread/IThreadLocal.h"
+#include "Runtime/Base/Misc/AssertUtils.h"
+#include "Runtime/Core/Allocator/MemoryModule.h"
+#include "Runtime/Base/Math/CompileTime.h"
 
 namespace Omni
 {

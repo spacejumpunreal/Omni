@@ -190,6 +190,7 @@ class VS2019Generator(base_generator.BaseGenerator):
                 additional_include_directories = [os.path.relpath(d, global_states.build_root) for d in abs_inc_dirs]
                 additional_include_directories.append("%(AdditionalIncludeDirectories)")
                 additional_link_libs = ["mincore.lib", "d3d12.lib", "dxgi.lib", "d3dcompiler.lib", "%(AdditionalDependencies)"]
+                pch_path = "" if target.pch is None else target.pch[0]
                 clcompile = XmlNode("ClCompile", (
                     XmlNode("WarningLevel", "Level4"),
                     XmlNode("Optimization", "Disabled" if is_debug else "MaxSpeed"),
@@ -202,7 +203,7 @@ class VS2019Generator(base_generator.BaseGenerator):
                     XmlNode("EnableEnhancedInstructionSet", "AdvancedVectorExtensions2"),
                     XmlNode("TreatWarningAsError", "true"),
                     XmlNode("PrecompiledHeader", "Use" if target.pch else "NotUsing"),
-                    XmlNode("PrecompiledHeaderFile", "" if target.pch is None else target.pch[0]),
+                    XmlNode("PrecompiledHeaderFile", pch_path),
                 ))
 
                 subsystem = {

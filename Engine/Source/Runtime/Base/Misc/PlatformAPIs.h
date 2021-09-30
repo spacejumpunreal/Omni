@@ -1,7 +1,7 @@
 #pragma once
-#include "Omni.h"
-#include "BaseAPI.h"
-#include "Misc/AssertUtils.h"
+#include "Runtime/Prelude/Omni.h"
+#include "Runtime/Base/BaseAPI.h"
+#include "Runtime/Base/Misc/AssertUtils.h"
 
 namespace Omni
 {

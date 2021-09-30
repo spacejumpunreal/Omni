@@ -1,7 +1,7 @@
 #pragma once
-#include "Omni.h"
-#include "BaseAPI.h"
-#include "Misc/PrivateData.h"
+#include "Runtime/Prelude/Omni.h"
+#include "Runtime/Base/BaseAPI.h"
+#include "Runtime/Base/Misc/PrivateData.h"
 #include <atomic>
 
 namespace Omni
