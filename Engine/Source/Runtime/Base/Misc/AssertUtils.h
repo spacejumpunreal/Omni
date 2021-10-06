@@ -1,4 +1,5 @@
 #pragma once
+#include "Runtime/Prelude/Omni.h"
 #include "Runtime/Base/BaseAPI.h"
 #include <cstdarg>
 #include <cstdio>
@@ -44,8 +45,8 @@ namespace Omni
 
 #define CheckAlways(cond, ...) OmniCheck((cond), ##__VA_ARGS__)
 #define CheckSucceeded(cond, ...) OmniCheck(SUCCEEDED(cond), ##__VA_ARGS__)
-#ifdef NDEBUG
-#define CheckDebug(cond, ...) ((void)(cond))
-#else
+#if OMNI_DEBUG
 #define CheckDebug(cond, ...) OmniCheck((cond), ##__VA_ARGS__)
+#else
+#define CheckDebug(cond, ...) ((void)(cond))
 #endif

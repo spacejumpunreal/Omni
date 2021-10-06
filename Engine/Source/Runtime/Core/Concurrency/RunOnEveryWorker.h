@@ -1,5 +1,6 @@
 #pragma once
 #include "Runtime/Prelude/Omni.h"
+#include "Runtime/Core/CoreAPI.h"
 #include "Runtime/Core/Concurrency/ConcurrencyModule.h"
 #include "Runtime/Core/Concurrency/JobPrimitives.h"
 #include "Runtime/Core/Concurrency/ThreadUtils.h"

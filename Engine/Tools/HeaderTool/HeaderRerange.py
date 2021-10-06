@@ -39,7 +39,9 @@ def reorganize_includes(lines, self_name):
             base_priority = 0
             if target.endswith('PCH.h"'):
                 return base_priority - 10
-            if target.endswith('Omni.h"'):
+            elif target.endswith('Omni.h"'):
+                return base_priority - 10
+            if target.endswith('API.h"'):
                 return base_priority - 9
             n = os.path.basename(target)
             basename_no_ext = os.path.splitext(n)[0]

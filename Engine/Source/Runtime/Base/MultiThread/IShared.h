@@ -1,4 +1,5 @@
 #pragma once
+#include "Runtime/Base/BaseAPI.h"
 #include <atomic>
 
 namespace Omni

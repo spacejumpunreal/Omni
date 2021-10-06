@@ -1,5 +1,6 @@
 #pragma once
 #include "Runtime/Prelude/Omni.h"
+#include "Runtime/Base/BaseAPI.h"
 #define ARRAY_LENGTH(a) (sizeof(a) / sizeof(a[0]))
 
 namespace Omni

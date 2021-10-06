@@ -1,5 +1,6 @@
 #pragma once
 #include "Runtime/Prelude/Omni.h"
+#include "Runtime/Base/BaseAPI.h"
 #include "Runtime/Base/Misc/AssertUtils.h"
 #include "Runtime/Prelude/PlatformDefs.h"
 #include "Runtime/Prelude/SuppressWarning.h"

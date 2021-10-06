@@ -15,14 +15,17 @@
 #elif IMPORT_BASE
 #define BASE_API IMPORT_BASE_API
 #else
-#error("using header of module that is not imported")
+#error("using header from a module that is not imported")
 #endif
 
 
-//the deal
+//the plan
 /*
 * # user
-*   - define import/export in a file, but there's a problem, what about inferred dependency, so dependency resolved by build system is still needed
+*   - declare import in build files
 * # implementation
+*   - declare export in build files
+*   - include ModuleAPI in all .h for checking
 * # build tool
+*   - generate EXPORT_MODULE/IMPORT_MODULE defs
 */

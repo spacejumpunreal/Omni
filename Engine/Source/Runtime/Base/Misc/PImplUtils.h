@@ -1,4 +1,5 @@
 #pragma once
+#include "Runtime/Base/BaseAPI.h"
 #include <type_traits>
 
 namespace Omni

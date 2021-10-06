@@ -1,4 +1,5 @@
 #pragma once
+#include "Runtime/Prelude/PreludeAPI.h"
 
 //references: https://github.com/kobalicek/ppmagic/blob/master/ppmagic.h
 
