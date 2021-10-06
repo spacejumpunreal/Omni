@@ -4,6 +4,13 @@ import os
 import re
 
 re_begin_with_include = re.compile(r'\s*#include\s*(.*)')
+re_runtime_known_path = re.compile(r'Runtime.(Prelude|Base|Core)..*')
+known_runtime_sub_mod_count = 3
+known_runtime_sub_mods = {
+    u"Prelude": 0,
+    u"Base": 1,
+    u"Core": 2,
+}
 
 
 def reorganize_includes(lines, self_name):
@@ -29,14 +36,22 @@ def reorganize_includes(lines, self_name):
     def sort_paths(a, b):
 
         def calc_special_case_weight(target):
+            base_priority = 0
             if target.endswith('PCH.h"'):
-                return -10
+                return base_priority - 10
             if target.endswith('Omni.h"'):
-                return -9
+                return base_priority - 9
             n = os.path.basename(target)
-            if os.path.splitext(n)[0] == self_name:
-                return -8
-            return 1
+            basename_no_ext = os.path.splitext(n)[0]
+            if basename_no_ext == self_name:
+                return base_priority - 8
+            # weight according to path start
+            m = re_runtime_known_path.match(target)
+            if m is not None:
+                sub = m.group(1)
+                return base_priority - 7 + known_runtime_sub_mods.get(sub, known_runtime_sub_mod_count)
+
+            return base_priority - 7 + known_runtime_sub_mod_count + 1
         av, bv = map(calc_special_case_weight, (a, b))
         if av != bv:
             return cmp(av, bv)

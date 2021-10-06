@@ -13,7 +13,7 @@ class Core(build_target.BuildTarget):
 
 class CoreUnitTest(build_target.BuildTarget):
     def __init__(self, build_file_path):
-        super(CoreUnitTest, self).__init__(build_file_path)
+        super(CoreUnitTest, self).__init__(build_file_path)DYNAMIC_LIBRARY
         self.target_type = build_target.TARGET_TYPE_CONSOLE_APP
         self.setup_build_files(build_target.default_unittest_rule)
         self.dependencies = ["Core", "GTest"]

@@ -1,5 +1,6 @@
 #pragma once
 #include "Runtime/Prelude/Omni.h"
+#include "Runtime/Base/BaseAPI.h"
 #include "Runtime/Base/Container/PMRContainers.h"
 #include "Runtime/Base/Memory/StdMemoryResource.h"
 
