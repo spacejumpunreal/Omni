@@ -358,18 +358,35 @@ class VS2019Generator(base_generator.BaseGenerator):
         for t in self._targets.itervalues():
             if t.group == "":
                 t.group = os.path.relpath(os.path.dirname(t.base_dir), global_states.source_root)
+                t.group = t.group.replace('/', '\\')
             target_dir_rp = t.group
-            if target_dir_rp and target_dir_rp != '.':
+            assert(target_dir_rp and target_dir_rp != '.')
+            while True:
                 guid = path2guid.get(target_dir_rp, None)
                 if guid is None:
                     guid = uuid.uuid5(uuid.NAMESPACE_URL, target_dir_rp)  # a directory, assign guid for it
                     path2guid[target_dir_rp] = guid
-                nested_projects.append("\t\t{%s} = {%s}\n" % (str(t.guid).upper(), str(guid).upper()))
+                splits = target_dir_rp.rsplit('\\', 1)
+                if len(splits) == 1:
+                    break
+                target_dir_rp = splits[0]
+
+        for path, guid in path2guid.iteritems():
+            splits = path.rsplit('\\', 1)
+            if len(splits) == 1:
+                continue
+            parent_guid = path2guid[splits[0]]
+            nested_projects.append("\t\t{%s} = {%s}\n" % (str(guid).upper(), str(parent_guid).upper()))
+
+        for t in self._targets.itervalues():
+            parent_guid = path2guid[t.group]
+            nested_projects.append("\t\t{%s} = {%s}\n" % (str(t.guid).upper(), str(parent_guid).upper()))
 
         frags = []
         for path, guid in path2guid.iteritems():
+            base_name = path.rsplit('\\')[-1]
             s = 'Project("{%s}") = "%s", "%s", "{%s}"\nEndProject\n' % (
-                "2150E333-8FDC-42A3-9474-1A3956D46DE8", path, path, str(guid).upper())
+                "2150E333-8FDC-42A3-9474-1A3956D46DE8", base_name, base_name, str(guid).upper())
             frags.append(s)
         sorted_prj_files = sorted(generated_projects, key=lambda x: x[1])
         for target, vcxproj_file in sorted_prj_files:

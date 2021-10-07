@@ -1,39 +1,58 @@
-#include "Programs/PlayGround/PlayGroundPCH.h"
-#include "Programs/PlayGround/PlayGroundExperiment.h"
-#include "Runtime/Base/Container/PMRContainers.h"
+#include "Programs/Experiments/MultiThreadEfficiency/MultiThreadEfficiency.h"
+#include "Runtime/Base/Memory/MemoryArena.h"
+#include "Runtime/Base/Misc/ArrayUtils.h"
+#include "Runtime/Base/Misc/AssertUtils.h"
+#include "Runtime/Base/Misc/PerfUtils.h"
 #include "Runtime/Base/Misc/PlatformAPIs.h"
 #include "Runtime/Base/MultiThread/LockfreeContainer.h"
+#include "Runtime/Base/MultiThread/SpinLock.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
+#include "Runtime/Core/Concurrency/ConcurrencyModule.h"
+#include "Runtime/Core/Concurrency/JobPrimitives.h"
 #include "Runtime/Core/Concurrency/LockfreeNodeCache.h"
-
+#include "Runtime/Core/Concurrency/ThreadUtils.h"
+#include "Runtime/Core/Platform/InputDefs.h"
+#include "Runtime/Core/Platform/InputModule.h"
+#include "Runtime/Core/Platform/KeyMap.h"
+#include "Runtime/Core/System/System.h"
 
 #include <atomic>
 #include <chrono>
+#include <functional>
+#include <mutex>
 #include <thread>
+#include <unordered_set>
 
 namespace Omni
 {
-    void ExperimentAll()
-    {
-        //Exp2ThreadsPingpong();
-        ExpLockfreeVSSingle();
-    }
-
     struct CacheAlignedCounter
     {
+    public:
         static constexpr int CounterSize = sizeof(std::atomic<size_t>);
-        
+        std::atomic<size_t> Count;
+        char Padding[256 - CounterSize];
+    public:
         CacheAlignedCounter()
             : Count(0)
         {}
 
-        std::atomic<size_t> Count;
-        char Padding[256 - CounterSize];
     };
 
     template<size_t TestCount>
     struct Exp2ThreadsPassToken
     {
+        /*
+            test:
+                N threads uses a token to control who has access to a global shared counter,
+                each thread read the token to know if it has access,
+                if has access, increment the counter, and then modify token to pass access to other thread
+
+        */
+    private:
+        std::atomic<u64>        mToken;
+        size_t                  mThreadCount;
+        CacheAlignedCounter     mData0;
+        CacheAlignedCounter* mDataPtr;
     public:
         Exp2ThreadsPassToken(size_t threadCount)
             : mToken(0)
@@ -56,7 +75,7 @@ namespace Omni
                 PauseThread();
                 if (mToken.load(std::memory_order_acquire) != threadIndex)
                 {
-                    
+
                     continue;
                 }
                 size_t prevValue = mDataPtr->Count.fetch_add(1, std::memory_order_relaxed);
@@ -69,11 +88,6 @@ namespace Omni
         {
             d->Run(i);
         }
-    private:
-        std::atomic<u64>        mToken;
-        size_t                  mThreadCount;
-        CacheAlignedCounter     mData0;
-        CacheAlignedCounter*    mDataPtr;
     };
 
     void Exp2ThreadsPingpong()
@@ -141,7 +155,16 @@ namespace Omni
     };
 
     void ExpLockfreeVSSingle()
-    {
+    {/*
+        test:
+           N threads sharing a LockfreeStack which contains a single node,
+           the element has a pointer to a global counter,
+           each thread try to pop this node,
+           if get it, increment the global counter and then push node back,
+           quit until counter reached speicific value
+        objective:
+            see how slow can multithread be compared with single thread
+        */
         constexpr size_t TestCount = 0x7ffffff;
         size_t nThreads = std::thread::hardware_concurrency() / 4;
         nThreads = 4;
@@ -162,4 +185,20 @@ namespace Omni
 
         printf("\nExpLockfreeVSSingle(%d threads) duration:%fs\n", (int)nThreads, durtion.count());
     }
+
+	void PlayGroundCode()
+	{
+        Exp2ThreadsPingpong();
+        ExpLockfreeVSSingle();
+	}
+}
+
+int main(int, const char**)
+{
+	Omni::System::CreateSystem();
+	Omni::System& system = Omni::System::GetSystem();
+	system.InitializeAndJoin(0, nullptr, Omni::PlayGroundCode);
+	system.DestroySystem();
+
+	return 0;
 }
