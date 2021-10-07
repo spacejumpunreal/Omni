@@ -17,15 +17,28 @@ namespace Omni
 		Finalizing,
 	};
 
+	/*
+	* # init sequence
+	* - ctor called for module
+	* - call Initialize() until if Module::Initialize() is called by this module(considered fully initialized)
+	* - Retain() may be called by others to declare reference
+	*
+	* # destroy sequence
+	* - Release() called until eached zero reference
+	* - call Finalize() until if Module::Finalize() is called by this module(considered that finalize is done)
+	* - call dtor to free memory
+	* 
+	*/
+
 	class CORE_API Module
 	{
 	public:
 		Module();
 		virtual void Destroy() = 0;
 		virtual void Initialize(const EngineInitArgMap&);
-		virtual void Initializing();
+		void Initializing();
 		virtual void Finalize();
-		virtual void Finalizing();
+		void Finalizing();
 		virtual ~Module();
 
 		ModuleStatus GetStatus(); //supposed to be called on MainThread during Initialization and Finalization

@@ -6,6 +6,11 @@ namespace Omni
 {
 	class MonotonicMemoryResource;
 	class Module;
+	struct ModuleExportInfo;
+
+	using ModuleKey = i32;
+	using SystemInitializedCallback = void(*)();
+
 	enum class SystemStatus : u8
 	{
 		Uninitialized,
@@ -15,8 +20,6 @@ namespace Omni
 		Finalizing,
 	};
 
-	using ModuleKey = i32;
-	using SystemInitializedCallback = void(*)();
 
 	class CORE_API System
 	{
@@ -25,19 +28,18 @@ namespace Omni
 		static void CreateSystem();
 		static System& GetSystem();
 		void DestroySystem();
-
-		//EngineModule MainThread
-		//whoever called this became MainThread
-		void InitializeAndJoin(u32 argc, const char** argv, SystemInitializedCallback onSystemInitialized); 
-		void Finalize();
-
-		//API for Engine users
+		////the thread that InitializeAndJoin this beomes MainThread
+		void InitializeAndJoin(u32 argc, const char** argv, SystemInitializedCallback onSystemInitialized);
 		SystemStatus GetStatus();
 		void TriggerFinalization(bool assertOnMiss);
 
 		//APIs for Modules
+		void RegisterModule(const ModuleExportInfo& moduleInfo);
 		Module* GetModule(ModuleKey moduleKey) const;
 		Module* GetModule(const char* s) const;
 		MonotonicMemoryResource& GetInitMemResource();
+
+		//internal use
+		void Finalize();
 	};
 }

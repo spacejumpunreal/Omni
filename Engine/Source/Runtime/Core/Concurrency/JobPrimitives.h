@@ -11,6 +11,7 @@ namespace Omni
 {
 	class DispatchWorkItem;
 
+
 	class DispatchQueue
 	{
 	public:
@@ -22,11 +23,12 @@ namespace Omni
 		PrivateData<CPU_CACHE_LINE_SIZE * 3, CPU_CACHE_LINE_SIZE>	mData;
 	};
 
+
 	class DispatchWorkItem : public SListNode
 	{
 	public:
 		template<typename T>
-		static DispatchWorkItem& Create(void (*func)(T*), T* argPtr)
+		static DispatchWorkItem& Create(void (*func)(T*), const T* argPtr)
 		{
 			static_assert(std::is_standard_layout_v<T> && std::is_trivial_v<T>);
 			static_assert(alignof(DispatchWorkItem) <= sizeof(void*));
@@ -57,6 +59,7 @@ namespace Omni
 		void*				mFPtr;
 	};
 
+
 	class DispatchGroup
 	{
 	public:
@@ -64,6 +67,9 @@ namespace Omni
 		CORE_API ~DispatchGroup();
 		CORE_API void Destroy();
 		CORE_API void Enter();
+#if OMNI_DEBUG
+		CORE_API void Lock();
+#endif
 		CORE_API void Leave();
 		CORE_API void Notify(DispatchWorkItem& item, DispatchQueue* queue);
 	private:

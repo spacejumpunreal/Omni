@@ -15,8 +15,11 @@
 
 namespace Omni
 {
+	//forward decl
 	struct CacheLinePageHeader;
 
+
+	//declarations
 	struct CacheLinePerThreadData
 	{
 	public:
@@ -29,19 +32,29 @@ namespace Omni
 		u32						Index;
 		CacheLinePageHeader*	Pages[LocalPageCount];
 	};
+
+
 	struct CacheLinePageHeader
 	{
 	public:
-		static FORCEINLINE CacheLinePageHeader& GetHeader(void* p);
+		static FORCEINLINE CacheLinePageHeader& GetHeader(void* addr);
 		bool IsAvailable() { return AcquireCount.Data.load(std::memory_order_relaxed) == ReleaseCount.Data.load(std::memory_order_relaxed); }
 	public:
 		CacheAligned<std::atomic<size_t>>		AcquireCount;
 		CacheAligned<std::atomic<size_t>>		ReleaseCount;
 	};
 
+
 	OMNI_PUSH_WARNING()
 	OMNI_SUPPRESS_WARNING_PADDED_DUE_TO_ALIGNMENT()
-
+	/*
+		alloc algorithm:
+		1. do bump allocation on local page, if exhausted, try next entry in ring buffer
+		2. when using new entry(page), check if is totally free, use if free, otherwise put it on global list for inspection
+		3. loop over global queue(mPendingPages) to find free page, if no avail, mmap new one
+		free algorithm:
+		1. decrease use count foro page
+	*/
 	struct CacheLineAllocatorPrivate final : public StdPmr::memory_resource
 	{
 	public:
@@ -62,22 +75,30 @@ namespace Omni
 	};
 	OMNI_POP_WARNING()
 
-	//global
+
+	//global data
 	OMNI_DECLARE_THREAD_LOCAL(CacheLinePerThreadData, gCacheLinePerThreadData);
 
+
+	//CacheLinePageHeader impl
 	CacheLinePageHeader& CacheLinePageHeader::GetHeader(void* addr)
 	{
 		u64 addr64 = (u64)addr;
 		u64 p64 = addr64 & ~(u64)(CacheLineAllocatorPrivate::PageSize - 1);
 		return *(CacheLinePageHeader*)p64;
 	}
+
+
+	//CacheLineAllocatorPrivate impl
 	CacheLineAllocatorPrivate::CacheLineAllocatorPrivate()
 		: mPendingPages(1)
 	{}
+
 	u32 CacheLineAllocatorPrivate::Size2Cachelines(size_t sz)
 	{
 		return ((u32)AlignUpSize(sz, CPU_CACHE_LINE_SIZE)) >> CacheLineSizeShift;
 	}
+
 	void CacheLineAllocatorPrivate::Shrink()
 	{
 		MemoryModule& mm = MemoryModule::Get();
@@ -149,34 +170,42 @@ namespace Omni
 			{
 				ld.Index = ni;
 			}
-			ld.UsedCachelines = 2;
+			ld.UsedCachelines = HeaderCacheLines;
 		}
 		ld.Pages[ld.Index]->AcquireCount.Data.fetch_add(1, std::memory_order_relaxed);
 		char* p = ((char*)ld.Pages[ld.Index]) + ((u64)ld.UsedCachelines << CacheLineAllocatorPrivate::CacheLineSizeShift);
 		ld.UsedCachelines += lines;
 		return p;
 	}
+
 	void CacheLineAllocatorPrivate::do_deallocate(void* p, std::size_t, std::size_t)
 	{
 		CacheLinePageHeader& header = CacheLinePageHeader::GetHeader(p);
 		header.ReleaseCount.Data.fetch_add(1, std::memory_order_release);
 	}
+
 	bool CacheLineAllocatorPrivate::do_is_equal(const StdPmr::memory_resource& other) const noexcept
 	{
 		return this == &other;
 	}
+
+
+	//CacheLineAllocator impl
 	CacheLineAllocator::CacheLineAllocator()
 		: mData(PrivateDataType<CacheLineAllocatorPrivate>{})
 	{
 	}
+
 	CacheLineAllocator::~CacheLineAllocator()
 	{
 		mData.DestroyAs<CacheLineAllocatorPrivate>();
 	}
+
 	PMRResource* CacheLineAllocator::GetResource()
 	{
 		return mData.Ptr<CacheLineAllocatorPrivate>();
 	}
+
 	MemoryStats CacheLineAllocator::GetStats()
 	{
 		MemoryStats ret;
@@ -185,27 +214,31 @@ namespace Omni
 		self.mWatch.Data.Dump(ret);
 		return ret;
 	}
+
 	const char* CacheLineAllocator::GetName()
 	{
 		return "CacheLineAllocator";
 	}
+
 	void CacheLineAllocator::Shrink()
 	{
 		CacheLineAllocatorPrivate& self = mData.Ref<CacheLineAllocatorPrivate>();
 		self.Shrink();
 	}
+
 	void CacheLineAllocator::ThreadInitialize()
 	{
 		CheckAlways(gCacheLinePerThreadData->IsClean());
 		MemoryModule& mm = MemoryModule::Get();
 		gCacheLinePerThreadData->Index = 0;
-		gCacheLinePerThreadData->UsedCachelines = 2;
+		gCacheLinePerThreadData->UsedCachelines = CacheLineAllocatorPrivate::HeaderCacheLines;
 		for (u32 i = 0; i < CacheLinePerThreadData::LocalPageCount; ++i)
 		{
 			auto p = gCacheLinePerThreadData->Pages[i] = (CacheLinePageHeader*)mm.Mmap(CacheLineAllocatorPrivate::PageSize, CacheLineAllocatorPrivate::PageSize);
 			new (p) CacheLinePageHeader();
 		}
 	}
+
 	void CacheLineAllocator::ThreadFinalize()
 	{
 		CacheLineAllocatorPrivate& self = mData.Ref<CacheLineAllocatorPrivate>();

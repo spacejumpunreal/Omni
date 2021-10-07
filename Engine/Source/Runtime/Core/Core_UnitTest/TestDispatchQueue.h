@@ -16,6 +16,9 @@ namespace Omni
 {
 	struct TestDispatchQueue
 	{
+		/*
+			tested: multi-thread enqueue jobs(for each worker, JobBatch * JobLoop jobs) on to Primary serial queue, then wait for all equeued jobs are executed
+		*/
 		static constexpr u64 JobBatch = 256;
 		static constexpr u64 JobLoop = 256;
 		static constexpr u32 MaxThreads = 32;
@@ -30,6 +33,7 @@ namespace Omni
 			, ExpectedSum(0)
 			, Sum(0)
 		{
+			CheckAlways(ConcurrencyModule::Get().GetWorkerCount() <= MaxThreads);
 			memset(RunOnHistory, 0, sizeof(RunOnHistory));
 			u64 n = workerCount * (JobBatch * JobLoop);
 			ExpectedSum = n * (n - 1) / 2;

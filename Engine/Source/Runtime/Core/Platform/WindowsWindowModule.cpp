@@ -162,10 +162,6 @@ namespace Omni
         MemoryModule::Get().Release();
         Module::Finalize();
     }
-    void WindowModule::Finalizing()
-    {
-        Finalize();
-    }
     WindowModule& WindowModule::Get()
     {
         return *gWindowsWindowModule;
@@ -244,6 +240,6 @@ namespace Omni
     {
         InitMemFactory<WindowsWindowModuleImpl>::Delete((WindowsWindowModuleImpl*)this);
     }
-    ExportInternalModule(Window, ModuleExportInfo(WindowModuleCtor, false, "Window"));
+    EXPORT_INTERNAL_MODULE(Window, ModuleExportInfo(WindowModuleCtor, false, "Window"));
 }
 #endif//OMNI_WINDOWS

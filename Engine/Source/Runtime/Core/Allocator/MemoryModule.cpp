@@ -29,8 +29,10 @@ namespace Omni
     //flags
     static constexpr bool StatsMemoryKinds = false;
 
+
     //forard decalrations
     class IAllocator;
+
 
     //definitions
     struct MemoryModulePrivateData
@@ -45,12 +47,16 @@ namespace Omni
     public:
         MemoryModulePrivateData();
     };
+
     using MemoryModuleImpl = PImplCombine<MemoryModule, MemoryModulePrivateData>;
+
+
     //globals
     MemoryModuleImpl*						gMemoryModule;
     OMNI_DECLARE_THREAD_LOCAL(ScratchStack, gThreadArena);
-    //methods
 
+
+    //methods
     MemoryModulePrivateData::MemoryModulePrivateData()
         : mThreadArenaSize(DefaultThreadArenaSize)
         , mCacheLineAllocator(nullptr)
@@ -109,10 +115,12 @@ namespace Omni
             }
         }
     }
+
     void MemoryModule::Initialize(const EngineInitArgMap& args)
     {
         Module::Initialize(args);
     }
+
     void MemoryModule::Finalize()
     {
         MemoryModulePrivateData* self = MemoryModuleImpl::GetCombinePtr(this);
@@ -136,15 +144,18 @@ namespace Omni
         Module::Finalize();
         gMemoryModule = nullptr;
     }
+
     MemoryModule& MemoryModule::Get()
     {
         return *gMemoryModule;
     }
+
     PMRAllocator MemoryModule::GetPMRAllocator(MemoryKind kind)
     {
         MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
         return self->mKind2PMRResources[(u32)kind];
     }
+
     void* MemoryModule::Mmap(size_t size, size_t alignment)
     {
         CheckAlways(IsPow2((u64)alignment));
@@ -200,6 +211,7 @@ namespace Omni
         return nullptr;
 #endif
     }
+
     void MemoryModule::Munmap(void* mem, size_t size)
     {
         MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
@@ -211,10 +223,12 @@ namespace Omni
         munmap(mem, size);
 #endif
     }
+
     ScratchStack& MemoryModule::GetThreadScratchStack()
     {
         return gThreadArena.GetRaw();
     }
+
     void MemoryModule::ThreadInitialize()
     {
         CheckAlways(gThreadArena->GetPtr() == nullptr);
@@ -226,6 +240,7 @@ namespace Omni
         if (self->mCacheLineAllocator)
             self->mCacheLineAllocator->ThreadInitialize();
     }
+
     void MemoryModule::ThreadFinalize()
     {
         MemoryModuleImpl* self = gMemoryModule;
@@ -237,6 +252,7 @@ namespace Omni
         CheckAlways(p != nullptr);
         self->GetPMRAllocator(MemoryKind::ThreadScratchStack).resource()->deallocate(p, self->mThreadArenaSize, OMNI_DEFAULT_ALIGNMENT);
     }
+
     void MemoryModule::GetStats(StdPmr::vector<MemoryStats>& ret)
     {
         MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
@@ -246,6 +262,7 @@ namespace Omni
                 ret.push_back(a->GetStats());
         }
     }
+
     void MemoryModule::Shrink()
     {
         MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
@@ -255,15 +272,18 @@ namespace Omni
                 a->Shrink();
         }
     }
+
     static Module* MemoryModuleCtor(const EngineInitArgMap&)
     {
         return InitMemFactory<MemoryModuleImpl>::New();
     }
+
     void MemoryModule::Destroy()
     {
         return InitMemFactory<MemoryModuleImpl>::Delete((MemoryModuleImpl*)this);
     }
-    ExportInternalModule(Memory, ModuleExportInfo(MemoryModuleCtor, true));
+
+    EXPORT_INTERNAL_MODULE(Memory, ModuleExportInfo(MemoryModuleCtor, true));
 }
 
 void operator delete(void*, Omni::MemoryKind)

@@ -79,10 +79,6 @@ namespace Omni
         Module::Finalize();
         mm.Release();
     }
-    void InputModule::Finalizing()
-    {
-        Finalize();
-    }
     InputModule& InputModule::Get()
     {
         return *gInputModule;
@@ -180,7 +176,7 @@ namespace Omni
     {
         InitMemFactory<InputModuleImpl>::Delete((InputModuleImpl*)this);
     }
-    ExportInternalModule(Input, ModuleExportInfo(InputModuleCtor, true, "Input"));
+    EXPORT_INTERNAL_MODULE(Input, ModuleExportInfo(InputModuleCtor, true, "Input"));
 
 }
 #endif//OMNI_WINDOWS

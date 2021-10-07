@@ -5,6 +5,17 @@
 
 namespace Omni
 {
+    template<typename T>
+    class HasIsCleanMethod
+    {//standard use of SFINAE: https://en.wikipedia.org/wiki/Substitution_failure_is_not_an_error
+        template<typename C> static std::true_type Test(decltype(&C::IsClean));
+        template<typename C> static std::false_type Test(...);
+    public:
+        using Type = decltype(Test<T>(nullptr));
+        static constexpr bool Value = Type::value;
+    };
+
+
     class BASE_API IThreadLocal
     {
     public:
@@ -12,22 +23,13 @@ namespace Omni
         ~IThreadLocal() = default; //virtual dtor is not needed since thread_locals are not deleted through pointer
         virtual bool IsClean() = 0;
         static void CheckAllThreadLocalClean();
-        IThreadLocal* GetAllThreadLocals();
+        static IThreadLocal* GetAllThreadLocals();
     protected:
         void CheckIsClean();
     private:
         IThreadLocal*       mNext;
     };
 
-    template<typename T>
-    class HasIsCleanMethod
-    {
-        template<typename C> static std::true_type Test(decltype(&C::IsClean));
-        template<typename C> static std::false_type Test(...);
-    public:
-        using Type = decltype(Test<T>(nullptr));
-        static constexpr bool Value = Type::value;
-    };
 
     template<typename T>
     class ThreadLocalWrapper : public IThreadLocal

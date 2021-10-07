@@ -18,6 +18,7 @@ namespace Omni
 			, Key(key)
 			, IsAlwaysLoad(isAlwaysLoad)
 		{}
+		ModuleExportInfo(const ModuleExportInfo& other) = default;
 		ModuleCtor		Ctor;
 		const char*		Name;
 		i32				Key;
@@ -25,6 +26,6 @@ namespace Omni
 	};
 }
 
-#define ModuleCreationStubName(moduleName) moduleName##ExportInfoStub
-#define ExportInternalModule(moduleName, info) ModuleExportInfo ModuleCreationStubName(moduleName) = info;
+#define MODULE_CREATION_STUB_NAME(moduleName) moduleName##ExportInfoStub
+#define EXPORT_INTERNAL_MODULE(moduleName, info) ModuleExportInfo MODULE_CREATION_STUB_NAME(moduleName) = info;
 

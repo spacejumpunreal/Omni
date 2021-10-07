@@ -34,18 +34,22 @@ namespace Omni
 		StdPmr::memory_resource&		mFallback;
 		const char*						mName;
 	};
+
 	WrapperAllocator::WrapperAllocator(StdPmr::memory_resource& memResource, const char* name)
 		: mData(PrivateDataType<WrapperAllocatorImpl>{}, memResource, name)
 	{
 	}
+
 	WrapperAllocator::~WrapperAllocator()
 	{
 		mData.DestroyAs<WrapperAllocatorImpl>();
 	}
+
 	PMRResource* WrapperAllocator::GetResource()
 	{
 		return mData.Ptr<WrapperAllocatorImpl>();
 	}
+
 	MemoryStats WrapperAllocator::GetStats()
 	{
 		WrapperAllocatorImpl& self = mData.Ref<WrapperAllocatorImpl>();
@@ -54,10 +58,12 @@ namespace Omni
 		self.mWatch.Dump(ret);
 		return ret;
 	}
+
 	const char* WrapperAllocator::GetName()
 	{
 		return mData.Ref<WrapperAllocatorImpl>().mName;
 	}
+
 	void WrapperAllocator::Shrink()
 	{}
 }

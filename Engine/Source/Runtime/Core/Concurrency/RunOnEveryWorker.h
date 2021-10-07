@@ -9,82 +9,77 @@
 
 namespace Omni
 {
-
-	template<typename TestLogic>
+	// use this to run a job on "ConcurrencyModule::Get().GetWorkerCount() - idleWorkers - 1" workers,
+	// guaranteed that no worker will execute this job twice and that every job thread(including calling thread) will execute this job
+	//notice that current thread is also counted
+	template<typename JobLogic>
 	class RunOnEveryWorker
 	{
 	private:
-		using TRawJobData = decltype(TestLogic{0}.Prepare(0));
+		using TRawJobData = decltype(JobLogic{0}.Prepare(0));
 		struct WrapperJobData
 		{
 			TRawJobData			RawData;
-			DispatchGroup*		Group;
 			RunOnEveryWorker*	ThisData;
 		};
 	public:
-		void OnWorkerDone()
-		{
-			{
-				std::unique_lock ul(mLock);
-				--mTodo;
-				if (mTodo == 0)
-					mCVWorker.notify_all();
-			}
-			{
-				std::unique_lock ul(mLock);
-				while (mTodo > 0)
-					mCVWorker.wait(ul);
-			}
-			{
-				std::unique_lock ul(mLock);
-				--mToWait;
-				if (mToWait == 0)
-					mCVMain.notify_all();
-			}
-		}
 		RunOnEveryWorker(u32 idleWorkers = 0)
-			: mTodo(ConcurrencyModule::Get().GetWorkerCount() - 1 - idleWorkers)
-			, mToWait(ConcurrencyModule::Get().GetWorkerCount() - 1 - idleWorkers)
-			, mLogic(ConcurrencyModule::Get().GetWorkerCount() - 1 - idleWorkers)
+			: mTodo(ConcurrencyModule::Get().GetWorkerCount() - idleWorkers)
+			, mRefCount(ConcurrencyModule::Get().GetWorkerCount() - idleWorkers - 1)
+			, mLogic(ConcurrencyModule::Get().GetWorkerCount() - idleWorkers)
 		{
 			CheckAlways(IsOnMainThread());
-			DispatchGroup& group = DispatchGroup::Create(mTodo);
 			DispatchWorkItem* head = nullptr;
+			WrapperJobData jobData;
 			for (u32 iWork = 0; iWork < mTodo; ++iWork)
 			{
-				WrapperJobData jobData;
 				jobData.RawData = mLogic.Prepare(iWork);
-				jobData.Group = &group;
 				jobData.ThisData = this;
-				DispatchWorkItem* item = &DispatchWorkItem::Create(&WrapperBody, &jobData);
-				item->Next = head;
-				head = item;
+				if (iWork != mTodo - 1) //leave the last for local execution
+				{
+					DispatchWorkItem* item = &DispatchWorkItem::Create(&WrapperBody, &jobData);
+					item->Next = head;
+					head = item;
+				}
 			}
 			ConcurrencyModule::Get().Async(*head);
-			WaitDone();
+			WrapperBody(&jobData);
 			mLogic.Check();
-		}
-		void WaitDone()
-		{
-			std::unique_lock ul(mLock);
-			while (mToWait > 0)
-			{
-				mCVMain.wait(ul);
-			}
 		}
 	private:
 		std::mutex					mLock;
-		std::condition_variable		mCVWorker;
-		std::condition_variable		mCVMain;
 		u32							mTodo;
-		u32							mToWait;
-		TestLogic					mLogic;
+		u32							mRefCount;
+		JobLogic					mLogic;
 	private:
 		static void WrapperBody(WrapperJobData* data)
 		{
-			TestLogic::Run(&data->RawData);
-			data->Group->Leave();
-			data->ThisData->OnWorkerDone();
+			JobLogic::Run(&data->RawData);
+			{
+				std::unique_lock lk(data->ThisData->mLock);
+				--data->ThisData->mTodo;
+			}
+			while (true)
+			{
+				std::unique_lock lk(data->ThisData->mLock);
+				if (data->ThisData->mTodo == 0)
+					break;
+			}
+			//the following ensures that MainThread is the last thread
+			if (IsOnMainThread())
+			{
+				while (true)
+				{
+					std::unique_lock lk(data->ThisData->mLock);
+					if (data->ThisData->mRefCount == 0)
+						break;
+				}
+			}
+			else
+			{
+				std::unique_lock lk(data->ThisData->mLock);
+				--data->ThisData->mRefCount;
+			}
 		}
 	};
 }

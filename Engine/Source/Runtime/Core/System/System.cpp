@@ -9,10 +9,7 @@
 #include "Runtime/Core/System/InternalModuleRegistry.h"
 #include "Runtime/Core/System/Module.h"
 #include "Runtime/Core/System/ModuleExport.h"
-
 #include "Runtime/Base/Memory/MonotonicMemoryResource.h"
-
-
 #include <array>
 #include <atomic>
 #include <set>
@@ -22,12 +19,30 @@
 
 namespace Omni
 {
+	//consts
 	static constexpr size_t SystemInitMemSize = 1024 * 1024;
+	static constexpr char LoadModuleText[] = "LoadModule";
+
+#define ModuleItem(name) extern ModuleExportInfo MODULE_CREATION_STUB_NAME(name);
+#include "Runtime/Core/System/InternalModuleRegistry.inl"
+#undef ModuleItem
+
+
+#define ModuleItem(name) &MODULE_CREATION_STUB_NAME(name),
+	static const ModuleExportInfo* InternalModuleInfo[] = {
+#include "Runtime/Core/System/InternalModuleRegistry.inl"
+	};
+#undef ModuleItem
+
 
 	//forward declarations
 	struct SystemPrivateData;
+
+
 	//definitions
 	using SystemImpl = PImplCombine<System, SystemPrivateData>;
+
+
 	struct SystemPrivateData
 	{
 		std::atomic<SystemStatus>					mStatus;
@@ -43,21 +58,10 @@ namespace Omni
 		{}
 	};
 
-	//constants
-#define ModuleItem(name) extern ModuleExportInfo ModuleCreationStubName(name);
-#include "Runtime/Core/System/InternalModuleRegistry.inl"
-#undef ModuleItem
-
-#define ModuleItem(name) &ModuleCreationStubName(name),
-	static const ModuleExportInfo* InternalModuleInfo[] = {
-#include "Runtime/Core/System/InternalModuleRegistry.inl"
-	};
-#undef ModuleItem
-
-	static const char* LoadModuleText = "LoadModule";
 
 	//globals
 	static SystemImpl* GSystem;
+
 
 	//functions
 	void System::CreateSystem()
@@ -66,10 +70,12 @@ namespace Omni
 		CheckAlways(GSystem == nullptr, "double create");
 		GSystem = new SystemImpl();
 	}
+
 	System& System::GetSystem()
 	{
 		return *GSystem;
 	}
+
 	void System::DestroySystem()
 	{
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);
@@ -79,6 +85,7 @@ namespace Omni
 		GSystem = nullptr;
 		UnregisterMainThread();
 	}
+
 	void System::InitializeAndJoin(u32 argc, const char** argv, SystemInitializedCallback onSystemInitialized)
 	{
 		//parse args
@@ -112,9 +119,11 @@ namespace Omni
 		for (size_t i = 0; i < ARRAY_LENGTH(InternalModuleInfo); ++i)
 		{
 			auto info = InternalModuleInfo[i];
-			if (info->IsAlwaysLoad || (InternalModuleInfo[i]->Name != nullptr && loadModuleNames.count(InternalModuleInfo[i]->Name) != 0))
+			if (info->IsAlwaysLoad || 
+				(InternalModuleInfo[i]->Name != nullptr && loadModuleNames.count(InternalModuleInfo[i]->Name) != 0))
 			{
 				Module* m = info->Ctor(argMap);
+				CheckAlways(info->Key == -1, "intenral modules should all have -1 keys in declaration, actually keys will come from order in list");
 				self->mModules.push_back(m);
 				self->mKey2Module[(ModuleKey)i] = m;
 				if (info->Name != nullptr)
@@ -173,6 +182,7 @@ namespace Omni
 		ThreadData::GetThisThreadData().RunAndFinalizeOnMain(onSystemInitialized);
 
 	}
+
 	void System::Finalize()
 	{
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);
@@ -215,11 +225,13 @@ namespace Omni
 		self->mExternalModuleInfo.clear();
 		self->mInitMem.Reset();
 	}
+
 	SystemStatus System::GetStatus()
 	{
 		const SystemImpl* self = SystemImpl::GetCombinePtr(this);
 		return self->mStatus;
 	}
+
 	void System::TriggerFinalization(bool assertOnMiss)
 	{
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);
@@ -231,6 +243,13 @@ namespace Omni
 			CheckAlways(false);
 		}
 	}
+
+	void System::RegisterModule(const ModuleExportInfo& moduleInfo)
+	{
+		SystemImpl* self = SystemImpl::GetCombinePtr(this);
+		self->mExternalModuleInfo.push_back(moduleInfo);
+	}
+
 	Module* System::GetModule(ModuleKey key) const
 	{
 		const SystemImpl* self = SystemImpl::GetCombinePtr(this);
@@ -239,6 +258,7 @@ namespace Omni
 			return nullptr;
 		return it->second;
 	}
+
 	Module* System::GetModule(const char* s) const
 	{
 		const SystemImpl* self = SystemImpl::GetCombinePtr(this);
@@ -247,6 +267,7 @@ namespace Omni
 			return nullptr;
 		return it->second;
 	}
+
 	MonotonicMemoryResource& System::GetInitMemResource()
 	{
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);

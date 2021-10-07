@@ -1,23 +1,26 @@
-#include "Programs/PlayGround/PlayGroundPCH.h"
-#include "Programs/PlayGround/PlayGroundTests.h"
-#include "Programs/PlayGround/TestAsync.h"
-#include "Programs/PlayGround/TestDispatchQueue.h"
-#include "Programs/PlayGround/TestMultiThreadAllocation.h"
-#include "Runtime/Base/Memory/MemoryArena.h"
+#include "Runtime/Prelude/Omni.h"
+#include "Runtime/Base/Container/PMRContainers.h"
+#include "Runtime/Base/Misc/ArrayUtils.h"
 #include "Runtime/Base/Misc/AssertUtils.h"
+#include "Runtime/Base/Memory/MemoryArena.h"
 #include "Runtime/Base/MultiThread/LockfreeContainer.h"
 #include "Runtime/Base/MultiThread/SpinLock.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
+#include "Runtime/Core/Core_UnitTest/TestAsync.h"
+#include "Runtime/Core/Core_UnitTest/TestDispatchQueue.h"
+#include "Runtime/Core/Core_UnitTest/TestMultiThreadAllocation.h"
 #include "Runtime/Core/Concurrency/LockfreeNodeCache.h"
 #include "Runtime/Core/Concurrency/RunOnEveryWorker.h"
-#include <array>
+#include "Runtime/Core/System/System.h"
+#include "External/googletest/include/gtest/gtest.h"
 #include <random>
-#include <thread>
 
 namespace Omni
 {
+	//forward decls
+
 	void TestLockfreeStackSingleThread()
-	{
+	{//single thread test for LockfreeStack
 		LockfreeStack stk;
 		constexpr u64 testCount = 1024;
 		u64 pushIndex = 0;
@@ -36,8 +39,9 @@ namespace Omni
 			LockfreeNodeCache::Free(poped);
 		}
 	}
+
 	void TestLockfreeQueueSingleThread()
-	{
+	{//single thread test for LockfreeQueue
 		constexpr int TestCount = 1024;
 		LockfreeQueue<LockfreeNodeCache> queue(1);
 		for (u64 i = 0; i < TestCount; ++i)
@@ -69,8 +73,9 @@ namespace Omni
 			LockfreeNodeCache::Free(d1);
 		}
 	}
+
 	void TestLockfreeQueueMultiThread()
-	{
+	{//multi-thread test for LockfreeQueue
 		constexpr int Repeats = 256;
 		for (int iRepeat = 0; iRepeat < Repeats; ++iRepeat)
 		{
@@ -157,7 +162,7 @@ namespace Omni
 	}
 
 	void TestLockfreeStackMultiThread()
-	{
+	{//multi-thread test for LockfreeStack
 		constexpr int Repeats = 256;
 		for (int iRepeat = 0; iRepeat < Repeats; ++iRepeat)
 		{
@@ -244,15 +249,16 @@ namespace Omni
 	}
 
 	void TestPMRAllocate()
-	{
+	{//very easy test of using PMRAllocator
 		PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(Omni::MemoryKind::UserDefault);
 		size_t testSize = 1024;
 		std::byte* p = alloc.allocate(testSize);
 		memset(p, 0, testSize);
 		alloc.deallocate(p, testSize);
 	}
+
 	void TestScratchStack()
-	{
+	{//simple test for ScratchStack
 		ScratchStack& stack = MemoryModule::Get().GetThreadScratchStack();
 		stack.Push();
 		{
@@ -283,16 +289,17 @@ namespace Omni
 		}
 		stack.Pop();
 	}
+
 	void TestSpinLock()
-	{
+	{//simple test for SpinLock
 		SpinLock sl;
 
 		sl.Lock();
 		std::thread x = std::thread([&]
-        {
-            //std::this_thread::sleep_for(std::chrono::seconds(5));
-            sl.Unlock();
-        });
+			{
+				//std::this_thread::sleep_for(std::chrono::seconds(5));
+				sl.Unlock();
+			});
 		sl.Lock();
 		bool succeeed = sl.TryLock();
 		CheckAlways(!succeeed);
@@ -305,12 +312,62 @@ namespace Omni
 		//TestMultiThreadAllocation
 		RunOnEveryWorker<struct TestMultiThreadAllocation> obj;
 	}
+
 	void TestDispatchQueue()
 	{
 		RunOnEveryWorker<struct TestDispatchQueue> obj(1);
 	}
+
 	void TestAsync()
 	{
 		RunOnEveryWorker<struct TestAsync> obj(1);
 	}
+
+	FORCEINLINE void TestAll()
+	{
+		
+#if 1
+		//Lockfree container related tests
+		TestLockfreeStackSingleThread();
+		TestLockfreeQueueSingleThread();
+		TestLockfreeStackMultiThread();
+		TestLockfreeQueueMultiThread();
+#endif
+
+#if 1
+		//Base primitive related tests
+		TestPMRAllocate();
+		TestScratchStack();
+		TestSpinLock();
+#endif
+
+#if 1
+		//Concurrency related testes
+		
+		TestMultiThreadAllocation();
+		TestDispatchQueue();
+		TestAsync();
+#endif
+	}
+
+	void CoreUnitTestCode()
+	{
+		TestAll();
+		//ExperimentAll();
+		System::GetSystem().TriggerFinalization(true);
+	}
+}
+
+int main(int argc, char** argv) {
+    printf("Running main() from %s\n", __FILE__);
+
+
+	Omni::System::CreateSystem();
+	Omni::System& system = Omni::System::GetSystem();
+	system.InitializeAndJoin(0, nullptr, Omni::CoreUnitTestCode);
+	system.DestroySystem();
+
+
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

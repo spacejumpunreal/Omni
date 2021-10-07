@@ -1,6 +1,5 @@
 #include "Programs/PlayGround/PlayGroundPCH.h"
 #include "Programs/PlayGround/PlayGroundExperiment.h"
-#include "Programs/PlayGround/PlayGroundTests.h"
 #include "Runtime/Base/Memory/MemoryArena.h"
 #include "Runtime/Base/Misc/ArrayUtils.h"
 #include "Runtime/Base/Misc/AssertUtils.h"
@@ -21,14 +20,13 @@
 #include <chrono>
 #include <functional>
 #include <mutex>
-
 #include <thread>
 #include <unordered_set>
 
 
 namespace Omni
 {
-	void MainThreadTest()
+	void PlayGroundCode()
 	{
 		struct KeyStateLogger : public KeyStateListener
 		{
@@ -52,10 +50,6 @@ namespace Omni
 			InputModule::Get().RegisterListener(KeyMap::MouseLeft, pleft);
 			InputModule::Get().RegisterListener(KeyMap::MouseRight, pright);
 		}
-		
-		//TestAll();
-		//ExperimentAll();
-		//System::GetSystem().TriggerFinalization(true);
 	}
 }
 
@@ -68,7 +62,7 @@ int main(int, const char** )
 		"LoadModule=Window",
 		"--window-size=1920x1080",
 	};
-	system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv, Omni::MainThreadTest);
+	system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv, Omni::PlayGroundCode);
 	system.DestroySystem();
  
 	return 0;

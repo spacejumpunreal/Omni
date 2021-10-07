@@ -16,7 +16,6 @@ namespace Omni
 		void Destroy() override;
 		void Initialize(const EngineInitArgMap&) override;
 		void Finalize() override;
-		void Finalizing() override;
 		static ConcurrencyModule& Get();
 
 		u32 GetWorkerCount();

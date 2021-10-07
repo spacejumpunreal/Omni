@@ -8,11 +8,14 @@
 
 namespace Omni
 {
+    //consts
     constexpr u32 LockfreeNodeMmapSize = 1024 * 1024;
     constexpr u32 LockfreeNodeTransferBatchCount = 32;
     constexpr u32 TmpCountSlot = 0;
     constexpr u32 TmpNextSlot = 1;
-    //cache managing policy:
+    
+
+    //declarations
     class LockfreeNodeCachePerThreadData
     {
     public:
@@ -28,6 +31,7 @@ namespace Omni
         LockfreeNode* mColdList;
     };
 
+
     class LockfreeNodeCacheGlobalData
     {
     public:
@@ -40,11 +44,13 @@ namespace Omni
         LockfreeStack		mBatchStack;
     };
 
-    //global
+
+    //global data
     OMNI_DECLARE_THREAD_LOCAL(LockfreeNodeCachePerThreadData, gLockfreeNodeCachePerThreadData);
     static LockfreeNodeCacheGlobalData gLockfreeNodeCacheGlobalData;
 
 
+    //LockfreeNodeCachePerThreadData impl
     LockfreeNodeCachePerThreadData::LockfreeNodeCachePerThreadData()
         : mHotCount(0)
         , mColdCount(0)
@@ -52,6 +58,7 @@ namespace Omni
         , mColdList(nullptr)
     {
     }
+
     LockfreeNode* LockfreeNodeCachePerThreadData::Allocate()
     {
         if (mHotCount == 0)
@@ -69,6 +76,7 @@ namespace Omni
         ret->Next = nullptr;
         return ret;
     }
+
     void LockfreeNodeCachePerThreadData::Free(LockfreeNode* node)
     {
         if (mHotCount == LockfreeNodeTransferBatchCount)
@@ -89,8 +97,8 @@ namespace Omni
             node->Next = mHotList;
             mHotList = node;
         }
-
     }
+
     void LockfreeNodeCachePerThreadData::Cleanup()
     {
         if (mHotCount > 0)
@@ -102,14 +110,18 @@ namespace Omni
         mHotList = nullptr;
         mColdList = nullptr;
     }
+
     bool LockfreeNodeCachePerThreadData::IsClean()
     {
         return mHotCount == 0 && mColdCount == 0 && mHotList == nullptr && mColdList == nullptr;
     }
+
+    //LockfreeNodeCacheGlobalData impl
     LockfreeNodeCacheGlobalData::LockfreeNodeCacheGlobalData()
     {
         CheckAlways(mBatchStack.Pop() == nullptr);
     }
+
     std::tuple<LockfreeNode*, u32> LockfreeNodeCacheGlobalData::AllocateBatch()
     {
         LockfreeNode* n = mBatchStack.Pop();
@@ -132,20 +144,23 @@ namespace Omni
         }
         else
         {
-            n->Next = (LockfreeNode*)n->Data[TmpNextSlot];
+            n->Next = (LockfreeNode*)n->Data[TmpNextSlot]; //n->Next filled will was used by mBatchStack for linked list, it was use for node freelist
             return std::make_tuple(n, (u32)(u64)n->Data[TmpCountSlot]);
         }
     }
+
     void LockfreeNodeCacheGlobalData::FreeBatch(LockfreeNode* lst, u32 count)
     {
         lst->Data[TmpCountSlot] = (void*)(u64)count;
-        lst->Data[TmpNextSlot] = (LockfreeNode*)lst->Next;
+        lst->Data[TmpNextSlot] = (LockfreeNode*)lst->Next; //n->Next filled will was used by mBatchStack for linked list, it was use for node freelist
         mBatchStack.Push(lst);
     }
+
     bool LockfreeNodeCacheGlobalData::IsClean()
     {
         return mBatchStack.Pop() == nullptr;
     }
+
     void LockfreeNodeCacheGlobalData::Cleanup()
     {
         std::unordered_set<u64, std::hash<u64>, std::equal_to<u64>> pages;
@@ -171,26 +186,33 @@ namespace Omni
             MemoryModule::Get().Munmap((void*)(addr << CompileTimeLog2(LockfreeNodeMmapSize)), LockfreeNodeMmapSize);
         }
     }
+
+    //LockfreeNodeCache impl
     void LockfreeNodeCache::GlobalInitialize()
     {
         CheckAlways(gLockfreeNodeCacheGlobalData.IsClean());
     }
+
     void LockfreeNodeCache::GlobalFinalize()
     {
         gLockfreeNodeCacheGlobalData.Cleanup();
     }
+
     void LockfreeNodeCache::ThreadInitialize()
     {
         CheckAlways(gLockfreeNodeCachePerThreadData.IsClean());
     }
+
     void LockfreeNodeCache::ThreadFinalize()
     {
         gLockfreeNodeCachePerThreadData.GetRaw().Cleanup();
     }
+
     LockfreeNode* LockfreeNodeCache::Alloc()
     {
         return gLockfreeNodeCachePerThreadData.GetRaw().Allocate();
     }
+
     void LockfreeNodeCache::Free(LockfreeNode* node)
     {
         gLockfreeNodeCachePerThreadData.GetRaw().Free(node);

@@ -13,19 +13,17 @@ namespace Omni
     class CORE_API ThreadData
     {
     public:
-        //for ConcurrencyModule
+        //for Engine
         static ThreadData& Create();
-        
-        
         void InitAsMainOnMain();
         void RunAndFinalizeOnMain(SystemInitializedCallback cb);
         void LauchAsWorkerOnMain();
         void JoinAndDestroyOnMain();
-        //for thread
+        //for module/user
         static ThreadData& GetThisThreadData();
         bool IsAskedToQuit();
         static void MarkQuitWork();
-        bool IsOnSelfThread();
+        bool IsSelfThread();
         ThreadIndex GetThreadIndex();
 
     protected:
@@ -56,14 +54,15 @@ namespace Omni
 *   - done
 * 
 * @WorkerThread
-*   - take id
+*   - std::thread created
+*   - thread running
 *   - ThreadInitialize
 *
 *   - work
 * 
 *   - ThreadFinalize
 *   - return
-* 
+*   - MainThread call std::~thread
 * 
 * quit sequence
 * - some thread called System::TriggerFinalization

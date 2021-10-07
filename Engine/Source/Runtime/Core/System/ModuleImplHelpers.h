@@ -2,7 +2,7 @@
 #include "Runtime/Prelude/Omni.h"
 #include "Runtime/Core/CoreAPI.h"
 #include "Runtime/Base/Memory/MonotonicMemoryResource.h"
-#include "Runtime/Core/System/System.h"
+#include "Runtime/Core/System/Module.h"
 
 namespace Omni
 {
@@ -24,7 +24,8 @@ namespace Omni
             MonotonicMemoryResource& initMem = System::GetSystem().GetInitMemResource();
             PMRAllocatorT<ModuleT> alloc(&initMem);
             std::allocator_traits<PMRAllocatorT<ModuleT>>::destroy(alloc, _module);
-            alloc.deallocate(_module, 1);//the size here is wrong, size doesn't matter for this allocator, allocator will figure it out
+            //allocation size doesn't matter for this allocator, it only check counts, checking size is doable but would add more trouble
+            alloc.deallocate(_module, 0);
         }
     };
 }

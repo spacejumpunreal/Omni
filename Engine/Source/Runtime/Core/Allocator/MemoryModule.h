@@ -11,6 +11,7 @@
 namespace Omni
 {
 	class ScratchStack;
+
 	class CORE_API MemoryModule : public Module
 	{
 	public:
@@ -37,6 +38,7 @@ namespace Omni
 		void Shrink();
 	};
 
+
 	template<typename T>
 	void DeleteForType(T* p, MemoryKind kind, std::align_val_t align = {})
 	{
@@ -52,16 +54,19 @@ FORCEINLINE void* operator new(size_t size, Omni::MemoryKind kind)
 {
 	return Omni::MemoryModule::Get().GetPMRAllocator(kind).resource()->allocate(size, OMNI_DEFAULT_ALIGNMENT);
 }
+
 FORCEINLINE void* operator new(size_t size, std::align_val_t align, Omni::MemoryKind kind)
 {
 	return Omni::MemoryModule::Get().GetPMRAllocator(kind).resource()->allocate(size, (size_t)align);
 }
-void operator delete(void*, Omni::MemoryKind);//only when there's exception in ctor
+
+void operator delete(void*, Omni::MemoryKind);//only when there's exception in ctor, currently asserted since I don't think we need one
 
 FORCEINLINE void* OmniMalloc(Omni::MemoryKind kind, size_t size, std::align_val_t align = {})
 {
 	return Omni::MemoryModule::Get().GetPMRAllocator(kind).resource()->allocate(size, align == std::align_val_t{} ? OMNI_DEFAULT_ALIGNMENT : (size_t)align);
 }
+
 FORCEINLINE void OmniFree(Omni::MemoryKind kind, size_t size, void* p, std::align_val_t align = {})
 {
 	Omni::MemoryModule::Get().GetPMRAllocator(kind).resource()->deallocate(p, size, align == std::align_val_t{} ? OMNI_DEFAULT_ALIGNMENT : (size_t)align);

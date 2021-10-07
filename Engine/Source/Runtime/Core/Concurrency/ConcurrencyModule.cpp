@@ -87,10 +87,6 @@ namespace Omni
         Module::Finalize();
         MemoryModule::Get().Release();
     }
-    void ConcurrencyModule::Finalizing()
-    {
-        Finalize();
-    }
     ConcurrencyModule& ConcurrencyModule::Get()
     {
         return *gConcurrencyModule;
@@ -127,7 +123,8 @@ namespace Omni
             item.Next = lastJob;
             lastJob = &item;
         }
-        Async(*lastJob);
+        if (lastJob != nullptr)
+            Async(*lastJob);
     }
     ConcurrencyModulePrivateImpl::ConcurrencyModulePrivateImpl()
         : mThreadData(nullptr)
@@ -176,5 +173,5 @@ namespace Omni
     {
         InitMemFactory<ConcurrencyModuleImpl>::Delete((ConcurrencyModuleImpl*)this);
     }
-    ExportInternalModule(Concurrency, ModuleExportInfo(ConcurrencyModuleCtor, true));
+    EXPORT_INTERNAL_MODULE(Concurrency, ModuleExportInfo(ConcurrencyModuleCtor, true));
 }
