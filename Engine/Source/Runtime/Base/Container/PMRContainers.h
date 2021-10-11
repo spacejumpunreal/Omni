@@ -8,6 +8,7 @@
 #include <experimental/unordered_set>
 #include <experimental/vector>
 #else
+#include <map>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -23,4 +24,7 @@ namespace Omni
 
     template<typename K, typename Hasher, typename KeyEqual>
     using PMRUnorderedSet = StdPmr::unordered_set<K, Hasher, KeyEqual>;
+
+	template<typename K, typename V, typename KeyCmp = std::less<K>>
+	using PMRMap = StdPrm::map<K, V, KeyCmp>;
 }

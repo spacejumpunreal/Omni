@@ -59,6 +59,8 @@ int main(int, const char** )
 	const char* engineArgv[] =
 	{
 		"LoadModule=Window",
+		"LoadModule=GfxApi",
+		"LoadModule=DemoRenderer",
 		"--window-size=1920x1080",
 	};
 	system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv, Omni::PlayGroundCode);

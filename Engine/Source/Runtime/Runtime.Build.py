@@ -9,5 +9,6 @@ class Runtime(build_target.BuildTarget):
         self.add_target("Prelude")
         self.add_target("Base")
         self.add_target("Core")
+        self.add_target("Engine")
 
 
