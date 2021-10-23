@@ -10,8 +10,6 @@ namespace Omni
 	{
 		static constexpr u32 PerThreadLaunch = 1024 * 16;
 
-
-
 		struct LauncherJobData
 		{
 			TestAsync*		State;

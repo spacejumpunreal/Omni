@@ -1,4 +1,5 @@
 #include "Runtime/Core/CorePCH.h"
+#include "Runtime/Core/Concurrency/ConcurrencyModule.h"
 #include "Runtime/Core/Concurrency/ThreadUtils.h"
 #include "Runtime/Base/Misc/AssertUtils.h"
 #include "Runtime/Base/MultiThread/IThreadLocal.h"
@@ -66,12 +67,23 @@ namespace Omni
         self.InitializeOnThread();
     }
 
-    void ThreadData::RunAndFinalizeOnMain(SystemInitializedCallback onSystemInitialized)
+    void ThreadData::RunAndFinalizeAsMain(SystemInitializedCallback onSystemInitialized)
     {
         auto& self = *static_cast<ThreadDataImpl*>(this);
         CheckAlways(IsOnMainThread());
-        onSystemInitialized();
-        ConcurrentWorkerThreadFunc(&self);
+        
+        ConcurrencyModule::Get().EnqueueWork(
+            DispatchWorkItem::Create(onSystemInitialized, MemoryKind::CacheLine),
+            QueueKind::Main);
+        auto queue = ConcurrencyModule::Get().GetQueue(QueueKind::Main);
+
+        while (!self.IsAskedToQuit())
+        {
+            auto item = queue->Dequeue<DispatchWorkItem>();
+            item->Perform();
+            item->Destroy();
+        }
+        System::GetSystem().StopThreads();
         System::GetSystem().Finalize();
     }
 

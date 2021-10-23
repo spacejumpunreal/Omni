@@ -32,6 +32,7 @@ namespace Omni
 		void InitializeAndJoin(u32 argc, const char** argv, SystemInitializedCallback onSystemInitialized);
 		SystemStatus GetStatus();
 		void TriggerFinalization(bool assertOnMiss);
+		void StopThreads();
 
 		//APIs for Modules
 		void RegisterModule(const ModuleExportInfo& moduleInfo);

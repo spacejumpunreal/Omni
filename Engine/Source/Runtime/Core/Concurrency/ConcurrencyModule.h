@@ -28,7 +28,8 @@ namespace Omni
 		LockQueue* GetQueue(QueueKind queueKind);
 		ThreadData* CreateThread(const TThreadBody& body, ThreadId designatedTid = InvalidThreadId);
 		void EnqueueWork(DispatchWorkItem& head, QueueKind queueKind);
-		void SignalWorkersToQuit();
+		void PollQueue(QueueKind queueKind);
+		void FinishPendingJobs();
 	};
 }
 

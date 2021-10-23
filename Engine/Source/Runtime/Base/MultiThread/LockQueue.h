@@ -52,7 +52,7 @@ namespace Omni
             }
             else
             {
-                CheckAlways(mHead == nullptr);
+                CheckDebug(mHead == nullptr);
                 mHead = head;
                 mTail = tail;
             }
@@ -84,6 +84,24 @@ namespace Omni
                     mCV.wait(lk);
                     --mWaitCount;
                 }
+                --mTodoCount;
+                ret = mHead;
+                mHead = mHead->Next;
+                if (mHead == nullptr)
+                    mTail = nullptr;
+            }
+            return static_cast<T*>(ret);
+        }
+
+        template<typename T>
+        T* TryDequeue()
+        {
+            static_assert(std::is_base_of_v<SListNode, T>);
+            SListNode* ret;
+            {
+                std::unique_lock<std::mutex> lk(mLock);
+                if (mHead == nullptr)
+                    return nullptr;
                 --mTodoCount;
                 ret = mHead;
                 mHead = mHead->Next;

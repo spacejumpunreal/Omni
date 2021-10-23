@@ -310,17 +310,17 @@ namespace Omni
 	void TestMultiThreadAllocation()
 	{
 		//TestMultiThreadAllocation
-		RunOnEveryWorker<struct TestMultiThreadAllocation> obj;
+		RunOnAllWorker<struct TestMultiThreadAllocation> obj;
 	}
 
 	void TestDispatchQueue()
 	{
-		RunOnEveryWorker<struct TestDispatchQueue> obj(1);
+		RunOnAllWorker<struct TestDispatchQueue> obj(1);
 	}
 
 	void TestAsync()
 	{
-		RunOnEveryWorker<struct TestAsync> obj(1);
+		RunOnAllWorker<struct TestAsync> obj(1);
 	}
 
 	FORCEINLINE void TestAll()
@@ -339,12 +339,11 @@ namespace Omni
 		TestPMRAllocate();
 		TestScratchStack();
 		TestSpinLock();
+		TestMultiThreadAllocation();
 #endif
 
 #if 1
 		//Concurrency related testes
-		
-		TestMultiThreadAllocation();
 		TestDispatchQueue();
 		TestAsync();
 #endif
@@ -353,7 +352,6 @@ namespace Omni
 	void CoreUnitTestCode()
 	{
 		TestAll();
-		//ExperimentAll();
 		System::GetSystem().TriggerFinalization(true);
 	}
 }

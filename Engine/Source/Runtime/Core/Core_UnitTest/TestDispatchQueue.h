@@ -17,7 +17,7 @@ namespace Omni
 	struct TestDispatchQueue
 	{
 		/*
-			tested: multi-thread enqueue jobs(for each worker, JobBatch * JobLoop jobs) on to Primary serial queue, then wait for all equeued jobs are executed
+			tested: multi-thread enqueue jobs(for each worker, JobBatch * JobLoop jobs) on to main queue, then wait for all equeued jobs are executed
 		*/
 		static constexpr u64 JobBatch = 256;
 		static constexpr u64 JobLoop = 256;
@@ -87,6 +87,10 @@ namespace Omni
 					std::this_thread::sleep_for(1ms);
 				}
 			}
+		}
+		void IdleWait()
+		{
+			ConcurrencyModule::Get().PollQueue(QueueKind::Main);
 		}
 		void Check()
 		{

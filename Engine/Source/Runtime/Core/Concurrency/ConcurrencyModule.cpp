@@ -58,7 +58,7 @@ namespace Omni
             mainThreadData.InitAsMainOnMain(); //main thread
         }
 
-        //2. worker threads
+        //2. worker threads init and launch
         self->mWorkerCount = (u32)std::thread::hardware_concurrency();
         i32 offset = -2; //main thread and render thread
         auto it = args.find("--worker-thread-count");
@@ -89,10 +89,22 @@ namespace Omni
     void ConcurrencyModule::StopThreads()
     {
         ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
-        for (ThreadId wid = 0; wid < self->mWorkerCount; ++wid)
+
+        DispatchWorkItem* lastJob = nullptr;
+        for (u32 iThread = 0; iThread < self->mWorkerCount; ++iThread)
         {
-            self->mThreadData[wid]->JoinAndDestroyOnMain();
-            self->mThreadData[wid] = nullptr;
+            DispatchWorkItem& item = DispatchWorkItem::Create(ThreadData::MarkQuitWork, MemoryKind::CacheLine);
+            item.Next = lastJob;
+            lastJob = &item;
+        }
+        if (lastJob != nullptr)
+            self->EnqueueWork(*lastJob, QueueKind::Shared);
+
+        for (u32 wid = 0; wid < self->mWorkerCount; ++wid)
+        {
+            ThreadId tid = wid + WorkerThreadBaseId;
+            self->mThreadData[tid]->JoinAndDestroyOnMain();
+            self->mThreadData[tid] = nullptr;
         }
     }
 
@@ -106,7 +118,8 @@ namespace Omni
         ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
         for (auto it = self->mThreadData.begin(); it != self->mThreadData.end(); ++it)
         {
-            CheckAlways(it->second == nullptr);
+            if (it->second != nullptr)
+                CheckAlways(it->second->GetThreadId() == MainThreadId);
         }
         self->mThreadData[MainThreadId]->JoinAndDestroyOnMain();
 
@@ -156,18 +169,39 @@ namespace Omni
         self->mQueues[(u32)queueKind].Enqueue(&head, t);
     }
 
-    void ConcurrencyModule::SignalWorkersToQuit()
+    void ConcurrencyModule::PollQueue(QueueKind queueKind)
     {
         ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
-        DispatchWorkItem* lastJob = nullptr;
-        for (u32 iThread = 0; iThread < self->mWorkerCount; ++iThread)
+        auto& queue = self->mQueues[(u32)queueKind];
+        while (true)
         {
-            DispatchWorkItem& item = DispatchWorkItem::Create(ThreadData::MarkQuitWork, MemoryKind::CacheLine);
-            item.Next = lastJob;
-            lastJob = &item;
+            auto item = queue.TryDequeue<DispatchWorkItem>();
+            if (item == nullptr)
+                break;
+            item->Perform();
+            item->Destroy();
         }
-        if (lastJob != nullptr)
-            self->EnqueueWork(*lastJob, QueueKind::Shared);
+    }
+
+    void ConcurrencyModule::FinishPendingJobs()
+    {
+        ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
+        bool remain;
+        do {
+            remain = false;
+            for (auto& queue : self->mQueues)
+            {
+                while (true)
+                {
+                    DispatchWorkItem* job = queue.TryDequeue<DispatchWorkItem>();
+                    if (job == nullptr)
+                        break;
+                    job->Perform();
+                    job->Destroy();
+                    remain = true;
+                }
+            }
+        } while (remain);
     }
 
     ConcurrencyModulePrivateImpl::ConcurrencyModulePrivateImpl()

@@ -178,8 +178,7 @@ namespace Omni
 			firstRound = false;
 		}
 		self->mStatus = SystemStatus::Ready;
-		ThreadData::GetThisThreadData().RunAndFinalizeOnMain(onSystemInitialized);
-
+		ThreadData::GetThisThreadData().RunAndFinalizeAsMain(onSystemInitialized);
 	}
 
 	void System::Finalize()
@@ -236,12 +235,26 @@ namespace Omni
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);
 		SystemStatus v = SystemStatus::Ready;
 		if (self->mStatus.compare_exchange_strong(v, SystemStatus::ToBeFinalized))
-			ConcurrencyModule::Get().SignalWorkersToQuit();
+		{//mark main thread quit, main thread will drive the quit procedure
+			DispatchWorkItem& quitJob = DispatchWorkItem::Create(ThreadData::MarkQuitWork, MemoryKind::CacheLine);
+			ConcurrencyModule::Get().EnqueueWork(quitJob, QueueKind::Main);
+		}
 		else if (assertOnMiss)
 		{
 			CheckAlways(false);
 		}
 	}
+
+	void System::StopThreads()
+	{
+		SystemImpl* self = SystemImpl::GetCombinePtr(this);
+		for (Module* mod : self->mModules)
+		{
+			mod->StopThreads();
+		}
+		ConcurrencyModule::Get().FinishPendingJobs();
+	}
+
 
 	void System::RegisterModule(const ModuleExportInfo& moduleInfo)
 	{

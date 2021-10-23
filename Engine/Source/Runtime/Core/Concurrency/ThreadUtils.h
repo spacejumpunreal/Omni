@@ -24,7 +24,7 @@ namespace Omni
         //for Engine
         static ThreadData& Create(ThreadId id);
         void InitAsMainOnMain();
-        void RunAndFinalizeOnMain(SystemInitializedCallback cb);
+        void RunAndFinalizeAsMain(SystemInitializedCallback cb);
         void LauchAsWorkerOnMain(const TThreadBody& body);
         void JoinAndDestroyOnMain();
         //for module/user
