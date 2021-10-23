@@ -26,7 +26,7 @@ namespace Omni
 
 			PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(MemoryKind::CacheLine);
 			std::mt19937 gen;
-			ThreadIndex seed = ThreadData::GetThisThreadData().GetThreadIndex();
+			ThreadId seed = ThreadData::GetThisThreadData().GetThreadId();
 			gen.seed((unsigned int)seed);
 			std::uniform_int_distribution<> dis((int)(Size64K / 3), (int)(Size64K * 3 / 4));
 			u8* slots[History];

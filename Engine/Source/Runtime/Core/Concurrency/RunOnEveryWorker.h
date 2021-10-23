@@ -37,12 +37,12 @@ namespace Omni
 				jobData.ThisData = this;
 				if (iWork != mTodo - 1) //leave the last for local execution
 				{
-					DispatchWorkItem* item = &DispatchWorkItem::Create(&WrapperBody, &jobData);
+					DispatchWorkItem* item = &DispatchWorkItem::Create(&WrapperBody, &jobData, MemoryKind::CacheLine);
 					item->Next = head;
 					head = item;
 				}
 			}
-			ConcurrencyModule::Get().Async(*head);
+			ConcurrencyModule::Get().EnqueueWork(*head, QueueKind::Shared);
 			WrapperBody(&jobData);
 			mLogic.Check();
 		}

@@ -16,6 +16,8 @@ namespace Omni
 	{
 		mStatus = ModuleStatus::Initializing;
 	};
+	void Module::StopThreads()
+	{}
 	void Module::Finalize() 
 	{
 		mStatus = ModuleStatus::Uninitialized;

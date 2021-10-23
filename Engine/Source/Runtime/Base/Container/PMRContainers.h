@@ -12,12 +12,16 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <deque>
 #endif
 
 namespace Omni
 {
 	template<typename T>
 	using PMRVector = StdPmr::vector<T>;
+
+	template<typename T>
+	using PMRDeque = StdPmr::deque<T>;
 
 	template<typename K, typename V, typename Hasher, typename KeyEqual>
 	using PMRUnorderedMap = StdPmr::unordered_map<K, V, Hasher, KeyEqual>;
@@ -26,5 +30,8 @@ namespace Omni
     using PMRUnorderedSet = StdPmr::unordered_set<K, Hasher, KeyEqual>;
 
 	template<typename K, typename V, typename KeyCmp = std::less<K>>
-	using PMRMap = StdPrm::map<K, V, KeyCmp>;
+	using PMRMap = StdPmr::map<K, V, KeyCmp>;
+
+	template<typename K, typename V, typename KeyCmp = std::less<K>>
+	using PMRMultiMap = StdPmr::multimap<K, V, KeyCmp>;
 }

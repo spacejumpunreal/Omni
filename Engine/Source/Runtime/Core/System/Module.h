@@ -36,7 +36,8 @@ namespace Omni
 		Module();
 		virtual void Destroy() = 0;
 		virtual void Initialize(const EngineInitArgMap&);
-		void Initializing();
+		virtual void Initializing();
+		virtual void StopThreads();
 		virtual void Finalize();
 		void Finalizing();
 		virtual ~Module();

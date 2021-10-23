@@ -1,14 +1,3 @@
-# Queue
-## API
-- ctorSerial: do not support chaining queues as in libdispatch
-- async(WorkItem)
-- 
-## question
-- must serial queue be tied to 1 core? No. And the sync before taking a job is always necessary, so multiple threads serve a serial queue at different time?
-## detail
-- every concurrent queue has some private threads for itself, no for serial queue(use some thread on the global queue?)
-- or the model should be：DispatchObjects are just frontends, they insert items on to thread specific queues
-
 # WorkItem
 ## API
 - ctor()
@@ -18,7 +7,31 @@
     - use std::function directly: too large(64bytes on MVSC), will use dynmaic allocation when too large
     - function ptr + POD args: can't use lambda(can be good: explicit), no ctor/dtor for args
 
-
 # Group
 ## detail
 - ctor(queue, count)
+
+# Initialize/Finalize sequence
+## Initialize
+- MainThread ThreadData alloc, init
+- WorkerThreads ThreadData alloc, init
+
+## SystemInitialize
+- on MainThread, in System::InitializeAndJoin()
+	- called ThreadData::GetThisThreadData().RunAndFinalizeOnMain(onSystemInitialized);
+		- call onSystemInitialized() callback
+		- loop/wait on MainQueue
+			- TriggerFinalization called
+			- got AskedToQuit, jump out of loop
+		- wait for all threads to quit
+		- poll all queues until all queues are empty
+		- call System::Finalize()
+
+## TriggerFinalization
+- set flags
+- Send cleanup task to MainThread
+
+## MainThreadedCleanupTask
+- call every module's FinalizeThreads(), to join all worker threads
+
+## Finalize

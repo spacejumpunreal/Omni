@@ -1,3 +1,5 @@
-QUEUE_KIND(Primary)//avoid the name main, since it can be run by non MainThread
-QUEUE_KIND(Max)
+QUEUE_KIND(Main)
+QUEUE_KIND(Render)
+QUEUE_KIND(Shared)
+QUEUE_KIND(Count)
 

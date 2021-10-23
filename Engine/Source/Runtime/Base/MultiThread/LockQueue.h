@@ -1,27 +1,36 @@
 #pragma once
 #include "Runtime/Prelude/Omni.h"
+#include "Runtime/Prelude/PlatformDefs.h"
+#include "Runtime/Prelude/SuppressWarning.h"
 #include "Runtime/Base/BaseAPI.h"
 #include "Runtime/Base/Container/LinkedList.h"
+#include "Runtime/Base/Memory/MemoryDefs.h"
 #include "Runtime/Base/Misc/AssertUtils.h"
 #include "Runtime/Base/Misc/Padding.h"
 #include "Runtime/Base/MultiThread/SpinLock.h"
 #include <condition_variable>
 #include <mutex>
+#include <atomic>
 
 namespace Omni
 {
     struct SListNode;
-    //can't wrap sync around Queue, Dequeue need to block on empty
-    class ConcurrentQueue
+    
+    OMNI_PUSH_WARNING()
+    OMNI_SUPPRESS_WARNING_PADDED_DUE_TO_ALIGNMENT()
+
+    class alignas(CPU_CACHE_LINE_SIZE) LockQueue
     {
     public:
-        ConcurrentQueue()
+        LockQueue()
             : mHead(nullptr)
             , mTail(nullptr)
             , mTodoCount(0)
             , mWaitCount(0)
             , mAllWakeupLimit(0)
         {}
+        LockQueue(const LockQueue&) = delete;
+
         void Enqueue(SListNode* head, SListNode* tail)
         {
             u32 inc = 0;
@@ -61,6 +70,7 @@ namespace Omni
                         mCV.notify_one();
             }
         }
+
         template<typename T>
         T* Dequeue()
         {
@@ -82,6 +92,7 @@ namespace Omni
             }
             return static_cast<T*>(ret);
         }
+
         u32 Size()
         {
             bool ret;
@@ -90,10 +101,12 @@ namespace Omni
             mLock.unlock();
             return ret;
         }
+
         void SetAllWakeupLimit(u32 limit) 
         {
             mAllWakeupLimit = limit;
         }
+
     private:
         std::mutex                  mLock;
         std::condition_variable     mCV;
@@ -104,4 +117,5 @@ namespace Omni
         u32                         mAllWakeupLimit;
     };
 
+    OMNI_POP_WARNING()
 }

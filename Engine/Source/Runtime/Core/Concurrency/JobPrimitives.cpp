@@ -1,8 +1,7 @@
 #include "Runtime/Core/CorePCH.h"
 #include "Runtime/Core/Concurrency/JobPrimitives.h"
-#include "Runtime/Base/Container/Queue.h"
 #include "Runtime/Base/Misc/Padding.h"
-#include "Runtime/Base/MultiThread/SpinLock.h"
+#include "Runtime/Base/MultiThread/LockQueue.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/Concurrency/ConcurrencyModule.h"
 #include "Runtime/Core/Concurrency/ThreadUtils.h"
@@ -11,91 +10,6 @@
 namespace Omni
 {
 	using UnaryFunctionType = void (*)(void*);
-
-
-	struct DispatchQueuePrivate
-	{
-	public:
-		CacheAligned<SpinLock>					mDataLock;
-		CacheAligned<SpinLock>					mExecLock;
-		Queue									mQueue;
-		const char*								mName;
-	public:
-		DispatchQueuePrivate();
-	};
-
-
-	DispatchQueuePrivate::DispatchQueuePrivate()
-		: mName(nullptr)
-	{
-	}
-
-	DispatchQueue::DispatchQueue()
-		: mData(PrivateDataType<DispatchQueuePrivate>{})
-	{
-	}
-
-	DispatchQueue::~DispatchQueue()
-	{
-		mData.DestroyAs<DispatchQueuePrivate>();
-	}
-
-	void DispatchQueue::SetName(const char* name)
-	{
-		mData.Ref<DispatchQueuePrivate>().mName = name;
-	}
-
-	static void PollDispatchQueueFunc(DispatchQueue** pq)
-	{
-		DispatchQueuePrivate* queue = (DispatchQueuePrivate*)*pq;
-		if (!queue->mExecLock.Data.TryLock())
-			return;
-
-		bool done = false;
-		while (!done)
-		{
-			queue->mDataLock.Data.Lock();
-			DispatchWorkItem* head = static_cast<DispatchWorkItem*>(queue->mQueue.DequeueAll());
-			queue->mDataLock.Data.Unlock();
-			while (head != nullptr)
-			{
-				head->Perform();
-				DispatchWorkItem* sp = head;
-				head = static_cast<DispatchWorkItem*>(head->Next);
-				sp->Destroy();
-			}
-			
-			queue->mDataLock.Data.Lock();
-			done = queue->mQueue.IsEmpty();
-			queue->mDataLock.Data.Unlock();
-		}
-		queue->mExecLock.Data.Unlock();
-	}
-
-	void DispatchQueue::Enqueue(DispatchWorkItem* head, DispatchWorkItem* tail)
-	{
-#if false //check lnked list is valid
-		{
-			CheckAlways(tail->Next == nullptr);
-			DispatchWorkItem* p = head, *pp = nullptr;
-			while (p != nullptr)
-			{
-				pp = p;
-				p = (DispatchWorkItem*)p->Next;
-			}
-			CheckAlways(pp == tail);
-		}
-#endif
-		DispatchQueuePrivate& self = mData.Ref<DispatchQueuePrivate>();
-		self.mDataLock.Data.Lock();
-		self.mQueue.Enqueue(head, tail);
-		self.mDataLock.Data.Unlock();
-		DispatchQueue* pq = this;
-		DispatchWorkItem& pollQueue = DispatchWorkItem::Create(PollDispatchQueueFunc, &pq);
-		ConcurrencyModule::Get().Async(pollQueue);
-	}
-
-
 	//DispatchWorkItem impl
 	void DispatchWorkItem::Perform()
 	{
@@ -107,22 +21,23 @@ namespace Omni
 
 	void DispatchWorkItem::Destroy()
 	{
+		PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(mMemKind);
 		this->~DispatchWorkItem();
-		PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(MemoryKind::CacheLine);
 		alloc.resource()->deallocate(this, 0);
 	}
 
-	DispatchWorkItem& DispatchWorkItem::CreatePrivate(void* f, size_t aSize)
+	DispatchWorkItem& DispatchWorkItem::CreatePrivate(void* f, size_t aSize, MemoryKind memKind)
 	{
-		PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(MemoryKind::CacheLine);
+		PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(memKind);
 		DispatchWorkItem* ret = (DispatchWorkItem*)alloc.resource()->allocate(sizeof(DispatchWorkItem) + aSize);
-		new (ret)DispatchWorkItem(f);
+		new (ret)DispatchWorkItem(f, memKind);
 		return *ret;
 	}
 
-	DispatchWorkItem::DispatchWorkItem(void* fptr)
+	DispatchWorkItem::DispatchWorkItem(void* fptr, MemoryKind memKind)
 		: SListNode(nullptr)
 		, mFPtr(fptr)
+		, mMemKind(memKind)
 	{}
 
 
@@ -130,7 +45,7 @@ namespace Omni
 	{
 		std::atomic<size_t>				mEnterCount;
 		DispatchWorkItem*				mNotifyTask;
-		DispatchQueue*					mNotifyQueue; //if speicified, mNotifyTask will execute on this queue
+		LockQueue*						mNotifyQueue; //if speicified, mNotifyTask will execute on this queue
 #if OMNI_DEBUG
 		std::atomic<bool>		mLocked;
 #endif
@@ -196,23 +111,19 @@ namespace Omni
 		size_t v = self.mEnterCount.fetch_sub(1, std::memory_order_release);
 		if (v == 1 && self.mNotifyTask)
 		{
-			if (self.mNotifyQueue)
-				self.mNotifyQueue->Enqueue(self.mNotifyTask, self.mNotifyTask);
-			else
-			{
-				ConcurrencyModule::Get().Async(*self.mNotifyTask);
-			}
+			self.mNotifyQueue->Enqueue(self.mNotifyTask, self.mNotifyTask);
 		}
 		if (v == 1)
 			Destroy();
 	}
 
-	void DispatchGroup::Notify(DispatchWorkItem& item, DispatchQueue* queue)
+	void DispatchGroup::Notify(DispatchWorkItem& item, LockQueue* queue)
 	{
 		DispatchGroupPrivate& self = mData.Ref<DispatchGroupPrivate>();
 #if OMNI_DEBUG
 		CheckAlways(!self.mLocked.load(std::memory_order_relaxed));
 #endif
+		CheckAlways((self.mNotifyTask && self.mNotifyQueue) || (self.mNotifyTask == nullptr && self.mNotifyQueue == nullptr));
 		self.mNotifyTask = &item;
 		self.mNotifyQueue = queue;
 	}

@@ -4,6 +4,7 @@
 #include "Runtime/Base/Misc/ArrayUtils.h"
 #include "Runtime/Base/Misc/AssertUtils.h"
 #include "Runtime/Prelude/PlatformDefs.h"
+#include <cstring>
 
 namespace Omni
 {
@@ -31,6 +32,7 @@ namespace Omni
 		u8* Cleanup();
 		bool IsClean();
 		FORCEINLINE u8* Allocate(u32 size);
+		template<typename T> T* AllocateAndInitWith(u32 count, const T* src);
 		FORCEINLINE void Push();
 		FORCEINLINE void Pop();
 		[[nodiscard]] FORCEINLINE MemoryArenaScope PushScope();
@@ -54,13 +56,19 @@ namespace Omni
 		mArena.mDepth = mDepth;
 		mArena.mUsedBytes = mArena.mOffsets[mDepth];
 	}
-
 	u8* ScratchStack::Allocate(u32 size)
 	{
 		u8* ret = mPtr + mUsedBytes;
 		mUsedBytes += AlignUpSize(size, Alignment);
 		CheckDebug(mUsedBytes <= mTotalBytes);
 		return ret;
+	}
+	template<typename T>
+	T* ScratchStack::AllocateAndInitWith(u32 count, const T* src)
+	{
+		auto ptr = (T*)Allocate(count * sizeof(T));
+		std::memcpy(ptr, src, count * sizeof(T));
+		return ptr;
 	}
 	void ScratchStack::Push()
 	{

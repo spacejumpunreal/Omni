@@ -2,29 +2,37 @@
 #include "Runtime/Prelude/Omni.h"
 #include "Runtime/Core/CoreAPI.h"
 #include "Runtime/Core/System/System.h"
+#include <functional>
 
 namespace Omni
 {
-    using ThreadIndex = i16;
+    class ThreadData;
 
-    static constexpr ThreadIndex MainThreadIndex = 0;
-    static constexpr ThreadIndex InvalidThreadIndex = -1;
+    using ThreadId = u32; //this id is used to mark ThreadData before thread is created(thread::id not known yet)
+    using TThreadBody = std::function<void()>;
+
+    static constexpr ThreadId InvalidThreadId = (ThreadId)-1;
+    static constexpr ThreadId MainThreadId = 0;
+    static constexpr ThreadId RenderThreadId = 1;
+    static constexpr ThreadId WindowThreadId = 2;
+    static constexpr ThreadId WorkerThreadBaseId = 3;
+    static constexpr ThreadId DynamicThreadBaseId = 1024;
 
     class CORE_API ThreadData
     {
     public:
         //for Engine
-        static ThreadData& Create();
+        static ThreadData& Create(ThreadId id);
         void InitAsMainOnMain();
         void RunAndFinalizeOnMain(SystemInitializedCallback cb);
-        void LauchAsWorkerOnMain();
+        void LauchAsWorkerOnMain(const TThreadBody& body);
         void JoinAndDestroyOnMain();
         //for module/user
         static ThreadData& GetThisThreadData();
         bool IsAskedToQuit();
         static void MarkQuitWork();
         bool IsSelfThread();
-        ThreadIndex GetThreadIndex();
+        ThreadId GetThreadId();
 
     protected:
         ThreadData() = default;

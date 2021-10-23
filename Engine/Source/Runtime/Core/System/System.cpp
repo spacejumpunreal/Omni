@@ -6,7 +6,6 @@
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/Concurrency/ConcurrencyModule.h"
 #include "Runtime/Core/Concurrency/ThreadUtils.h"
-#include "Runtime/Core/System/InternalModuleRegistry.h"
 #include "Runtime/Core/System/Module.h"
 #include "Runtime/Core/System/ModuleExport.h"
 #include "Runtime/Base/Memory/MonotonicMemoryResource.h"
@@ -23,16 +22,16 @@ namespace Omni
 	static constexpr size_t SystemInitMemSize = 1024 * 1024;
 	static constexpr char LoadModuleText[] = "LoadModule";
 
-#define ModuleItem(name) extern ModuleExportInfo MODULE_CREATION_STUB_NAME(name);
-#include "Runtime/Core/System/InternalModuleRegistry.inl"
-#undef ModuleItem
+#define CoreModuleItem(name) extern ModuleExportInfo MODULE_CREATION_STUB_NAME(name);
+#include "Runtime/Core/CoreModuleRegistry.inl"
+#undef CoreModuleItem
 
 
-#define ModuleItem(name) &MODULE_CREATION_STUB_NAME(name),
-	static const ModuleExportInfo* InternalModuleInfo[] = {
-#include "Runtime/Core/System/InternalModuleRegistry.inl"
+#define CoreModuleItem(name) &MODULE_CREATION_STUB_NAME(name),
+	static const ModuleExportInfo* CoreModuleInfo[] = {
+#include "Runtime/Core/CoreModuleRegistry.inl"
 	};
-#undef ModuleItem
+#undef CoreModuleItem
 
 
 	//forward declarations
@@ -116,11 +115,11 @@ namespace Omni
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);
 		self->mStatus = SystemStatus::Initializing;
 		//create internal modules
-		for (size_t i = 0; i < ARRAY_LENGTH(InternalModuleInfo); ++i)
+		for (size_t i = 0; i < ARRAY_LENGTH(CoreModuleInfo); ++i)
 		{
-			auto info = InternalModuleInfo[i];
+			auto info = CoreModuleInfo[i];
 			if (info->IsAlwaysLoad || 
-				(InternalModuleInfo[i]->Name != nullptr && loadModuleNames.count(InternalModuleInfo[i]->Name) != 0))
+				(CoreModuleInfo[i]->Name != nullptr && loadModuleNames.count(CoreModuleInfo[i]->Name) != 0))
 			{
 				Module* m = info->Ctor(argMap);
 				CheckAlways(info->Key == -1, "intenral modules should all have -1 keys in declaration, actually keys will come from order in list");
@@ -237,7 +236,7 @@ namespace Omni
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);
 		SystemStatus v = SystemStatus::Ready;
 		if (self->mStatus.compare_exchange_strong(v, SystemStatus::ToBeFinalized))
-			ConcurrencyModule::Get().DismissWorkers();
+			ConcurrencyModule::Get().SignalWorkersToQuit();
 		else if (assertOnMiss)
 		{
 			CheckAlways(false);

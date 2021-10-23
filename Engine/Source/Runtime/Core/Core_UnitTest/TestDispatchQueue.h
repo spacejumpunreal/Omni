@@ -55,7 +55,7 @@ namespace Omni
 		{
 			TestDispatchQueue* state = jd->State;
 			CheckAlways(state->TestLock.TryLock());
-			u32 tid = (u32)ThreadData::GetThisThreadData().GetThreadIndex();
+			u32 tid = (u32)ThreadData::GetThisThreadData().GetThreadId();
 			++state->RunOnHistory[tid];
 			TimeConsumingFunctions::Fab(5);
 			jd->State->Sum += jd->Sequence;
@@ -73,14 +73,14 @@ namespace Omni
 				DispatchWorkItem* tail = nullptr;
 				for (u32 j = 0; j < JobBatch; ++j)
 				{
-					DispatchWorkItem& item = DispatchWorkItem::Create(&SerialJob, &tmpJd);
+					DispatchWorkItem& item = DispatchWorkItem::Create(&SerialJob, &tmpJd, MemoryKind::CacheLine);
 					if (j == 0)
 						tail = &item;
 					++tmpJd.Sequence;
 					item.Next = head;
 					head = &item;
 				}
-				ConcurrencyModule::Get().GetQueue(QueueKind::Primary).Enqueue(head, tail);
+				ConcurrencyModule::Get().GetQueue(QueueKind::Main)->Enqueue(head, tail);
 				if (i % 10 == 0)
 				{
 					using namespace std::chrono_literals;

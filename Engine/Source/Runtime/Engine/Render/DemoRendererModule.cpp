@@ -1,6 +1,7 @@
 #include "Runtime/Engine/EnginePCH.h"
 #include "Runtime/Engine/Render/DemoRendererModule.h"
 #include "Runtime/Base/Misc/PImplUtils.h"
+#include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/System/ModuleExport.h"
 #include "Runtime/Core/System/ModuleImplHelpers.h"
 
