@@ -41,6 +41,13 @@ namespace Omni
 	//definitions
 	using SystemImpl = PImplCombine<System, SystemPrivateData>;
 
+	struct MainThreadArgs
+	{
+		u32							Argc;
+		const char**				Argv;
+		SystemInitializedCallback	OnSystemInitialized;
+	};
+
 
 	struct SystemPrivateData
 	{
@@ -50,11 +57,19 @@ namespace Omni
 		std::unordered_map<std::string, Module*>	mName2Module;
 		std::vector<ModuleExportInfo>				mExternalModuleInfo;
 		MonotonicMemoryResource						mInitMem;
+		//ui thread/main thread related
+		std::thread									mMainThread;
+		std::function<void()>						mUIThreadBody;
+		std::mutex									mUIThreadLock;
+		std::condition_variable						mUIThreadCV;
 
 		SystemPrivateData()
 			: mStatus(SystemStatus::Uninitialized)
 			, mInitMem(SystemInitMemSize)
 		{}
+		void InitializeAndJoinAsMainThread(const MainThreadArgs& args);
+		void WaitForUIThreadToStall();
+		static void ResumeUIThread(std::function<void()>&& body);
 	};
 
 
@@ -65,7 +80,6 @@ namespace Omni
 	//functions
 	void System::CreateSystem()
 	{
-		RegisterMainThread();
 		CheckAlways(GSystem == nullptr, "double create");
 		GSystem = new SystemImpl();
 	}
@@ -82,103 +96,27 @@ namespace Omni
 		CheckAlways(GSystem != nullptr, "double destroy");
 		delete GSystem;
 		GSystem = nullptr;
-		UnregisterMainThread();
 	}
 
+	//this is runned by UI thread
 	void System::InitializeAndJoin(u32 argc, const char** argv, SystemInitializedCallback onSystemInitialized)
 	{
-		//parse args
-		EngineInitArgMap argMap;
-		for (u32 i = 0; i < argc; ++i)
-		{
-			size_t b = 0;
-			const char* arg = argv[i];
-			while (arg[b] != 0 && arg[b] != '=')
-				++b;
-			std::string k(arg, arg + b);
-			std::string v;
-			if (arg[b] == '=')
-			{
-				++b;
-				size_t bb = b;
-				while (arg[b] != 0)
-					++b;
-				v = std::string(arg + bb, arg + b);
-			}
-			argMap.insert(std::make_pair(k, v));
-		}
-		//loadModuleNames
-		auto tup = argMap.equal_range(LoadModuleText);
-		std::unordered_set<std::string> loadModuleNames;
-		for (auto it = tup.first; it != tup.second; ++it)
-			loadModuleNames.insert(it->second);
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);
-		self->mStatus = SystemStatus::Initializing;
-		//create internal modules
-		for (size_t i = 0; i < ARRAY_LENGTH(CoreModuleInfo); ++i)
+		MainThreadArgs threadArg
 		{
-			auto info = CoreModuleInfo[i];
-			if (info->IsAlwaysLoad || 
-				(CoreModuleInfo[i]->Name != nullptr && loadModuleNames.count(CoreModuleInfo[i]->Name) != 0))
-			{
-				Module* m = info->Ctor(argMap);
-				CheckAlways(info->Key == -1, "intenral modules should all have -1 keys in declaration, actually keys will come from order in list");
-				self->mModules.push_back(m);
-				self->mKey2Module[(ModuleKey)i] = m;
-				if (info->Name != nullptr)
-					self->mName2Module[info->Name] = m;
-			}
-		}
-		//create external modules
-		for (size_t i = 0; i < self->mExternalModuleInfo.size(); ++i)
-		{
-			const ModuleExportInfo& info = self->mExternalModuleInfo[i];
-			if (info.IsAlwaysLoad || loadModuleNames.count(info.Name) != 0)
-			{
-				Module* m = info.Ctor(argMap);
-				self->mModules.push_back(m);
-				if (info.Key >= 0)
-				{
-					CheckAlways(self->mKey2Module.count(info.Key) == 0, "dumplicated module keys");
-					self->mKey2Module[info.Key] = m;
-				}
-				if (info.Name != nullptr)
-				{
-					CheckAlways(self->mName2Module.count(info.Name) == 0, "duplicated module names");
-					self->mName2Module[info.Name] = m;
-				}
-			}
-		}
-		size_t nModules = self->mModules.size();
-		size_t todo = 1;//make sure we enter the first round
-		bool firstRound = true;
-		while (todo > 0)
-		{
-			todo = 0;
-			for (size_t i = 0; i < nModules; ++i)
-			{
-				Module* mod = self->mModules[i];
-				if (firstRound || mod->GetStatus() == ModuleStatus::Initializing)
-				{
-					mod->Initialize(argMap);
-				}
-				ModuleStatus ms = mod->GetStatus();
-				switch (ms)
-				{
-				case ModuleStatus::Initializing:
-					++todo;
-					break;
-				case ModuleStatus::Ready:
-					break;
-				default:
-					CheckAlways(false, "unexpected init status");
-					break;
-				}
-			}
-			firstRound = false;
-		}
-		self->mStatus = SystemStatus::Ready;
-		ThreadData::GetThisThreadData().RunAndFinalizeAsMain(onSystemInitialized);
+			.Argc = argc,
+			.Argv = argv,
+			.OnSystemInitialized = onSystemInitialized,
+		};
+		std::unique_lock lk(self->mUIThreadLock);
+		self->mMainThread = std::thread([&](){
+			RegisterMainThread();
+			self->InitializeAndJoinAsMainThread(threadArg);
+			UnregisterMainThread();
+		});
+		self->mUIThreadCV.wait(lk);
+		self->mUIThreadBody();
+		self->mMainThread.join();
 	}
 
 	void System::Finalize()
@@ -284,5 +222,119 @@ namespace Omni
 	{
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);
 		return self->mInitMem;
+	}
+
+	void SystemPrivateData::InitializeAndJoinAsMainThread(const MainThreadArgs& args)
+	{
+		SystemImpl* self = SystemImpl::GetCombinePtr(this);
+		//parse args
+		EngineInitArgMap argMap;
+		for (u32 i = 0; i < args.Argc; ++i)
+		{
+			size_t b = 0;
+			const char* arg = args.Argv[i];
+			while (arg[b] != 0 && arg[b] != '=')
+				++b;
+			std::string k(arg, arg + b);
+			std::string v;
+			if (arg[b] == '=')
+			{
+				++b;
+				size_t bb = b;
+				while (arg[b] != 0)
+					++b;
+				v = std::string(arg + bb, arg + b);
+			}
+			argMap.insert(std::make_pair(k, v));
+		}
+		//loadModuleNames
+		auto tup = argMap.equal_range(LoadModuleText);
+		std::unordered_set<std::string> loadModuleNames;
+		for (auto it = tup.first; it != tup.second; ++it)
+			loadModuleNames.insert(it->second);
+
+		self->mStatus = SystemStatus::Initializing;
+		//create internal modules
+		for (size_t i = 0; i < ARRAY_LENGTH(CoreModuleInfo); ++i)
+		{
+			auto info = CoreModuleInfo[i];
+			if (info->IsAlwaysLoad ||
+				(CoreModuleInfo[i]->Name != nullptr && loadModuleNames.count(CoreModuleInfo[i]->Name) != 0))
+			{
+				Module* m = info->Ctor(argMap);
+				CheckAlways(info->Key == -1, "intenral modules should all have -1 keys in declaration, actually keys will come from order in list");
+				self->mModules.push_back(m);
+				self->mKey2Module[(ModuleKey)i] = m;
+				if (info->Name != nullptr)
+					self->mName2Module[info->Name] = m;
+			}
+		}
+		//create external modules
+		for (size_t i = 0; i < self->mExternalModuleInfo.size(); ++i)
+		{
+			const ModuleExportInfo& info = self->mExternalModuleInfo[i];
+			if (info.IsAlwaysLoad || loadModuleNames.count(info.Name) != 0)
+			{
+				Module* m = info.Ctor(argMap);
+				self->mModules.push_back(m);
+				if (info.Key >= 0)
+				{
+					CheckAlways(self->mKey2Module.count(info.Key) == 0, "dumplicated module keys");
+					self->mKey2Module[info.Key] = m;
+				}
+				if (info.Name != nullptr)
+				{
+					CheckAlways(self->mName2Module.count(info.Name) == 0, "duplicated module names");
+					self->mName2Module[info.Name] = m;
+				}
+			}
+		}
+		size_t nModules = self->mModules.size();
+		size_t todo = 1;//make sure we enter the first round
+		bool firstRound = true;
+		while (todo > 0)
+		{
+			todo = 0;
+			for (size_t i = 0; i < nModules; ++i)
+			{
+				Module* mod = self->mModules[i];
+				if (firstRound || mod->GetStatus() == ModuleStatus::Initializing)
+				{
+					mod->Initialize(argMap);
+				}
+				ModuleStatus ms = mod->GetStatus();
+				switch (ms)
+				{
+				case ModuleStatus::Initializing:
+					++todo;
+					break;
+				case ModuleStatus::Ready:
+					break;
+				default:
+					CheckAlways(false, "unexpected init status");
+					break;
+				}
+			}
+			firstRound = false;
+		}
+		//free it anyway, if already previously freed, this will have no effect
+		self->ResumeUIThread(std::function<void()>([]() {}));
+		self->mStatus = SystemStatus::Ready;
+		ThreadData::GetThisThreadData().RunAndFinalizeAsMain(args.OnSystemInitialized);
+	}
+
+	void SystemPrivateData::WaitForUIThreadToStall()
+	{
+		SystemImpl* self = SystemImpl::GetCombinePtr(this);
+		self->mUIThreadLock.lock();
+		self->mUIThreadLock.unlock();
+	}
+	void SystemPrivateData::ResumeUIThread(std::function<void()>&& body)
+	{
+		SystemImpl* self = SystemImpl::GetCombinePtr(&System::GetSystem());
+		self->mUIThreadLock.lock();
+		self->mUIThreadBody = std::move(body);
+		self->mUIThreadLock.unlock();
+		self->mUIThreadCV.notify_one();
 	}
 }
