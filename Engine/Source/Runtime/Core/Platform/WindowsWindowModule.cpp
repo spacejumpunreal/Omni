@@ -8,6 +8,8 @@
 #include "Runtime/Core/System/ModuleExport.h"
 #include "Runtime/Core/System/ModuleImplHelpers.h"
 #include <Windows.h>
+#include <functional>
+#include <future>
 
 namespace Omni
 {
@@ -19,7 +21,15 @@ namespace Omni
     static constexpr u32 OmniWindowResizeMinPixels = 32;
     static const wchar_t* OmniWindowClassName = L"OmniWindowClass";
 
-    //declarations
+    void ResumeUIThread(std::function<void()>&& body);
+
+    //definitions
+    struct InitUIThreadArgs
+    {
+        const EngineInitArgMap*     Args;
+        std::promise<void>          ReadyFlag;
+    };
+
     struct WindowsWindowModulePrivate
     {
     public:
@@ -27,6 +37,7 @@ namespace Omni
         static RECT CalcNonClientWindowRect(u32 topLeftX, u32 topLeftY, u32 width, u32 height);
         void OnSizeChanged(u32 clientWidth, u32 clientHeight);
         void SyncWindowSize();
+        void RunUILoop(InitUIThreadArgs& args);
     public:
         HWND    mWindow;
         u32     mBackbufferWidth;
@@ -105,49 +116,21 @@ namespace Omni
         }
         return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
+
     void WindowModule::Initialize(const EngineInitArgMap& args)
     {
         MemoryModule::Get().Retain();
         WindowsWindowModuleImpl* self = WindowsWindowModuleImpl::GetCombinePtr(this);
         CheckAlways(gWindowsWindowModule == nullptr);
         gWindowsWindowModule = self;
+        
+        InitUIThreadArgs initArgs;
+        initArgs.Args = &args;
 
-        HINSTANCE instance = GetModuleHandle(NULL);
-        //here
-        WNDCLASS wc = {};
-        wc.lpfnWndProc = OmniWindowProc;
-        wc.lpszClassName = OmniWindowClassName;
-        wc.hInstance = instance;
-        RegisterClass(&wc);
-
-        auto itr = args.find("--window-size");
-        u32 bfw = DefaultBackbufferWdith;
-        u32 bfh = DefaultBackbufferWdith;
-        if (itr != args.end())
-        {
-            std::string s = itr->second;
-            auto ix = s.find("x");
-            if (ix != std::string::npos)
-            {
-                s[ix] = 0;
-                bfw = atoi(s.data());
-                bfh = atoi(s.data() + ix + 1);
-            }
-        }
-        self->mWindow = CreateWindowEx(
-            OmniMainWindowAdditionalStyle,              // Optional window styles.
-            OmniWindowClassName,                        // Window class
-            L"Learn to Program Windows",                // Window text
-            OmniMainWindowStyle,                        // Window style
-            CW_USEDEFAULT, CW_USEDEFAULT, bfw, bfh,     // Size and position
-            NULL,                                       // Parent window    
-            NULL,                                       // Menu
-            instance,                                   // Instance handle
-            self                                        // Additional application data
-        );
-        CheckAlways(self->mWindow != NULL, "create window failed");
-        ShowWindow(self->mWindow, SW_SHOW);
-
+        ResumeUIThread(std::function<void()>([&]() {
+            self->RunUILoop(initArgs);
+            }));
+        initArgs.ReadyFlag.get_future().wait();
         Module::Initialize(args);
     }
     void WindowModule::Finalize()
@@ -169,19 +152,6 @@ namespace Omni
     WindowModule* WindowModule::GetPtr()
     {
         return gWindowsWindowModule;
-    }
-    void WindowModule::RunUILoop()
-    {
-        MSG msg;
-        BOOL bRet;
-        while ((bRet = GetMessage(&msg, NULL, 0, 0)) != 0)
-        {
-            CheckDebug(bRet != -1);
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        //PostQuitMessage(0) let us get here
-        System::GetSystem().TriggerFinalization(true);
     }
     void WindowModule::GetBackbufferSize(u32& width, u32& height)
     {
@@ -232,6 +202,59 @@ namespace Omni
         mWindowWidth = rect.right - rect.left;
         mWindowHeight = rect.bottom - rect.top;
     }
+    void WindowsWindowModulePrivate::RunUILoop(InitUIThreadArgs& initArgs)
+    {
+        WindowsWindowModuleImpl* self = WindowsWindowModuleImpl::GetCombinePtr(this);
+
+        HINSTANCE instance = GetModuleHandle(NULL);
+        //here
+        WNDCLASS wc = {};
+        wc.lpfnWndProc = OmniWindowProc;
+        wc.lpszClassName = OmniWindowClassName;
+        wc.hInstance = instance;
+        RegisterClass(&wc);
+
+        auto itr = initArgs.Args->find("--window-size");
+        u32 bfw = DefaultBackbufferWdith;
+        u32 bfh = DefaultBackbufferWdith;
+        if (itr != initArgs.Args->end())
+        {
+            std::string s = itr->second;
+            auto ix = s.find("x");
+            if (ix != std::string::npos)
+            {
+                s[ix] = 0;
+                bfw = atoi(s.data());
+                bfh = atoi(s.data() + ix + 1);
+            }
+        }
+        self->mWindow = CreateWindowEx(
+            OmniMainWindowAdditionalStyle,              // Optional window styles.
+            OmniWindowClassName,                        // Window class
+            L"Learn to Program Windows",                // Window text
+            OmniMainWindowStyle,                        // Window style
+            CW_USEDEFAULT, CW_USEDEFAULT, bfw, bfh,     // Size and position
+            NULL,                                       // Parent window    
+            NULL,                                       // Menu
+            instance,                                   // Instance handle
+            self                                        // Additional application data
+        );
+        CheckAlways(self->mWindow != NULL, "create window failed");
+        ShowWindow(self->mWindow, SW_SHOW);
+
+        initArgs.ReadyFlag.set_value();
+
+        MSG msg;
+        BOOL bRet;
+        while ((bRet = GetMessage(&msg, NULL, 0, 0)) != 0)
+        {
+            CheckDebug(bRet != -1);
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+        System::GetSystem().TriggerFinalization(false);
+    }
+
     static Module* WindowModuleCtor(const EngineInitArgMap& args)
     {
         return InitMemFactory<WindowsWindowModuleImpl>::New(args);

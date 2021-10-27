@@ -42,12 +42,12 @@ namespace Omni
 			int count = 0;
 		};
 
-		if constexpr (false)
+		if constexpr (true)
 		{
 			auto pleft = new KeyStateLogger();
-			auto pright = new KeyStateLogger();
+			//auto pright = new KeyStateLogger();
 			InputModule::Get().RegisterListener(KeyMap::MouseLeft, pleft);
-			InputModule::Get().RegisterListener(KeyMap::MouseRight, pright);
+			//InputModule::Get().RegisterListener(KeyMap::MouseRight, pright);
 		}
 	}
 }

@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <future>
 
 namespace Omni
 {
@@ -36,6 +37,7 @@ namespace Omni
 
 	//forward declarations
 	struct SystemPrivateData;
+	void ResumeUIThread(std::function<void()>&& body);
 
 
 	//definitions
@@ -59,17 +61,15 @@ namespace Omni
 		MonotonicMemoryResource						mInitMem;
 		//ui thread/main thread related
 		std::thread									mMainThread;
-		std::function<void()>						mUIThreadBody;
-		std::mutex									mUIThreadLock;
-		std::condition_variable						mUIThreadCV;
+		std::promise<std::function<void()>>			mUIThreadBody;
+		bool										mUIThreadBodySet;
 
 		SystemPrivateData()
 			: mStatus(SystemStatus::Uninitialized)
 			, mInitMem(SystemInitMemSize)
+			, mUIThreadBodySet(false)
 		{}
 		void InitializeAndJoinAsMainThread(const MainThreadArgs& args);
-		void WaitForUIThreadToStall();
-		static void ResumeUIThread(std::function<void()>&& body);
 	};
 
 
@@ -108,14 +108,13 @@ namespace Omni
 			.Argv = argv,
 			.OnSystemInitialized = onSystemInitialized,
 		};
-		std::unique_lock lk(self->mUIThreadLock);
+		auto body = self->mUIThreadBody.get_future();
 		self->mMainThread = std::thread([&](){
 			RegisterMainThread();
 			self->InitializeAndJoinAsMainThread(threadArg);
 			UnregisterMainThread();
 		});
-		self->mUIThreadCV.wait(lk);
-		self->mUIThreadBody();
+		body.get()();
 		self->mMainThread.join();
 	}
 
@@ -318,23 +317,16 @@ namespace Omni
 			firstRound = false;
 		}
 		//free it anyway, if already previously freed, this will have no effect
-		self->ResumeUIThread(std::function<void()>([]() {}));
+		if (!self->mUIThreadBodySet)
+			ResumeUIThread(std::function<void()>([]() {}));
 		self->mStatus = SystemStatus::Ready;
 		ThreadData::GetThisThreadData().RunAndFinalizeAsMain(args.OnSystemInitialized);
 	}
 
-	void SystemPrivateData::WaitForUIThreadToStall()
-	{
-		SystemImpl* self = SystemImpl::GetCombinePtr(this);
-		self->mUIThreadLock.lock();
-		self->mUIThreadLock.unlock();
-	}
-	void SystemPrivateData::ResumeUIThread(std::function<void()>&& body)
+	void ResumeUIThread(std::function<void()>&& body)
 	{
 		SystemImpl* self = SystemImpl::GetCombinePtr(&System::GetSystem());
-		self->mUIThreadLock.lock();
-		self->mUIThreadBody = std::move(body);
-		self->mUIThreadLock.unlock();
-		self->mUIThreadCV.notify_one();
+		self->mUIThreadBodySet = true;
+		self->mUIThreadBody.set_value(std::move(body));
 	}
 }
