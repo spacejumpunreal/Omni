@@ -10,7 +10,7 @@ namespace Omni
 	class KeyStateListener;
 	using KeyStateCallback = void (*)(KeyCode code, void* userData);
 
-	class InputModule : public Module
+	class CORE_API InputModule : public Module
 	{
 	public:
 		void Destroy() override;

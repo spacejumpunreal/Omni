@@ -2,11 +2,14 @@
 #if OMNI_WINDOWS
 #include "Runtime/Base/Misc/AssertUtils.h"
 #include "Runtime/Base/Misc/PImplUtils.h"
+#include "Runtime/Base/MultiThread/SpinLock.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
+#include "Runtime/Core/Concurrency/ConcurrencyModule.h"
 #include "Runtime/Core/Platform/InputModule.h"
 #include "Runtime/Core/Platform/WindowModule.h"
 #include "Runtime/Core/System/ModuleExport.h"
 #include "Runtime/Core/System/ModuleImplHelpers.h"
+
 #include <Windows.h>
 #include <functional>
 #include <future>
@@ -27,6 +30,7 @@ namespace Omni
     struct InitUIThreadArgs
     {
         const EngineInitArgMap*     Args;
+        ThreadData*                 ThreadData;
         std::promise<void>          ReadyFlag;
     };
 
@@ -34,22 +38,39 @@ namespace Omni
     {
     public:
         WindowsWindowModulePrivate(const EngineInitArgMap& args);
+        ~WindowsWindowModulePrivate();
         static RECT CalcNonClientWindowRect(u32 topLeftX, u32 topLeftY, u32 width, u32 height);
         void OnSizeChanged(u32 clientWidth, u32 clientHeight);
-        void SyncWindowSize();
         void RunUILoop(InitUIThreadArgs& args);
     public:
-        HWND    mWindow;
-        u32     mBackbufferWidth;
-        u32     mBackbufferHeight;
-        u32     mWindowWidth;
-        u32     mWindowHeight;
+        struct MainThreadData
+        {
+            SpinLock    mMainThreadDataLock;
+            u32         mBackbufferWidth;
+            u32         mBackbufferHeight;
+            u32         mWindowWidth;
+            u32         mWindowHeight;
+        };
+        MainThreadData*         mMainThreadData;
+        std::promise<void>      mCleanupFlag;
+        HWND                    mWindow;
     };
 
     using WindowsWindowModuleImpl = PImplCombine<WindowModule, WindowsWindowModulePrivate>;
 
     //globals
     WindowsWindowModuleImpl* gWindowsWindowModule;
+
+    struct UpdateMouseOnMain
+    {
+        MousePos MousePos;
+        bool LDown, RDown;
+        static void Run(UpdateMouseOnMain* arg)
+        {
+            InputModule& inputModule = InputModule::Get();
+            inputModule.UpdateMouse(arg->MousePos, arg->LDown, arg->RDown);
+        }
+    };
 
     //implementations
     static LRESULT CALLBACK OmniWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -95,20 +116,22 @@ namespace Omni
         case WM_RBUTTONDOWN:
         {
             POINT lp;
-            bool ldown, rdown;
+            UpdateMouseOnMain updateMouseOnMain;
+
             CheckDebug(GetCursorPos(&lp));
             SHORT bs;
             bs = GetKeyState(VK_LBUTTON);
-            ldown = (bs & 0x8000) != 0;
+            updateMouseOnMain.LDown = (bs & 0x8000) != 0;
             bs = GetKeyState(VK_RBUTTON);
-            rdown = (bs & 0x8000) != 0;
+            updateMouseOnMain.RDown = (bs & 0x8000) != 0;
 
             WindowsWindowModuleImpl* self = (WindowsWindowModuleImpl*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
             CheckDebug(ScreenToClient(self->mWindow, &lp));
-            MousePos mpos { .X = (i16)lp.x, .Y = (i16)lp.y };
+            updateMouseOnMain.MousePos = MousePos { .X = (i16)lp.x, .Y = (i16)lp.y };
 
-            InputModule& inputModule = InputModule::Get();
-            inputModule.UpdateMouse(mpos, ldown, rdown);
+            //TODO: temp mute this, return here once we fixed close window destroy system assert
+            //auto dispatchWork = DispatchWorkItem::CreateWithFunctor(std::move(updateMouseOnMain), MemoryKind::CacheLine);
+            //ConcurrencyModule::Get().EnqueueWork(dispatchWork, QueueKind::Main);
             break;
         }
         default:
@@ -126,12 +149,22 @@ namespace Omni
         
         InitUIThreadArgs initArgs;
         initArgs.Args = &args;
+        initArgs.ThreadData = &ThreadData::Create(UIThreadId);
 
         ResumeUIThread(std::function<void()>([&]() {
+            initArgs.ThreadData->InitializeOnThread();
             self->RunUILoop(initArgs);
+            initArgs.ThreadData->FinalizeOnThread();
             }));
         initArgs.ReadyFlag.get_future().wait();
         Module::Initialize(args);
+    }
+    void WindowModule::StopThreads()
+    {
+        WindowsWindowModuleImpl* self = WindowsWindowModuleImpl::GetCombinePtr(this);
+        DestroyWindow(self->mWindow);
+        self->mCleanupFlag.get_future().wait();
+
     }
     void WindowModule::Finalize()
     {
@@ -156,11 +189,13 @@ namespace Omni
     void WindowModule::GetBackbufferSize(u32& width, u32& height)
     {
         WindowsWindowModuleImpl* self = WindowsWindowModuleImpl::GetCombinePtr(this);
-        width = self->mBackbufferWidth;
-        height = self->mBackbufferHeight;
+        self->mMainThreadData->mMainThreadDataLock.Lock();
+        width = self->mMainThreadData->mBackbufferWidth;
+        height = self->mMainThreadData->mBackbufferHeight;
+        self->mMainThreadData->mMainThreadDataLock.Unlock();
     }
     void WindowModule::RequestSetBackbufferSize(u32 width, u32 height)
-    {
+    {//can be called on any thread, for it will send a request to Window's internal message queue
         WindowsWindowModuleImpl* self = WindowsWindowModuleImpl::GetCombinePtr(this);
         RECT rect{};
         CheckWinAPI(GetWindowRect(self->mWindow, &rect));
@@ -170,12 +205,17 @@ namespace Omni
         CheckWinAPI(SetWindowPos(self->mWindow, HWND_TOPMOST, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOCOPYBITS));
     }
     WindowsWindowModulePrivate::WindowsWindowModulePrivate(const EngineInitArgMap&)
-        : mWindow(NULL)
-        , mBackbufferWidth(0)
-        , mBackbufferHeight(0)
-        , mWindowWidth(0)
-        , mWindowHeight(0)
+        : mMainThreadData(OMNI_NEW(MemoryKind::SystemInit)(MainThreadData))
+        , mWindow(NULL)
     {
+        mMainThreadData->mBackbufferWidth = 0;
+        mMainThreadData->mBackbufferHeight = 0;
+        mMainThreadData->mWindowWidth = 0;
+        mMainThreadData->mWindowHeight = 0;
+    }
+    WindowsWindowModulePrivate::~WindowsWindowModulePrivate()
+    {
+        OMNI_DELETE(mMainThreadData, MemoryKind::SystemInit);
     }
     RECT WindowsWindowModulePrivate::CalcNonClientWindowRect(u32 topLeftX, u32 topLeftY, u32 width, u32 height)
     {
@@ -192,15 +232,15 @@ namespace Omni
     void WindowsWindowModulePrivate::OnSizeChanged(u32 clientWidth, u32 clientHeight)
     {
         WindowsWindowModuleImpl* self = WindowsWindowModuleImpl::GetCombinePtr(this);
-        self->mBackbufferWidth = clientWidth;
-        self->mBackbufferHeight = clientHeight;
-        SyncWindowSize();
-    }
-    void WindowsWindowModulePrivate::SyncWindowSize()
-    {
-        RECT rect = CalcNonClientWindowRect(0, 0, mBackbufferWidth, mBackbufferHeight);
-        mWindowWidth = rect.right - rect.left;
-        mWindowHeight = rect.bottom - rect.top;
+        RECT rect = CalcNonClientWindowRect(0, 0, clientWidth, clientHeight);
+        u32 windowWidth = rect.right - rect.left; ;
+        u32 windowHeight = rect.bottom - rect.top;
+        self->mMainThreadData->mMainThreadDataLock.Lock();
+        self->mMainThreadData->mBackbufferWidth = clientWidth;
+        self->mMainThreadData->mBackbufferHeight = clientHeight;
+        self->mMainThreadData->mWindowWidth = windowWidth;
+        self->mMainThreadData->mWindowHeight = windowHeight;
+        self->mMainThreadData->mMainThreadDataLock.Unlock();
     }
     void WindowsWindowModulePrivate::RunUILoop(InitUIThreadArgs& initArgs)
     {
@@ -253,6 +293,7 @@ namespace Omni
             DispatchMessage(&msg);
         }
         System::GetSystem().TriggerFinalization(false);
+        self->mCleanupFlag.set_value();
     }
 
     static Module* WindowModuleCtor(const EngineInitArgMap& args)

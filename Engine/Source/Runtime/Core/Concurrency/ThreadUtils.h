@@ -12,10 +12,11 @@ namespace Omni
     using TThreadBody = std::function<void()>;
 
     static constexpr ThreadId InvalidThreadId = (ThreadId)-1;
-    static constexpr ThreadId MainThreadId = 0;
-    static constexpr ThreadId RenderThreadId = 1;
-    static constexpr ThreadId WindowThreadId = 2;
-    static constexpr ThreadId WorkerThreadBaseId = 3;
+    static constexpr ThreadId UIThreadId = 0;
+    static constexpr ThreadId MainThreadId = 1;
+    static constexpr ThreadId RenderThreadId = 2;
+    static constexpr ThreadId WindowThreadId = 3;
+    static constexpr ThreadId WorkerThreadBaseId = 4;
     static constexpr ThreadId DynamicThreadBaseId = 1024;
 
     class CORE_API ThreadData
@@ -24,14 +25,21 @@ namespace Omni
         //for Engine
         static ThreadData& Create(ThreadId id);
         void InitAsMainOnMain();
-        void RunAndFinalizeAsMain(SystemInitializedCallback cb);
+        void RunAndFinalizeAsMain(SystemInitializedCallback initCb, SystemWillQuitCallback quitCb);
+
         void LauchAsWorkerOnMain(const TThreadBody& body);
         void JoinAndDestroyOnMain();
+
+        void InitializeOnThread();
+        void FinalizeOnThread();
+        void CheckFinalizedAndDestroyOnMain();
+
         //for module/user
         static ThreadData& GetThisThreadData();
         bool IsAskedToQuit();
         static void MarkQuitWork();
         bool IsSelfThread();
+        bool IsFinalized();
         ThreadId GetThreadId();
 
     protected:

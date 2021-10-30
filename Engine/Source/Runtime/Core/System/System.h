@@ -10,6 +10,7 @@ namespace Omni
 
 	using ModuleKey = i32;
 	using SystemInitializedCallback = void(*)();
+	using SystemWillQuitCallback = void(*)();
 
 	enum class SystemStatus : u8
 	{
@@ -29,7 +30,7 @@ namespace Omni
 		static System& GetSystem();
 		void DestroySystem();
 		////the thread that InitializeAndJoin this beomes MainThread
-		void InitializeAndJoin(u32 argc, const char** argv, SystemInitializedCallback onSystemInitialized);
+		void InitializeAndJoin(u32 argc, const char** argv, SystemInitializedCallback onSystemInitialized, SystemWillQuitCallback onSystemWillQuit);
 		SystemStatus GetStatus();
 		void TriggerFinalization(bool assertOnMiss);
 		void StopThreads();

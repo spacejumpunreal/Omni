@@ -67,13 +67,11 @@ namespace Omni
         if (GetUserCount() > 0)
             return;
 
-#if OMNI_DEBUG
         const InputModuleImpl* self = InputModuleImpl::GetCombinePtr(this);
         for (auto& ksp: self->mKeys)
         {
             CheckAlways(ksp.second.Listeners.size() == 0);
         }
-#endif
         MemoryModule& mm = MemoryModule::Get();
         gInputModule = nullptr;
         Module::Finalize();

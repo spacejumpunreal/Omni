@@ -11,6 +11,7 @@ namespace Omni
 	public:
 		void Destroy() override;
 		void Initialize(const EngineInitArgMap&) override;
+		void StopThreads() override;
 		void Finalize() override;
 		static WindowModule& Get();
 		static WindowModule* GetPtr();

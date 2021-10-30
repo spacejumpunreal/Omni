@@ -27,8 +27,9 @@ namespace Omni
     private:
         u32					mHotCount;
         u32					mColdCount;
-        LockfreeNode* mHotList;
-        LockfreeNode* mColdList;
+        LockfreeNode*       mHotList;
+        LockfreeNode*       mColdList;
+        bool                mCleaned;
     };
 
 
@@ -56,11 +57,14 @@ namespace Omni
         , mColdCount(0)
         , mHotList(nullptr)
         , mColdList(nullptr)
+        , mCleaned(false)
+
     {
     }
 
     LockfreeNode* LockfreeNodeCachePerThreadData::Allocate()
     {
+        CheckDebug(!mCleaned);
         if (mHotCount == 0)
         {
             if (mColdCount == 0)
@@ -79,6 +83,7 @@ namespace Omni
 
     void LockfreeNodeCachePerThreadData::Free(LockfreeNode* node)
     {
+        CheckDebug(!mCleaned);
         if (mHotCount == LockfreeNodeTransferBatchCount)
         {
             ++mColdCount;
@@ -109,6 +114,7 @@ namespace Omni
         mColdCount = 0;
         mHotList = nullptr;
         mColdList = nullptr;
+        mCleaned = true;
     }
 
     bool LockfreeNodeCachePerThreadData::IsClean()

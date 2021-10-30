@@ -100,9 +100,9 @@ namespace Omni
         if (lastJob != nullptr)
             self->EnqueueWork(*lastJob, QueueKind::Shared);
 
-        for (u32 wid = 0; wid < self->mWorkerCount; ++wid)
+        for (u32 iThread = 0; iThread < self->mWorkerCount; ++iThread)
         {
-            ThreadId tid = wid + WorkerThreadBaseId;
+            ThreadId tid = WorkerThreadBaseId + iThread;
             self->mThreadData[tid]->JoinAndDestroyOnMain();
             self->mThreadData[tid] = nullptr;
         }
@@ -118,11 +118,14 @@ namespace Omni
         ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
         for (auto it = self->mThreadData.begin(); it != self->mThreadData.end(); ++it)
         {
-            if (it->second != nullptr)
-                CheckAlways(it->second->GetThreadId() == MainThreadId);
+            if (it->second != nullptr && it->second->GetThreadId() != MainThreadId)
+            {//must be an external thread, should have been finalized
+                CheckAlways(it->second->IsFinalized());
+                it->second->CheckFinalizedAndDestroyOnMain();
+                it->second = nullptr;
+            }
         }
         self->mThreadData[MainThreadId]->JoinAndDestroyOnMain();
-
         gConcurrencyModule = nullptr;
         Module::Finalize();
         MemoryModule::Get().Release();
@@ -153,6 +156,15 @@ namespace Omni
         ThreadData* ret = &ThreadData::Create(tid);
         self->mThreadData.emplace(std::make_pair(tid, ret));
         ret->LauchAsWorkerOnMain(body);
+        return ret;
+    }
+
+    ThreadData* ConcurrencyModule::RegisterExternalThread(ThreadId designatedTid)
+    {
+        ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
+        ThreadId tid = designatedTid == InvalidThreadId ? self->mNextThreadId++ : designatedTid;
+        ThreadData* ret = &ThreadData::Create(tid);
+        self->mThreadData.emplace(std::make_pair(tid, ret));
         return ret;
     }
 

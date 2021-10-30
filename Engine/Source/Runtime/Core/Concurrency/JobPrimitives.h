@@ -16,6 +16,18 @@ namespace Omni
 	class DispatchWorkItem : public SListNode
 	{
 	public:
+		template<typename Functor>
+		static DispatchWorkItem& CreateWithFunctor(Functor&& functor, MemoryKind memKind)
+		{
+			static_assert(std::is_standard_layout_v<Functor> && std::is_trivial_v<Functor>);
+			static_assert(alignof(DispatchWorkItem) <= sizeof(void*));
+			static_assert(sizeof(decltype(&Functor::Run)) > 0);
+			DispatchWorkItem& r = CreatePrivate((void*)Functor::Run, sizeof(Functor), memKind);
+			void* ap = GetArgPtr(&r);
+			*(Functor*)ap = std::move(functor);
+			return r;
+		}
+
 		template<typename T>
 		static DispatchWorkItem& Create(void (*func)(T*), const T* argPtr, MemoryKind memKind)
 		{

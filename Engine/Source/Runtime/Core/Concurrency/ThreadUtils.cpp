@@ -31,10 +31,9 @@ namespace Omni
         std::thread         mThread;
         u32                 mThreadId;
         bool                mQuitAsked;
+        std::atomic<bool>   mFinalized;
     public:
         ThreadDataImpl(ThreadId tid); //only called on main thread, worker thread not created actually
-        void InitializeOnThread(); //only called on self thread
-        void FinalizeOnThread(); //only called on self thread
     };
 
 
@@ -67,13 +66,13 @@ namespace Omni
         self.InitializeOnThread();
     }
 
-    void ThreadData::RunAndFinalizeAsMain(SystemInitializedCallback onSystemInitialized)
+    void ThreadData::RunAndFinalizeAsMain(SystemInitializedCallback initCb, SystemWillQuitCallback quitCb)
     {
         auto& self = *static_cast<ThreadDataImpl*>(this);
         CheckAlways(IsOnMainThread());
         
         ConcurrencyModule::Get().EnqueueWork(
-            DispatchWorkItem::Create(onSystemInitialized, MemoryKind::CacheLine),
+            DispatchWorkItem::Create(initCb, MemoryKind::CacheLine),
             QueueKind::Main);
         auto queue = ConcurrencyModule::Get().GetQueue(QueueKind::Main);
 
@@ -83,6 +82,8 @@ namespace Omni
             item->Perform();
             item->Destroy();
         }
+        if (quitCb != nullptr)
+            quitCb();
         System::GetSystem().StopThreads();
         System::GetSystem().Finalize();
     }
@@ -112,6 +113,14 @@ namespace Omni
         OMNI_DELETE(self, MemoryKind::SystemInit); //memory for this is allocated on Main
     }
 
+    void ThreadData::CheckFinalizedAndDestroyOnMain()
+    {
+        CheckAlways(IsOnMainThread());
+        auto self = static_cast<ThreadDataImpl*>(this);
+        CheckAlways(self->IsFinalized());
+        OMNI_DELETE(self, MemoryKind::SystemInit);
+    }
+
     ThreadData& ThreadData::GetThisThreadData()
     {
         return *gThreadData.GetRaw();
@@ -133,6 +142,12 @@ namespace Omni
         return gThreadData.GetRaw() == this;
     }
 
+    bool ThreadData::IsFinalized()
+    {
+        auto& self = *static_cast<ThreadDataImpl*>(this);
+        return self.mFinalized;
+    }
+
     ThreadId ThreadData::GetThreadId()
     {
         auto& self = *static_cast<ThreadDataImpl*>(this);
@@ -142,23 +157,27 @@ namespace Omni
     ThreadDataImpl::ThreadDataImpl(ThreadId tid)
         : mThreadId(tid)
         , mQuitAsked(false)
+        , mFinalized(false)
     {
         CheckAlways(IsOnMainThread());
     }
 
-    void ThreadDataImpl::InitializeOnThread()
+    void ThreadData::InitializeOnThread()
     {
-        mThreadId = gThreadCount.fetch_add(1);
-        gThreadData.GetRaw() = this;
+        auto& self = *static_cast<ThreadDataImpl*>(this);
+        gThreadCount.fetch_add(1);
+        gThreadData.GetRaw() = &self;
         MemoryModule::ThreadInitialize();
         
     }
 
-    void ThreadDataImpl::FinalizeOnThread()
+    void ThreadData::FinalizeOnThread()
     {
+        auto& self = *static_cast<ThreadDataImpl*>(this);
         MemoryModule::ThreadFinalize();
         gThreadCount.fetch_sub(1);
         gThreadData.GetRaw() = nullptr;
+        self.mFinalized = true;
     }
 }
 

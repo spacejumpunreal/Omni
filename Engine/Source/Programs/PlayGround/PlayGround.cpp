@@ -25,30 +25,47 @@
 
 namespace Omni
 {
-	void PlayGroundCode()
-	{
-		struct KeyStateLogger : public KeyStateListener
-		{
-			void OnKeyEvent(KeyCode key, bool pressed) override
-			{
-				printf("Key[%x] is %s\n", key, pressed ? "down" : "up");
-				count++;
-				if (count > 40)
-				{
-					InputModule::Get().UnRegisterlistener(key, this);
-					delete this;
-				}
-			}
-			int count = 0;
-		};
+	struct KeyStateLogger;
+	KeyStateLogger* pleft;
 
-		if constexpr (true)
+	struct KeyStateLogger : public KeyStateListener
+	{
+		void OnKeyEvent(KeyCode key, bool pressed) override
 		{
-			auto pleft = new KeyStateLogger();
-			//auto pright = new KeyStateLogger();
-			InputModule::Get().RegisterListener(KeyMap::MouseLeft, pleft);
-			//InputModule::Get().RegisterListener(KeyMap::MouseRight, pright);
+			printf("Key[%x] is %s\n", key, pressed ? "down" : "up");
+			count++;
+			if (count > 10)
+			{
+				InputModule::Get().UnRegisterlistener(key, this);
+				delete this;
+				pleft = nullptr;
+				System::GetSystem().TriggerFinalization(true);
+			}
 		}
+		int count = 0;
+	};
+
+	
+
+	void PlayGroundReady()
+	{
+		pleft = new KeyStateLogger();
+		InputModule::Get().RegisterListener(KeyMap::MouseLeft, pleft);
+	}
+	void PlayGroundWillQuit()
+	{
+		if (pleft != nullptr)
+		{
+			InputModule::Get().UnRegisterlistener(KeyMap::MouseLeft, pleft);
+			delete pleft;
+			pleft = nullptr;
+		}
+			
+	}
+
+	void PlayGroundCodeEmpty()
+	{
+		System::GetSystem().TriggerFinalization(true);
 	}
 }
 
@@ -56,6 +73,7 @@ int main(int, const char** )
 {
 	Omni::System::CreateSystem();
 	Omni::System& system = Omni::System::GetSystem();
+#if true
 	const char* engineArgv[] =
 	{
 		"LoadModule=Window",
@@ -63,7 +81,10 @@ int main(int, const char** )
 		"LoadModule=DemoRenderer",
 		"--window-size=1920x1080",
 	};
-	system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv, Omni::PlayGroundCode);
+	system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv, Omni::PlayGroundReady, Omni::PlayGroundWillQuit);
+#else
+	system.InitializeAndJoin(0, nullptr, Omni::PlayGroundCodeEmpty);
+#endif
 	system.DestroySystem();
  
 	return 0;

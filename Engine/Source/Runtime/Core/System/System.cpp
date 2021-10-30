@@ -48,6 +48,7 @@ namespace Omni
 		u32							Argc;
 		const char**				Argv;
 		SystemInitializedCallback	OnSystemInitialized;
+		SystemWillQuitCallback		OnSystemWillQuit;
 	};
 
 
@@ -59,6 +60,7 @@ namespace Omni
 		std::unordered_map<std::string, Module*>	mName2Module;
 		std::vector<ModuleExportInfo>				mExternalModuleInfo;
 		MonotonicMemoryResource						mInitMem;
+		
 		//ui thread/main thread related
 		std::thread									mMainThread;
 		std::promise<std::function<void()>>			mUIThreadBody;
@@ -99,7 +101,7 @@ namespace Omni
 	}
 
 	//this is runned by UI thread
-	void System::InitializeAndJoin(u32 argc, const char** argv, SystemInitializedCallback onSystemInitialized)
+	void System::InitializeAndJoin(u32 argc, const char** argv, SystemInitializedCallback onSystemInitialized, SystemWillQuitCallback onSystemWillQuit)
 	{
 		SystemImpl* self = SystemImpl::GetCombinePtr(this);
 		MainThreadArgs threadArg
@@ -107,6 +109,7 @@ namespace Omni
 			.Argc = argc,
 			.Argv = argv,
 			.OnSystemInitialized = onSystemInitialized,
+			.OnSystemWillQuit = onSystemWillQuit,
 		};
 		auto body = self->mUIThreadBody.get_future();
 		self->mMainThread = std::thread([&](){
@@ -320,7 +323,7 @@ namespace Omni
 		if (!self->mUIThreadBodySet)
 			ResumeUIThread(std::function<void()>([]() {}));
 		self->mStatus = SystemStatus::Ready;
-		ThreadData::GetThisThreadData().RunAndFinalizeAsMain(args.OnSystemInitialized);
+		ThreadData::GetThisThreadData().RunAndFinalizeAsMain(args.OnSystemInitialized, args.OnSystemWillQuit);
 	}
 
 	void ResumeUIThread(std::function<void()>&& body)
