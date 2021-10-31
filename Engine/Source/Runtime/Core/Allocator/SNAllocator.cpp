@@ -4,6 +4,7 @@
 #include "Runtime/Base/Misc/ArrayUtils.h"
 #include "Runtime/Core/Allocator/SNMallocWrapper.h"
 
+#define OMNI_SNALLOCATOR_TRACK_EVERY_ALLOC 0
 
 namespace Omni
 {
@@ -13,7 +14,6 @@ namespace Omni
 	static constexpr u32 FillPatternAllocated = 0x12345678;
 	static constexpr u32 FillPatternFreed = 0xDEADBEEF;
 
-
 	struct SNAllocatorPrivate final : public StdPmr::memory_resource
 	{
 	public:
@@ -22,6 +22,18 @@ namespace Omni
 			size_t alignedSize = AlignUpSize(bytes, alignment);
 			snmalloc::Alloc* alloc = snmalloc::ThreadAlloc::get_reference();
 			void* p = alloc->alloc(alignedSize);
+#if OMNI_SNALLOCATOR_TRACK_EVERY_ALLOC
+			{
+				mTraceLock.lock();
+				++mTraceIndex;
+				if (alignedSize == 24 && 50 <= mTraceIndex && mTraceIndex <= 60)
+				{
+					Omni::OmniDebugBreak();
+				}
+				mTraceLivingAllocations.insert(std::make_pair(p, AllocInfo{ .Size = (u32)alignedSize, .Index = mTraceIndex }));
+				mTraceLock.unlock();
+			}
+#endif
 			if constexpr (TrashAllocatedMemory)
 			{
 				FillWithPattern(p, alignedSize, FillPatternAllocated);
@@ -43,6 +55,14 @@ namespace Omni
 				FillWithPattern(p, alignedSize, FillPatternFreed);
 			}
 			alloc->dealloc(p);
+#if OMNI_SNALLOCATOR_TRACK_EVERY_ALLOC
+			{
+				mTraceLock.lock();
+				++mTraceIndex;
+				CheckAlways(mTraceLivingAllocations.erase(p) == 1);
+				mTraceLock.unlock();
+			}
+#endif
 		}
 		bool do_is_equal(const StdPmr::memory_resource& other) const noexcept override
 		{
@@ -50,6 +70,18 @@ namespace Omni
 		}
 	public:
 		MemoryWatch						mWatch;
+
+#if OMNI_SNALLOCATOR_TRACK_EVERY_ALLOC
+	public:
+		struct AllocInfo
+		{
+			u32 Size;
+			u32 Index;
+		};
+		std::mutex mTraceLock;
+		u32 mTraceIndex;
+		std::unordered_map<void*, AllocInfo> mTraceLivingAllocations;
+#endif
 	};
 
 

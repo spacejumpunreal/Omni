@@ -83,7 +83,14 @@ int main(int, const char** )
 	};
 	system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv, Omni::PlayGroundReady, Omni::PlayGroundWillQuit);
 #else
-	system.InitializeAndJoin(0, nullptr, Omni::PlayGroundCodeEmpty);
+	const char* engineArgv[] =
+	{
+		"LoadModule=Window",
+		//"LoadModule=GfxApi",
+		//"LoadModule=DemoRenderer",
+		"--window-size=1920x1080",
+	};
+	system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv, Omni::PlayGroundCodeEmpty, nullptr);
 #endif
 	system.DestroySystem();
  

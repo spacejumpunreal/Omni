@@ -31,7 +31,7 @@ namespace Omni
     {
         const EngineInitArgMap*     Args;
         ThreadData*                 ThreadData;
-        std::promise<void>          ReadyFlag;
+        std::promise<void>*         ReadyFlag;
     };
 
     struct WindowsWindowModulePrivate
@@ -86,12 +86,57 @@ namespace Omni
         case WM_SIZING:
         {//currently limiting windows width x height to OmniWindowResizeMinPixels alignment
             RECT* rect = (RECT*)lParam;
+            
             u32 width = rect->right - rect->left;
             u32 height = rect->bottom - rect->top;
             width &= ~(OmniWindowResizeMinPixels - 1);
             height &= ~(OmniWindowResizeMinPixels - 1);
-            rect->right = rect->left + width;
-            rect->bottom = rect->top + height;
+
+            bool moveBottom = true, moveRight = true;
+            
+            switch (wParam)
+            {
+            case WMSZ_BOTTOM:
+                moveBottom = true;
+                break;
+            case WMSZ_BOTTOMLEFT:
+                moveBottom = true;
+                moveRight = false;
+                break;
+            case WMSZ_BOTTOMRIGHT:
+                moveBottom = true;
+                moveRight = true;
+                break;
+            case WMSZ_LEFT:
+                moveRight = false;
+                break;
+            case WMSZ_RIGHT:
+                moveRight = true;
+                break;
+            case WMSZ_TOP:
+                moveBottom = false;
+                break;
+            case WMSZ_TOPLEFT:
+                moveBottom = false;
+                moveRight = false;
+                break;
+            case WMSZ_TOPRIGHT:
+                moveBottom = false;
+                moveRight = true;
+                break;
+            default:
+                break;
+            }
+
+            if (moveRight)
+                rect->right = rect->left + width;
+            else
+                rect->left = rect->right - width;
+
+            if (moveBottom)
+                rect->bottom = rect->top + height;
+            else
+                rect->top = rect->bottom - height;
             break;
         }
         case WM_SIZE:
@@ -129,9 +174,8 @@ namespace Omni
             CheckDebug(ScreenToClient(self->mWindow, &lp));
             updateMouseOnMain.MousePos = MousePos { .X = (i16)lp.x, .Y = (i16)lp.y };
 
-            //TODO: temp mute this, return here once we fixed close window destroy system assert
-            //auto dispatchWork = DispatchWorkItem::CreateWithFunctor(std::move(updateMouseOnMain), MemoryKind::CacheLine);
-            //ConcurrencyModule::Get().EnqueueWork(dispatchWork, QueueKind::Main);
+            DispatchWorkItem& dispatchWork = DispatchWorkItem::CreateWithFunctor(std::move(updateMouseOnMain), MemoryKind::CacheLine);
+            ConcurrencyModule::Get().EnqueueWork(dispatchWork, QueueKind::Main);
             break;
         }
         default:
@@ -147,22 +191,27 @@ namespace Omni
         CheckAlways(gWindowsWindowModule == nullptr);
         gWindowsWindowModule = self;
         
+        std::promise<void> readyFlag;
         InitUIThreadArgs initArgs;
         initArgs.Args = &args;
-        initArgs.ThreadData = &ThreadData::Create(UIThreadId);
+        initArgs.ThreadData = ConcurrencyModule::Get().RegisterExternalThread(UIThreadId);
+        initArgs.ReadyFlag = &readyFlag;
 
-        ResumeUIThread(std::function<void()>([&]() {
-            initArgs.ThreadData->InitializeOnThread();
-            self->RunUILoop(initArgs);
-            initArgs.ThreadData->FinalizeOnThread();
+        ResumeUIThread(std::function<void()>([=]() {
+            ThreadData* sd = initArgs.ThreadData;
+            sd->InitializeOnThread();
+            auto x = initArgs;
+            self->RunUILoop(x);
+            sd->FinalizeOnThread();
+            self->mCleanupFlag.set_value();
             }));
-        initArgs.ReadyFlag.get_future().wait();
+        initArgs.ReadyFlag->get_future().wait();
         Module::Initialize(args);
     }
     void WindowModule::StopThreads()
     {
         WindowsWindowModuleImpl* self = WindowsWindowModuleImpl::GetCombinePtr(this);
-        DestroyWindow(self->mWindow);
+        PostMessage(self->mWindow, WM_CLOSE, 0, 0);
         self->mCleanupFlag.get_future().wait();
 
     }
@@ -282,7 +331,7 @@ namespace Omni
         CheckAlways(self->mWindow != NULL, "create window failed");
         ShowWindow(self->mWindow, SW_SHOW);
 
-        initArgs.ReadyFlag.set_value();
+        initArgs.ReadyFlag->set_value();
 
         MSG msg;
         BOOL bRet;
@@ -293,7 +342,6 @@ namespace Omni
             DispatchMessage(&msg);
         }
         System::GetSystem().TriggerFinalization(false);
-        self->mCleanupFlag.set_value();
     }
 
     static Module* WindowModuleCtor(const EngineInitArgMap& args)

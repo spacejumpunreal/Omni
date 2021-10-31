@@ -120,7 +120,6 @@ namespace Omni
         {
             if (it->second != nullptr && it->second->GetThreadId() != MainThreadId)
             {//must be an external thread, should have been finalized
-                CheckAlways(it->second->IsFinalized());
                 it->second->CheckFinalizedAndDestroyOnMain();
                 it->second = nullptr;
             }

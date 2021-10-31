@@ -153,6 +153,7 @@ namespace Omni
     PMRAllocator MemoryModule::GetPMRAllocator(MemoryKind kind)
     {
         MemoryModuleImpl* self = MemoryModuleImpl::GetCombinePtr(this);
+        CheckDebug((u32)kind < (u32)MemoryKind::Max);
         return self->mKind2PMRResources[(u32)kind];
     }
 
