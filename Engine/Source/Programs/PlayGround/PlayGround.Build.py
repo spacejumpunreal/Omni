@@ -9,7 +9,7 @@ class PlayGround(build_target.BuildTarget):
         self.target_type = build_target.TARGET_TYPE_CONSOLE_APP
         self.setup_build_files(build_target.default_runtime_rule)
         self.use_pch("PlayGroundPCH.h", "PlayGroundPCH.cpp")
-        self.dependencies.append("Core")
+        self.dependencies.append("Engine")
 
 
 BUILD_RULES = (PlayGround,)

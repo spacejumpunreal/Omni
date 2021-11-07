@@ -111,7 +111,7 @@ namespace Omni
 		size_t v = self.mEnterCount.fetch_sub(1, std::memory_order_release);
 		if (v == 1 && self.mNotifyTask)
 		{
-			self.mNotifyQueue->Enqueue(self.mNotifyTask, self.mNotifyTask);
+			self.mNotifyQueue->Enqueue(self.mNotifyTask);
 		}
 		if (v == 1)
 			Destroy();

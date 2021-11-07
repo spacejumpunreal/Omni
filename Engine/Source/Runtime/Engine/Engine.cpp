@@ -2,6 +2,7 @@
 #include "Runtime/Engine/Engine.h"
 #include "Runtime/Base/Misc/ArrayUtils.h"
 #include "Runtime/Core/System/ModuleExport.h"
+#include "Runtime/Core/System/System.h"
 
 namespace Omni
 {

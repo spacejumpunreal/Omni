@@ -1,5 +1,6 @@
 #pragma once
 #include "Runtime/Prelude/Omni.h"
+#include "Runtime/Base/Misc/TimeTypes.h"
 #include "Runtime/Core/CoreAPI.h"
 #include "Runtime/Core/Concurrency/ConcurrentDefs.h"
 #include "Runtime/Core/Concurrency/ThreadUtils.h"
@@ -30,6 +31,7 @@ namespace Omni
 		//for already existing thread, called on MainThread, return value should be passed to the existing thread, won't join it, but will check if it's finalized
 		ThreadData* RegisterExternalThread(ThreadId designatedTid = InvalidThreadId);
 		void EnqueueWork(DispatchWorkItem& head, QueueKind queueKind);
+		void PollQueueUntil(QueueKind queueKind, const TimePoint* deadline);
 		void PollQueue(QueueKind queueKind);
 		void FinishPendingJobs();
 	};

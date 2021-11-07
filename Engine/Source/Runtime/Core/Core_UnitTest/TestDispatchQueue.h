@@ -70,17 +70,14 @@ namespace Omni
 			for (u32 i = 0; i < JobLoop; ++i)
 			{
 				DispatchWorkItem* head = nullptr;
-				DispatchWorkItem* tail = nullptr;
 				for (u32 j = 0; j < JobBatch; ++j)
 				{
 					DispatchWorkItem& item = DispatchWorkItem::Create(&SerialJob, &tmpJd, MemoryKind::CacheLine);
-					if (j == 0)
-						tail = &item;
 					++tmpJd.Sequence;
 					item.Next = head;
 					head = &item;
 				}
-				ConcurrencyModule::Get().GetQueue(QueueKind::Main)->Enqueue(head, tail);
+				ConcurrencyModule::Get().GetQueue(QueueKind::Main)->Enqueue(head);
 				if (i % 10 == 0)
 				{
 					using namespace std::chrono_literals;

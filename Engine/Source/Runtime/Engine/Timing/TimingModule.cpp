@@ -27,14 +27,6 @@ namespace Omni
         QueueKind           Queue;
     };
 
-    struct TriggerFrameTask
-    {
-        TimingModulePrivateImpl*    Self;
-        EngineFrameType             Type;
-
-        static void DoTask(TriggerFrameTask* data);
-    };
-
     enum class ClockThreadState : u32
     {
         NotRunning,
@@ -57,18 +49,16 @@ namespace Omni
         static constexpr u32 QueueCount = (u32)EngineFrameType::Count;
     public:
         std::mutex                              mLock;
-        std::condition_variable                 mCV;
         PMRVector<EngineFrameTickItem>          mFrameTickQueue[QueueCount];
-        Duration                                mFrameDurations[QueueCount];
         PMRMap<TimePoint, TimerCallbackItem>    mTimerCallbacks;
-
-        std::thread                             mClockThread;
-        std::atomic<ClockThreadState>           mThreadState = ClockThreadState::NotRunning;
+        u32                                     mTicksPerFrame[QueueCount];
+        u32                                     mFrameTicks[QueueCount];
+        TimePoint                               mLastTickTime;
+        Duration                                mTickDuration;
+        bool                                    mStopTick;
     public:
         TimingModulePrivateImpl();
-        void TimingModuleLoop();
-        void OnFrameBegin(EngineFrameType frameType);
-        void EnqueueFrameTickCallback(EngineFrameType frameType, Duration& duration);
+        void DoTick();
     };
 
     using TimingImpl = PImplCombine<TimingModule, TimingModulePrivateImpl>;
@@ -89,26 +79,35 @@ namespace Omni
         return self->mTimePoint;
     }
 
-    /**
-      * TimingModule
-      */
+    struct TickFrameJob
+    {
+        TimingModulePrivateImpl* TimerModule;
+
+        static void Run(TickFrameJob* self)
+        {
+            self->TimerModule->DoTick();
+        }
+    };
+
     void TimingModule::Initialize(const EngineInitArgMap& args)
     {
         MemoryModule& mm = MemoryModule::Get();
         mm.Retain();
+        ConcurrencyModule& cm = ConcurrencyModule::Get();
+        cm.Retain();
 
         TimingImpl* self = TimingImpl::GetCombinePtr(this);
-        for (u32 iFrameType = 0; iFrameType < TimingModulePrivateImpl::QueueCount; ++iFrameType)
-        {
-            self->EnqueueFrameTickCallback((EngineFrameType)iFrameType, self->mFrameDurations[iFrameType]);
-        }
+        self->mLastTickTime = TClock::now();
 
-        self->mClockThread = std::thread([self]()
-        {
-            self->TimingModuleLoop();
-        });
+        cm.EnqueueWork(DispatchWorkItem::CreateWithFunctor(TickFrameJob{ self }, MemoryKind::CacheLine), QueueKind::Main);
 
         Module::Initialize(args);
+    }
+
+    void TimingModule::StopThreads()
+    {
+        TimingImpl* self = TimingImpl::GetCombinePtr(this);
+        self->mStopTick = true;
     }
 
     void TimingModule::Finalize()
@@ -117,16 +116,11 @@ namespace Omni
         if (GetUserCount() > 0)
             return;
 
-        TimingImpl* self = TimingImpl::GetCombinePtr(this);
-        self->mThreadState.store(ClockThreadState::MarkedToStop, std::memory_order_release);
-        while (self->mThreadState.load(std::memory_order_acquire) != ClockThreadState::Stopped)
-        {
-            std::this_thread::yield();
-        }
-
         MemoryModule& mm = MemoryModule::Get();
-        Module::Finalize();
+        ConcurrencyModule& cm = ConcurrencyModule::Get();
         mm.Release();
+        cm.Release();
+        Module::Finalize();
     }
 
     static Module* TimingModuleCtor(const EngineInitArgMap&)
@@ -139,28 +133,29 @@ namespace Omni
         InitMemFactory<TimingImpl>::Delete((TimingImpl*)this);
     }
 
-    void TimingModule::AddTimerCallback(TimePoint timePoint, DispatchWorkItem& callback, QueueKind queue)
+    void TimingModule::AddTimerCallback_OnAnyThread(TimePoint timePoint, DispatchWorkItem& callback, QueueKind queue)
     {
+        //TimingImpl* self = TimingImpl::GetCombinePtr(this);
+        (void)timePoint;
+        (void)callback;
+        (void)queue;
+    }
+
+    void TimingModule::SetTickInterval_OnMainThread(Duration duration)
+    {
+        CheckAlways(IsOnMainThread());
         TimingImpl* self = TimingImpl::GetCombinePtr(this);
-        self->mLock.lock();
-
-        auto prevBegin = self->mTimerCallbacks.begin();
-        auto ret = self->mTimerCallbacks.emplace(std::make_pair(timePoint, TimerCallbackItem{ .WorkItem = &callback, .Queue = queue }));
-        if (prevBegin != ret.first)
-        {//inserted a new head
-            self->mCV.notify_one();
-        }
-
-        self->mLock.unlock();
+        self->mTickDuration = duration;
     }
 
-    void TimingModule::SetFrameRate(EngineFrameType frameType, Duration duration)
+    void TimingModule::SetFrameRate_OnMainThread(EngineFrameType frameType, u32 ticksPerFrame)
     {
-        (void)frameType;
-        (void)duration;
+        CheckAlways(IsOnMainThread());
+        TimingImpl* self = TimingImpl::GetCombinePtr(this);
+        self->mTicksPerFrame[(u32)frameType] = ticksPerFrame;
     }
 
-    void TimingModule::RegisterFrameTick(EngineFrameType frameType, u32 priority, DispatchWorkItem& callback, QueueKind queue)
+    void TimingModule::RegisterFrameTick_OnAnyThread(EngineFrameType frameType, u32 priority, DispatchWorkItem& callback, QueueKind queue)
     {
         TimingImpl* self = TimingImpl::GetCombinePtr(this);
         self->mLock.lock();
@@ -185,7 +180,7 @@ namespace Omni
         self->mLock.unlock();
     }
 
-    void TimingModule::UnregisterFrameTick(EngineFrameType frameType, u32 priority)
+    void TimingModule::UnregisterFrameTick_OnAnyThread(EngineFrameType frameType, u32 priority)
     {
         TimingImpl* self = TimingImpl::GetCombinePtr(this);
         self->mLock.lock();
@@ -213,107 +208,74 @@ namespace Omni
             PMRVector<EngineFrameTickItem>(MemoryModule::Get().GetPMRAllocator(MemoryKind::SystemInit)),
         }
         , mTimerCallbacks(MemoryModule::Get().GetPMRAllocator(MemoryKind::SystemInit))
+        , mTickDuration(std::chrono::milliseconds(33))
+        , mStopTick(false)
     {
         for (u32 i = 0; i < QueueCount; ++i)
         {
-            mFrameDurations[i] = std::chrono::milliseconds(33);
+            mTicksPerFrame[i] = 1;
+            mFrameTicks[i] = 0;
         }
     }
 
-    void TriggerFrameTask::DoTask(TriggerFrameTask* data)
+    void TimingModulePrivateImpl::DoTick()
     {
-        data->Self->OnFrameBegin(data->Type);
-    }
+        if (mStopTick)
+            return;
 
-    template<typename TItem>
-    static void HandleATask(TItem& item)
-    {
-        (void)item;
-#if false
-        if (item.Queue == QueueKind::Immediate)
-        {
-            item.WorkItem->Perform();
-            item.WorkItem->Destroy();
-        }
-        else if (item.Queue == QueueKind::Shared)
-            ConcurrencyModule::Get().Async(*item.WorkItem);
-        else
-        {
-            ConcurrencyModule::Get().GetQueue(item.Queue).Enqueue(item.WorkItem, item.WorkItem);
-            CheckAlways(item.WorkItem->Next == nullptr);
-        }
-#endif
-    }
-
-    void TimingModulePrivateImpl::TimingModuleLoop()
-    {
-        mThreadState.store(ClockThreadState::Running, std::memory_order_release);
-        std::unique_lock lk(mLock);
-        while (mThreadState.load(std::memory_order_relaxed) != ClockThreadState::MarkedToStop)
-        {
-            TimePoint now = TClock::now();
-            Duration toWait;
-            while (true)
-            {
-                auto& ptAndCallback = *mTimerCallbacks.begin();
-                toWait = ptAndCallback.first - now;
-                if (toWait.count() >= 0)
-                {
-                    break;
-                }
-                //else, callback is due
-                HandleATask(ptAndCallback.second);
-            }
-            if (mTimerCallbacks.size() > 0)
-            {
-                mCV.wait_for(lk, toWait);
-            }
-            else
-            {
-                mCV.wait(lk);
-            }
-        }
-        //won't call remainning callbacks, since the protocol is to call them when time is due
-        for (auto it = mTimerCallbacks.begin(); it != mTimerCallbacks.end(); ++it)
-        {
-            it->second.WorkItem->Destroy();
-        }
-
-        mThreadState.store(ClockThreadState::Stopped, std::memory_order_acq_rel);
-    }
-
-    void TimingModulePrivateImpl::OnFrameBegin(EngineFrameType frameType)
-    {//when this is executed, mLock is already held
-        CheckDebug(mLock.try_lock() == false);
-        ScratchStack& stk = MemoryModule::Get().GetThreadScratchStack();
-        stk.Push();
-
-        PMRVector<EngineFrameTickItem>& queue = mFrameTickQueue[(u32)frameType];
-        size_t nJobs = queue.size();
-        auto items = (EngineFrameTickItem*)stk.AllocateAndInitWith((u32)nJobs, queue.data());
-
-        for (size_t i = 0; i < nJobs; ++i)
-        {
-            HandleATask(items[i]);
-        }
-        stk.Pop();
-    }
-
-    void TimingModulePrivateImpl::EnqueueFrameTickCallback(EngineFrameType frameType, Duration& duration)
-    {
-        (void)frameType;
-        (void)duration;
-#if false
-        TimingImpl* self = TimingImpl::GetCombinePtr(this);
-        TriggerFrameTask td;
-        td.Self = this;
-        td.Type = frameType;
-        DispatchWorkItem& workItem = DispatchWorkItem::Create<TriggerFrameTask>(
-            TriggerFrameTask::DoTask, 
-            &td, MemoryKind::CacheLine);
-
+        ConcurrencyModule& cm = ConcurrencyModule::Get();
+        
         TimePoint now = TClock::now();
-        self->AddTimerCallback(now + duration, workItem, QueueKind::Immediate);
-#endif
+        TimePoint waitUntil = mLastTickTime + mTickDuration;
+        if (now < waitUntil)
+        {
+            cm.PollQueueUntil(QueueKind::Shared, &mLastTickTime);
+            now = TClock::now();
+        }
+        //timer callbacks
+        {
+            PMRVector<TimerCallbackItem> expiredItems(16, MemoryModule::Get().GetPMRAllocator(MemoryKind::CacheLine));
+            expiredItems.clear();
+            mLock.lock();
+            for (auto it = mTimerCallbacks.begin(); it != mTimerCallbacks.end(); ++it)
+            {
+                if (it->first > now)
+                    break;
+                expiredItems.emplace_back(std::move(it->second));
+            }
+            mLock.unlock();
+            for (auto& item : expiredItems)
+            {
+                cm.EnqueueWork(*item.WorkItem, item.Queue);
+            }
+        }
+        //frame ticks
+        {
+            PMRVector<TimerCallbackItem> todoItems(16, MemoryModule::Get().GetPMRAllocator(MemoryKind::CacheLine));
+            todoItems.clear();
+            mLock.lock();
+            for (u32 iQueue = 0; iQueue < QueueCount; ++iQueue)
+            {
+                if (mTicksPerFrame[iQueue] <= ++mFrameTicks[iQueue])
+                {
+                    mFrameTicks[iQueue] = 0;
+                    auto& queue = mFrameTickQueue[iQueue];
+                    for (EngineFrameTickItem& item : queue)
+                    {
+                        todoItems.push_back(TimerCallbackItem{
+                                .WorkItem = item.WorkItem,
+                                .Queue = item.Queue,
+                            });
+                    }
+                }
+            }
+            mLock.unlock();
+            for (auto& item : todoItems)
+            {
+                cm.EnqueueWork(*item.WorkItem, item.Queue);
+            }
+        }
+        cm.EnqueueWork(DispatchWorkItem::CreateWithFunctor(TickFrameJob{ this }, MemoryKind::CacheLine), QueueKind::Main);
+        mLastTickTime = now;
     }
 }

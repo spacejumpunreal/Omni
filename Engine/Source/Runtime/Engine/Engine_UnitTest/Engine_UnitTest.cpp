@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
 
 	Omni::System::CreateSystem();
 	Omni::System& system = Omni::System::GetSystem();
-	system.InitializeAndJoin(0, nullptr, Omni::EngineUnitTestCode);
+	system.InitializeAndJoin(0, nullptr, Omni::EngineUnitTestCode, nullptr);
 	system.DestroySystem();
 
 

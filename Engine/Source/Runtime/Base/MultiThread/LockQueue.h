@@ -7,10 +7,12 @@
 #include "Runtime/Base/Memory/MemoryDefs.h"
 #include "Runtime/Base/Misc/AssertUtils.h"
 #include "Runtime/Base/Misc/Padding.h"
+#include "Runtime/Base/Misc/TimeTypes.h"
 #include "Runtime/Base/MultiThread/SpinLock.h"
 #include <condition_variable>
 #include <mutex>
 #include <atomic>
+
 
 namespace Omni
 {
@@ -31,16 +33,20 @@ namespace Omni
         {}
         LockQueue(const LockQueue&) = delete;
 
-        void Enqueue(SListNode* head, SListNode* tail)
+        void Enqueue(SListNode* head)
         {
+            SListNode* tail;
             u32 inc = 0;
             {
                 SListNode* p = head;
+                SListNode* last = nullptr;
                 while (p != nullptr)
                 {
                     ++inc;
+                    last = p;
                     p = p->Next;
                 }
+                tail = last;
             }
 
             mLock.lock();
@@ -110,6 +116,33 @@ namespace Omni
             }
             return static_cast<T*>(ret);
         }
+        
+        template<typename T>
+        T* TryDequeueWithTimeout(TimePoint deadline)
+        {
+            static_assert(std::is_base_of_v<SListNode, T>);
+            SListNode* ret;
+            {
+                std::unique_lock<std::mutex> lk(mLock);
+                bool timeout = false;
+                while (mHead == nullptr && !timeout)
+                {
+                    ++mWaitCount;
+                    std::cv_status state = mCV.wait_until(lk, deadline);
+                    timeout = std::cv_status::timeout == state;
+                    --mWaitCount;
+                }
+                if (mHead == nullptr)
+                    return nullptr;
+                --mTodoCount;
+                ret = mHead;
+                mHead = mHead->Next;
+                if (mHead == nullptr)
+                    mTail = nullptr;
+            }
+            return static_cast<T*>(ret);
+        }
+
 
         u32 Size()
         {

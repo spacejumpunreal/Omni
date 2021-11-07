@@ -9,7 +9,7 @@ namespace Omni
      * forward decls
      */
     class GfxApiTexture;
-    class GfxApiContext;
+    class GfxApiContext; //for threaded recording
     class GfxApiRenderPass;
 
     /**

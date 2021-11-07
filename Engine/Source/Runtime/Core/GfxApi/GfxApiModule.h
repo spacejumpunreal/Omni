@@ -17,7 +17,7 @@ namespace Omni
         virtual GfxApiRenderPass* BeginRenderPass(const GfxApiRenderPassDesc& desc) = 0;
         virtual void EndRenderPass(const GfxApiRenderPass* desc) = 0;
 
-        virtual GfxApiContext* BeginContext(const GfxApiContextDesc& desc) = 0;
+        virtual GfxApiContext* BeginContext(const GfxApiContextDesc& desc) = 0; //for threaded recording
         virtual void EndContext(GfxApiContext* context) = 0;
 
         virtual GfxApiTexture* GetBackBuffer(u32 index) = 0;

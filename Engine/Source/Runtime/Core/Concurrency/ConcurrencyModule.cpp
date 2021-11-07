@@ -170,28 +170,37 @@ namespace Omni
     void ConcurrencyModule::EnqueueWork(DispatchWorkItem& head, QueueKind queueKind)
     {
         DispatchWorkItem* p = &head;
-        DispatchWorkItem* t = nullptr;
         while (p)
         {
-            t = p;
             p = static_cast<DispatchWorkItem*>(p->Next);
         }
         ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
-        self->mQueues[(u32)queueKind].Enqueue(&head, t);
+        self->mQueues[(u32)queueKind].Enqueue(&head);
+    }
+
+    void ConcurrencyModule::PollQueueUntil(QueueKind queueKind, const TimePoint* deadline)
+    {
+        ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
+        auto& queue = self->mQueues[(u32)queueKind];
+        while (true)
+        {
+            auto item = deadline == nullptr ? queue.TryDequeue<DispatchWorkItem>() : queue.TryDequeueWithTimeout<DispatchWorkItem>(*deadline);
+            if (item == nullptr)
+                break;
+            item->Perform();
+            item->Destroy();
+        }
     }
 
     void ConcurrencyModule::PollQueue(QueueKind queueKind)
     {
         ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
         auto& queue = self->mQueues[(u32)queueKind];
-        while (true)
-        {
-            auto item = queue.TryDequeue<DispatchWorkItem>();
-            if (item == nullptr)
-                break;
-            item->Perform();
-            item->Destroy();
-        }
+        auto item = queue.TryDequeue<DispatchWorkItem>();
+        if (item == nullptr)
+            return;
+        item->Perform();
+        item->Destroy();
     }
 
     void ConcurrencyModule::FinishPendingJobs()

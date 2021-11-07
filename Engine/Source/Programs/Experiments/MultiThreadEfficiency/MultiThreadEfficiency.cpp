@@ -197,7 +197,7 @@ int main(int, const char**)
 {
 	Omni::System::CreateSystem();
 	Omni::System& system = Omni::System::GetSystem();
-	system.InitializeAndJoin(0, nullptr, Omni::PlayGroundCode);
+	system.InitializeAndJoin(0, nullptr, Omni::PlayGroundCode, nullptr);
 	system.DestroySystem();
 
 	return 0;

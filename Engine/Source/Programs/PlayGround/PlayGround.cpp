@@ -13,7 +13,7 @@
 #include "Runtime/Core/Platform/InputDefs.h"
 #include "Runtime/Core/Platform/InputModule.h"
 #include "Runtime/Core/Platform/KeyMap.h"
-#include "Runtime/Core/System/System.h"
+#include "Runtime/Engine/Engine.h"
 
 #include <atomic>
 #include <chrono>
@@ -71,7 +71,7 @@ namespace Omni
 
 int main(int, const char** )
 {
-	Omni::System::CreateSystem();
+	Omni::CreateEngineSystem();
 	Omni::System& system = Omni::System::GetSystem();
 #if true
 	const char* engineArgv[] =

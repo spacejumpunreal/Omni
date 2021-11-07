@@ -362,7 +362,7 @@ int main(int argc, char** argv) {
 
 	Omni::System::CreateSystem();
 	Omni::System& system = Omni::System::GetSystem();
-	system.InitializeAndJoin(0, nullptr, Omni::CoreUnitTestCode);
+	system.InitializeAndJoin(0, nullptr, Omni::CoreUnitTestCode, nullptr);
 	system.DestroySystem();
 
 

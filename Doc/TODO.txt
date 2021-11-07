@@ -1,9 +1,3 @@
 # todo
-## ThreadingModel
-- ConcurrencyModule
-	- just spawn worker threads, number of worker threads should be configurable
-	- interface to get dedicated(main/render) queues and shared queue
-
 - revisit TimingModule, only accessed on MainThread, tick precision
-- dedicated thread logic, private queue, Register private queue to ConcurrencyModule
 
