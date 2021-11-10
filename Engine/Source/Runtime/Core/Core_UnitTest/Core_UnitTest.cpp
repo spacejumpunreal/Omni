@@ -13,7 +13,9 @@
 #include "Runtime/Core/Concurrency/RunOnEveryWorker.h"
 #include "Runtime/Core/System/System.h"
 #include "External/googletest/include/gtest/gtest.h"
+#include <array>
 #include <random>
+
 
 namespace Omni
 {

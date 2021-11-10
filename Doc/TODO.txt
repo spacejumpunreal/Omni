@@ -1,3 +1,16 @@
 # todo
-- revisit TimingModule, only accessed on MainThread, tick precision
+- revisit dx12 demo
+- GfxApi
+	- all api
+		- add ResizeBackBuffer()
+		- refactor BeginRenderPass, load/store action, clear params
+		- add create buffer desc
+		- add update buffer
+	- dx12
+		- implement create swapchain
+		- implement GetBackBuffer()
+		- implement create buffer
+		- implement update buffer
+
+	
 

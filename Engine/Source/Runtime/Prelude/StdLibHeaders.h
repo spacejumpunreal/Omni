@@ -1,7 +1,9 @@
+#include <array>
 #include <atomic>
 #include <cstdio>
 #include <cstdlib>
 #include <map>
+#include <random>
 #include <string>
 #include <thread>
 #include <tuple>

@@ -46,7 +46,10 @@ namespace Omni
     public:
         const char* Name;
     public:
-        GfxApiResourceDesc(GfxApiResourceType type) : Type(type) {}
+        GfxApiResourceDesc(GfxApiResourceType type, const char* name = "") 
+            : Type(type) 
+            , Name(name)
+        {}
     };
 
     struct GfxApiBufferDesc : public GfxApiResourceDesc

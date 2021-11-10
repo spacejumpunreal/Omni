@@ -33,7 +33,7 @@ namespace Omni
     * won't use a dedicated thread for timer callback because it's not only a little complicated but
     * also make timing difficult to analyze
     */
-    class TimingModule : public Module
+    class ENGINE_API TimingModule : public Module
     {
     public:
         void Destroy() override;

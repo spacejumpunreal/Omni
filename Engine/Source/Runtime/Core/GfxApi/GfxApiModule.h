@@ -7,7 +7,7 @@
 
 namespace Omni
 {
-    class GfxApiModule : public Module
+    class CORE_API GfxApiModule : public Module
     {
     public:
         static GfxApiModule& Get() { return *gGfxApiModule; }
@@ -20,6 +20,7 @@ namespace Omni
         virtual GfxApiContext* BeginContext(const GfxApiContextDesc& desc) = 0; //for threaded recording
         virtual void EndContext(GfxApiContext* context) = 0;
 
+        virtual void ResizeBackbuffer(u32 width, u32 height, u32 bufferCount) = 0;
         virtual GfxApiTexture* GetBackBuffer(u32 index) = 0;
         virtual u32 GetBackBufferCount() = 0;
         virtual u32 GetCurrentFrameIndex() = 0;
