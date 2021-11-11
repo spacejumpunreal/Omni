@@ -79,7 +79,7 @@ EndGlobal
 
 Configurations = ("Debug", "Release")
 Platforms = ("x64",)
-PlatformToolset = "v142"
+PlatformToolset = "v143"
 Indent = "  "
 
 
@@ -107,10 +107,10 @@ def get_latest_windows_sdk_version():
     return sorted(subs, cmp=cmp_version)[-1]
 
 
-class VS2019Generator(base_generator.BaseGenerator):
+class VS2022Generator(base_generator.BaseGenerator):
     def __init__(self, collector):
-        super(VS2019Generator, self).__init__(collector)
-        self._solution_path = os.path.join(global_states.project_root, global_states.project_name + ".vs2019.sln")
+        super(VS2022Generator, self).__init__(collector)
+        self._solution_path = os.path.join(global_states.project_root, global_states.project_name + ".vs2022.sln")
         self._intermediate_dir = os.path.join(global_states.build_root, "Intermediate")
 
     def run(self):
@@ -413,20 +413,20 @@ class VS2019Generator(base_generator.BaseGenerator):
 
     @staticmethod
     def _get_vcxproj_file_name(target):
-        return target.get_name() + ".vs2019.vcxproj"
+        return target.get_name() + ".vs2022.vcxproj"
 
     @staticmethod
     def _get_filter_file_name(target):
-        return target.get_name() + ".vs2019.vcxproj.filters"
+        return target.get_name() + ".vs2022.vcxproj.filters"
 
     @staticmethod
     def get_user_file_name(target):
-        return target.get_name() + ".vs2019.vcxproj.user"
+        return target.get_name() + ".vs2022.vcxproj.user"
 
     @staticmethod
     def _get_target_name(target):
-        return target.get_name() + ".vs2019"
+        return target.get_name() + ".vs2022"
 
     @staticmethod
     def get_target_name(target):
-        return target.get_name() + ".vs2019"
+        return target.get_name() + ".vs2022"

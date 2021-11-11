@@ -13,7 +13,7 @@ def generate_project():
     c.run(top_file)
     if global_states.target_platform == platform_utils.PLATFORM_WINDOWS:
         import vs_generator
-        generator = vs_generator.VS2019Generator(c)
+        generator = vs_generator.VS2022Generator(c)
         generator.run()
     elif global_states.target_platform == platform_utils.PLATFORM_IOS:
         import xcode_generator
