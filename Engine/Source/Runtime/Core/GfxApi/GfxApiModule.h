@@ -7,24 +7,15 @@
 
 namespace Omni
 {
+    //this is just an interface, no GfxApiModule interface implementation will actually be provided, derived class like DX12Module will actually provide it
     class CORE_API GfxApiModule : public Module
     {
     public:
         static GfxApiModule& Get() { return *gGfxApiModule; }
       
-        virtual SharedPtr<SharedObject> CreateResource(const GfxApiResourceDesc& desc) = 0;
-
-        virtual GfxApiRenderPass* BeginRenderPass(const GfxApiRenderPassDesc& desc) = 0;
-        virtual void EndRenderPass(const GfxApiRenderPass* desc) = 0;
-
-        virtual GfxApiContext* BeginContext(const GfxApiContextDesc& desc) = 0; //for threaded recording
-        virtual void EndContext(GfxApiContext* context) = 0;
-
-        virtual void ResizeBackbuffer(u32 width, u32 height, u32 bufferCount) = 0;
-        virtual GfxApiTexture* GetBackBuffer(u32 index) = 0;
-        virtual u32 GetBackBufferCount() = 0;
-        virtual u32 GetCurrentFrameIndex() = 0;
-        virtual void Present() = 0;
+#define GfxApiMethod(Definition) virtual Definition = 0;
+#include "Runtime/Core/GfxApi/GfxApiMethodList.inl"
+#undef GfxApiMethod
 
     protected:
         static GfxApiModule* gGfxApiModule;

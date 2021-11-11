@@ -2,6 +2,7 @@
 #include <atomic>
 #include <cstdio>
 #include <cstdlib>
+#include <functional>
 #include <map>
 #include <random>
 #include <string>

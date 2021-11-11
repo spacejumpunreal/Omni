@@ -77,10 +77,9 @@ int main(int, const char** )
 	const char* engineArgv[] =
 	{
 		"LoadModule=Window",
-		"LoadModule=GfxApi",
+		"LoadModule=DX12Module",
 		"LoadModule=DemoRenderer",
 		"--window-size=1920x1080",
-		"--GfxApi=DX12",
 	};
 	system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv, Omni::PlayGroundReady, Omni::PlayGroundWillQuit);
 #else
