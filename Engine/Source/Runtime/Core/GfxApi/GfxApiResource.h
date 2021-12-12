@@ -11,6 +11,7 @@ namespace Omni
     class GfxApiTexture;
     class GfxApiContext; //for threaded recording
     class GfxApiRenderPass;
+    class GfxApiSwapChain;
 
     /**
      * enums
@@ -23,6 +24,7 @@ namespace Omni
         Pso,
         Shader,
         Fence,
+        Swapchain,
     };
 
     enum class GfxApiFormat : u32
@@ -39,30 +41,30 @@ namespace Omni
     /**
      * ResourceDesc definitions
      */
-    struct GfxApiResourceDesc
+    struct GfxApiObjectDesc
     {
     protected:
         GfxApiResourceType Type;
     public:
         const char* Name;
     public:
-        GfxApiResourceDesc(GfxApiResourceType type, const char* name = "") 
+        GfxApiObjectDesc(GfxApiResourceType type, const char* name = "") 
             : Type(type) 
             , Name(name)
         {}
     };
 
-    struct GfxApiBufferDesc : public GfxApiResourceDesc
+    struct GfxApiBufferDesc : public GfxApiObjectDesc
     {
     public:
         u32                 Size;
         GfxApiAccessFlags   AccessFlags;
 
     public:
-        GfxApiBufferDesc() : GfxApiResourceDesc(GfxApiResourceType::Buffer) {}
+        GfxApiBufferDesc() : GfxApiObjectDesc(GfxApiResourceType::Buffer) {}
     };
 
-    struct GfxApiTextureDesc : public GfxApiResourceDesc
+    struct GfxApiTextureDesc : public GfxApiObjectDesc
     {
     public:
         u32                 Width;
@@ -71,7 +73,19 @@ namespace Omni
         GfxApiFormat        Format;
 
     public:
-        GfxApiTextureDesc() : GfxApiResourceDesc(GfxApiResourceType::Texture) {}
+        GfxApiTextureDesc() : GfxApiObjectDesc(GfxApiResourceType::Texture) {}
+    };
+
+
+    struct GfxApiSwapChainDesc : public GfxApiObjectDesc
+    {
+    public:
+        u32                 BufferCount;
+        u32                 Width;
+        u32                 Height;
+        GfxApiFormat        Format;
+    public:
+        GfxApiSwapChainDesc() : GfxApiObjectDesc(GfxApiResourceType::Swapchain) {}
     };
 
     /**

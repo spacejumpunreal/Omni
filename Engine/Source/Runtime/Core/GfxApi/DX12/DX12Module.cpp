@@ -69,10 +69,15 @@ namespace Omni
     /*
     * GfxApiMethod implementations
     */
-    SharedPtr<SharedObject> DX12Module::CreateResource(const GfxApiResourceDesc& desc)
+    SharedPtr<SharedObject> DX12Module::CreateGfxApiObject(const GfxApiObjectDesc& desc)
     {
         (void)desc;
         return {};
+    }
+
+    void DX12Module::UpdateSwapChain(GfxApiSwapChain& swapChain)
+    {
+        (void)swapChain;
     }
 
     GfxApiRenderPass* DX12Module::BeginRenderPass(const GfxApiRenderPassDesc& desc)
@@ -96,31 +101,6 @@ namespace Omni
     {
         (void)context;
     }
-
-    void DX12Module::ResizeBackbuffer(u32 width, u32 height, u32 bufferCount)
-    {
-        (void)width;
-        (void)height;
-        (void)bufferCount;
-    }
-
-    GfxApiTexture* DX12Module::GetBackBuffer(u32 index)
-    {
-        (void)index;
-        return nullptr;
-    }
-    u32 DX12Module::GetBackBufferCount()
-    {
-        return 0;
-    }
-
-    u32 DX12Module::GetCurrentFrameIndex()
-    {
-        return 0;
-    }
-
-    void DX12Module::Present()
-    {}
 
 
     /*
