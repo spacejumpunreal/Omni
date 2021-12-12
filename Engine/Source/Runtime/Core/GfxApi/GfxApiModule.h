@@ -3,7 +3,7 @@
 #include "Runtime/Core/CoreAPI.h"
 #include "Runtime/Base/Misc/SharedObject.h"
 #include "Runtime/Core/System/Module.h"
-#include "Runtime/Core/GfxApi/GfxApiResource.h"
+#include "Runtime/Core/GfxApi/GfxApiObject.h"
 
 namespace Omni
 {

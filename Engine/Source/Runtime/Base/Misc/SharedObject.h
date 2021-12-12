@@ -9,14 +9,14 @@ namespace Omni
     class SharedObject
     {
     public:
-        BASE_API virtual ~SharedObject() {}
+        virtual ~SharedObject() {}
 
-        BASE_API void Acquire()
+        FORCEINLINE void Acquire()
         {
             mRefCount.fetch_add(1, std::memory_order_relaxed);
         }
 
-        BASE_API void Release()
+        FORCEINLINE void Release()
         {
             u64 oldValue = mRefCount.fetch_sub(1, std::memory_order_acq_rel);
             if (oldValue == 1)
@@ -25,7 +25,7 @@ namespace Omni
             }
         }
 
-        BASE_API virtual void Destroy()
+        FORCEINLINE virtual void Destroy()
         {
             this->~SharedObject();
         }
@@ -37,17 +37,17 @@ namespace Omni
     class SharedPtr
     {
     public:
-        SharedPtr() : mObject(nullptr) {}
-        T* GetRaw() { return mObject; }
+        FORCEINLINE SharedPtr() : mObject(nullptr) {}
+        FORCEINLINE T* GetRaw() const { return mObject; }
 
         template<typename U>
-        SharedPtr(const SharedPtr<U>& other)
-            : mObject(static_cast<T>(other.mObject))
+        FORCEINLINE SharedPtr(const SharedPtr<U>& other)
+            : mObject(static_cast<T*>(other.GetRaw()))
         { 
             mObject->Acquire(); 
         }
 
-        ~SharedPtr() 
+        FORCEINLINE ~SharedPtr()
         {
             if (mObject)
             {
@@ -55,8 +55,12 @@ namespace Omni
                 mObject = nullptr;
             }
         }
+        FORCEINLINE T* operator->()
+        {
+            return mObject;
+        }
         
     private:
-        SharedObject* mObject;
+        T* mObject;
     };
 }

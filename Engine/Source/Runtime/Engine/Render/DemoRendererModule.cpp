@@ -4,6 +4,8 @@
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/System/ModuleExport.h"
 #include "Runtime/Core/System/ModuleImplHelpers.h"
+#include "Runtime/Core/GfxApi/GfxApiModule.h"
+#include "Runtime/Core/Platform/WindowModule.h"
 
 namespace Omni
 {
@@ -11,14 +13,30 @@ namespace Omni
     {
     public:
     public:
+        SharedPtr<GfxApiSwapChain> SwapChain;
     };
 
     using DemoRendererImpl = PImplCombine<DemoRendererModule, DemoRendererModulePrivateImpl>;
 
     void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     {
+        DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         MemoryModule& mm = MemoryModule::Get();
         mm.Retain();
+        WindowModule& wm = WindowModule::Get();
+        wm.Retain();
+        GfxApiModule& gfxApi = GfxApiModule::Get();
+        gfxApi.Retain();
+        
+        //create swapchain
+        GfxApiSwapChainDesc descSwapChain;
+        descSwapChain.BufferCount = 3;
+        descSwapChain.Width = 800;
+        descSwapChain.Height = 600;
+        descSwapChain.Format = GfxApiFormat::R8G8B8A8_UNORM;
+        self.SwapChain = gfxApi.CreateGfxApiObject(descSwapChain);
+        self.SwapChain->Present();
+
         Module::Initialize(args);
     }
 
@@ -28,8 +46,12 @@ namespace Omni
         if (GetUserCount() > 0)
             return;
 
-        MemoryModule& mm = MemoryModule::Get();
         Module::Finalize();
+        GfxApiModule& gfxApi = GfxApiModule::Get();
+        gfxApi.Release();
+        WindowModule& wm = WindowModule::Get();
+        wm.Release();
+        MemoryModule& mm = MemoryModule::Get();
         mm.Release();
     }
 

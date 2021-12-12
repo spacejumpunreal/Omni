@@ -6,7 +6,7 @@
 
 namespace Omni
 {
-	class WindowModule : public Module
+	class CORE_API WindowModule : public Module
 	{
 	public:
 		void Destroy() override;
@@ -18,6 +18,8 @@ namespace Omni
 
 		void GetBackbufferSize(u32& width, u32& height);
 		void RequestSetBackbufferSize(u32 width, u32 height);
+	protected:
+		static WindowModule* gWindowModule;
 	};
 }
 

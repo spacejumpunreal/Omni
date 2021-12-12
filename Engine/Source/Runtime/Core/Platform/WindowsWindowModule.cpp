@@ -58,9 +58,6 @@ namespace Omni
 
     using WindowsWindowModuleImpl = PImplCombine<WindowModule, WindowsWindowModulePrivate>;
 
-    //globals
-    WindowsWindowModuleImpl* gWindowsWindowModule;
-
     struct UpdateMouseOnMain
     {
         MousePos MousePos;
@@ -188,8 +185,8 @@ namespace Omni
     {
         MemoryModule::Get().Retain();
         WindowsWindowModuleImpl* self = WindowsWindowModuleImpl::GetCombinePtr(this);
-        CheckAlways(gWindowsWindowModule == nullptr);
-        gWindowsWindowModule = self;
+        CheckAlways(gWindowModule == nullptr);
+        gWindowModule = self;
         
         std::promise<void> readyFlag;
         InitUIThreadArgs initArgs;
@@ -221,19 +218,11 @@ namespace Omni
         if (GetUserCount() > 0)
             return;
 
-        gWindowsWindowModule = nullptr;
+        gWindowModule = nullptr;
         WindowsWindowModuleImpl* self = WindowsWindowModuleImpl::GetCombinePtr(this);
         CheckAlways(self->mWindow == NULL);
         MemoryModule::Get().Release();
         Module::Finalize();
-    }
-    WindowModule& WindowModule::Get()
-    {
-        return *gWindowsWindowModule;
-    }
-    WindowModule* WindowModule::GetPtr()
-    {
-        return gWindowsWindowModule;
     }
     void WindowModule::GetBackbufferSize(u32& width, u32& height)
     {

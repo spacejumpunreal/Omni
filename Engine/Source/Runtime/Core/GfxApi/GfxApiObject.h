@@ -16,7 +16,7 @@ namespace Omni
     /**
      * enums
      */
-    enum class GfxApiResourceType : u32
+    enum class GfxApiObjectType : u32
     {
         Buffer,
         Texture,
@@ -29,7 +29,9 @@ namespace Omni
 
     enum class GfxApiFormat : u32
     {
-        Typeless,
+        R8G8B8A8_UNORM,
+        R16G16B16A16_FLOAT,
+        R11G11B10_FLOAT,
     };
 
     enum class GfxApiAccessFlags : u32
@@ -39,16 +41,16 @@ namespace Omni
     };
 
     /**
-     * ResourceDesc definitions
+     * GfxApiObjectDesc definitions
      */
     struct GfxApiObjectDesc
     {
     protected:
-        GfxApiResourceType Type;
+        GfxApiObjectType Type;
     public:
         const char* Name;
     public:
-        GfxApiObjectDesc(GfxApiResourceType type, const char* name = "") 
+        GfxApiObjectDesc(GfxApiObjectType type, const char* name = "") 
             : Type(type) 
             , Name(name)
         {}
@@ -61,7 +63,7 @@ namespace Omni
         GfxApiAccessFlags   AccessFlags;
 
     public:
-        GfxApiBufferDesc() : GfxApiObjectDesc(GfxApiResourceType::Buffer) {}
+        GfxApiBufferDesc() : GfxApiObjectDesc(GfxApiObjectType::Buffer) {}
     };
 
     struct GfxApiTextureDesc : public GfxApiObjectDesc
@@ -73,7 +75,7 @@ namespace Omni
         GfxApiFormat        Format;
 
     public:
-        GfxApiTextureDesc() : GfxApiObjectDesc(GfxApiResourceType::Texture) {}
+        GfxApiTextureDesc() : GfxApiObjectDesc(GfxApiObjectType::Texture) {}
     };
 
 
@@ -85,7 +87,7 @@ namespace Omni
         u32                 Height;
         GfxApiFormat        Format;
     public:
-        GfxApiSwapChainDesc() : GfxApiObjectDesc(GfxApiResourceType::Swapchain) {}
+        GfxApiSwapChainDesc() : GfxApiObjectDesc(GfxApiObjectType::Swapchain) {}
     };
 
     /**
@@ -129,4 +131,14 @@ namespace Omni
         GfxApiRenderPass*   RenderPass;
     };
 
+    /**
+    *   Object interface
+    */
+
+    class GfxApiSwapChain : public SharedObject
+    {
+    public:
+        virtual void Present() = 0;
+        virtual SharedPtr<GfxApiTexture> GetCurrentBackbuffer() = 0;
+    };
 }
