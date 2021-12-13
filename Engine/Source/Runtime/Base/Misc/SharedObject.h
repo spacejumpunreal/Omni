@@ -37,7 +37,6 @@ namespace Omni
     class SharedPtr
     {
     public:
-        FORCEINLINE SharedPtr() : mObject(nullptr) {}
         FORCEINLINE T* GetRaw() const { return mObject; }
 
         template<typename U>
@@ -45,6 +44,13 @@ namespace Omni
             : mObject(static_cast<T*>(other.GetRaw()))
         { 
             mObject->Acquire(); 
+        }
+
+        FORCEINLINE SharedPtr(T* other = nullptr)
+            : mObject(other)
+        {
+            if (mObject)
+                mObject->Acquire();
         }
 
         FORCEINLINE ~SharedPtr()

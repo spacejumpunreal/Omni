@@ -9,6 +9,8 @@ namespace Omni
 	{
 	public:
 		DX12SwapChain(const GfxApiSwapChainDesc& desc);
+		void Present();
+		SharedPtr<GfxApiTexture> GetCurrentBackbuffer();
 	private:
 		GfxApiSwapChainDesc mDesc;
 	};

@@ -20,7 +20,6 @@ namespace Omni
 
     void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     {
-        DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         MemoryModule& mm = MemoryModule::Get();
         mm.Retain();
         WindowModule& wm = WindowModule::Get();
@@ -28,6 +27,8 @@ namespace Omni
         GfxApiModule& gfxApi = GfxApiModule::Get();
         gfxApi.Retain();
         
+#if 0
+        DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         //create swapchain
         GfxApiSwapChainDesc descSwapChain;
         descSwapChain.BufferCount = 3;
@@ -36,7 +37,7 @@ namespace Omni
         descSwapChain.Format = GfxApiFormat::R8G8B8A8_UNORM;
         self.SwapChain = gfxApi.CreateGfxApiObject(descSwapChain);
         self.SwapChain->Present();
-
+#endif
         Module::Initialize(args);
     }
 

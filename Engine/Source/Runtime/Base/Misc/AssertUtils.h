@@ -43,6 +43,7 @@ namespace Omni
 
 }
 
+#define NotImplemented(...) OmniCheck(false, ##__VA_ARGS__)
 #define CheckAlways(cond, ...) OmniCheck((cond), ##__VA_ARGS__)
 #define CheckSucceeded(cond, ...) OmniCheck(SUCCEEDED(cond), ##__VA_ARGS__)
 

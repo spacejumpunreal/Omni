@@ -9,6 +9,13 @@ namespace Omni
 	{
 
 	}
+	void DX12SwapChain::Present()
+	{
+	}
+	SharedPtr<GfxApiTexture> DX12SwapChain::GetCurrentBackbuffer()
+	{
+		return SharedPtr<GfxApiTexture>(nullptr);
+	}
 }
 
 

@@ -47,9 +47,8 @@ namespace Omni
      */
     struct GfxApiObjectDesc
     {
-    protected:
-        GfxApiObjectType Type;
     public:
+        const GfxApiObjectType Type;
         const char* Name;
     public:
         GfxApiObjectDesc(GfxApiObjectType type, const char* name = "") 
@@ -78,6 +77,12 @@ namespace Omni
 
     public:
         GfxApiTextureDesc() : GfxApiObjectDesc(GfxApiObjectType::Texture) {}
+    };
+
+    class GfxApiTexture : public SharedObject
+    {
+    public:
+
     };
 
 
