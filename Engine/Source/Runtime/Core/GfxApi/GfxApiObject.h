@@ -1,7 +1,9 @@
 #pragma once
 #include "Runtime/Prelude/Omni.h"
 #include "Runtime/Base/Misc/EnumUtils.h"
+#include "Runtime/Base/Misc/SharedObject.h"
 #include "Runtime/Core/CoreAPI.h"
+
 
 namespace Omni
 {
@@ -41,7 +43,7 @@ namespace Omni
     };
 
     /**
-     * GfxApiObjectDesc definitions
+     * GfxApiObjectDesc definitions & GfxApiObject interface declarations
      */
     struct GfxApiObjectDesc
     {
@@ -87,8 +89,23 @@ namespace Omni
         u32                 Height;
         GfxApiFormat        Format;
     public:
-        GfxApiSwapChainDesc() : GfxApiObjectDesc(GfxApiObjectType::Swapchain) {}
+        GfxApiSwapChainDesc() : 
+            GfxApiObjectDesc(GfxApiObjectType::Swapchain)
+            , BufferCount(3)
+            , Width(0)
+            , Height(0)
+            , Format(GfxApiFormat::R8G8B8A8_UNORM)
+
+        {}
     };
+
+    class GfxApiSwapChain : public SharedObject
+    {
+    public:
+        virtual void Present() = 0;
+        virtual SharedPtr<GfxApiTexture> GetCurrentBackbuffer() = 0;
+    };
+
 
     /**
       * Command related
@@ -129,16 +146,5 @@ namespace Omni
     {
         GfxApiContextType   Type;
         GfxApiRenderPass*   RenderPass;
-    };
-
-    /**
-    *   Object interface
-    */
-
-    class GfxApiSwapChain : public SharedObject
-    {
-    public:
-        virtual void Present() = 0;
-        virtual SharedPtr<GfxApiTexture> GetCurrentBackbuffer() = 0;
     };
 }

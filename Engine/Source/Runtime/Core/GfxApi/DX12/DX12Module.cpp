@@ -49,6 +49,8 @@ namespace Omni
         MemoryModule& mm = MemoryModule::Get();
         mm.Retain();
         Module::Initialize(args);
+        CheckAlways(gGfxApiModule == nullptr);
+        gGfxApiModule = this;
     }
 
     void DX12Module::StopThreads()
@@ -56,6 +58,8 @@ namespace Omni
 
     void DX12Module::Finalize()
     {
+        CheckAlways(gGfxApiModule != nullptr);
+        gGfxApiModule = nullptr;
         Module::Finalizing();
         if (GetUserCount() > 0)
             return;
@@ -113,4 +117,4 @@ namespace Omni
     EXPORT_INTERNAL_MODULE(DX12Module, ModuleExportInfo(DX12ModuleCtor, false, "DX12"));
 }
 
-#endif
+#endif//OMNI_WINDOWS

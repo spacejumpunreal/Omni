@@ -77,7 +77,7 @@ int main(int, const char** )
 	const char* engineArgv[] =
 	{
 		"LoadModule=Window",
-		"LoadModule=DX12Module",
+		"LoadModule=DX12",
 		"LoadModule=DemoRenderer",
 		"--window-size=1920x1080",
 	};

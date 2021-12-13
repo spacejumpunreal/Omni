@@ -45,8 +45,10 @@ namespace Omni
 
 #define CheckAlways(cond, ...) OmniCheck((cond), ##__VA_ARGS__)
 #define CheckSucceeded(cond, ...) OmniCheck(SUCCEEDED(cond), ##__VA_ARGS__)
+
 #if OMNI_DEBUG
 #define CheckDebug(cond, ...) OmniCheck((cond), ##__VA_ARGS__)
 #else
 #define CheckDebug(cond, ...) ((void)(cond))
 #endif
+
