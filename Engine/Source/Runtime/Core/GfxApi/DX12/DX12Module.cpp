@@ -85,7 +85,7 @@ namespace Omni
         switch (desc.Type)
         {
         case GfxApiObjectType::Swapchain:
-            OMNI_NEW(MemoryKind::GfxApi)DX12SwapChain(static_cast<const GfxApiSwapChainDesc&>(desc));
+            ret = OMNI_NEW(MemoryKind::GfxApi)DX12SwapChain(static_cast<const GfxApiSwapChainDesc&>(desc));
             break;
         default:
             NotImplemented();

@@ -5,7 +5,7 @@
 
 namespace Omni
 {
-	class DX12SwapChain : GfxApiSwapChain
+	class DX12SwapChain : public GfxApiSwapChain
 	{
 	public:
 		DX12SwapChain(const GfxApiSwapChainDesc& desc);
@@ -13,6 +13,7 @@ namespace Omni
 		SharedPtr<GfxApiTexture> GetCurrentBackbuffer();
 	private:
 		GfxApiSwapChainDesc mDesc;
+		IDXGISwapChain1* mDX12SwapChain;
 	};
 }
 

@@ -242,6 +242,11 @@ namespace Omni
         CheckWinAPI(AdjustWindowRectEx(&rect, OmniMainWindowStyle, false, OmniMainWindowAdditionalStyle));
         CheckWinAPI(SetWindowPos(self->mWindow, HWND_TOPMOST, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOCOPYBITS));
     }
+    WindowHandle WindowModule::GetMainWindowHandle()
+    {
+        WindowsWindowModuleImpl* self = WindowsWindowModuleImpl::GetCombinePtr(this);
+        return self->mWindow;
+    }
     WindowsWindowModulePrivate::WindowsWindowModulePrivate(const EngineInitArgMap&)
         : mMainThreadData(OMNI_NEW(MemoryKind::SystemInit)(MainThreadData))
         , mWindow(NULL)

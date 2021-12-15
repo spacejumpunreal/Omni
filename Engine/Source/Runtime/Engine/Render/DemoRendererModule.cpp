@@ -26,18 +26,18 @@ namespace Omni
         wm.Retain();
         GfxApiModule& gfxApi = GfxApiModule::Get();
         gfxApi.Retain();
-        
-#if 0
-        DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
-        //create swapchain
-        GfxApiSwapChainDesc descSwapChain;
-        descSwapChain.BufferCount = 3;
-        descSwapChain.Width = 800;
-        descSwapChain.Height = 600;
-        descSwapChain.Format = GfxApiFormat::R8G8B8A8_UNORM;
-        self.SwapChain = gfxApi.CreateGfxApiObject(descSwapChain);
-        self.SwapChain->Present();
-#endif
+        {
+            DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
+            //create swapchain
+            GfxApiSwapChainDesc descSwapChain;
+            descSwapChain.BufferCount = 3;
+            descSwapChain.Width = 800;
+            descSwapChain.Height = 600;
+            descSwapChain.Format = GfxApiFormat::R8G8B8A8_UNORM;
+            descSwapChain.WindowHandle = wm.GetMainWindowHandle();
+            self.SwapChain = gfxApi.CreateGfxApiObject(descSwapChain);
+            self.SwapChain->Present();
+        }
         Module::Initialize(args);
     }
 

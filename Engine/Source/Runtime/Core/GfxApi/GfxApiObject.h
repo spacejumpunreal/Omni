@@ -3,6 +3,7 @@
 #include "Runtime/Base/Misc/EnumUtils.h"
 #include "Runtime/Base/Misc/SharedObject.h"
 #include "Runtime/Core/CoreAPI.h"
+#include "Runtime/Core/Platform/WindowUtils.h"
 
 
 namespace Omni
@@ -93,6 +94,7 @@ namespace Omni
         u32                 Width;
         u32                 Height;
         GfxApiFormat        Format;
+        WindowHandle        WindowHandle;
     public:
         GfxApiSwapChainDesc() : 
             GfxApiObjectDesc(GfxApiObjectType::Swapchain)

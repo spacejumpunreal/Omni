@@ -2,6 +2,7 @@
 #include "Runtime/Prelude/Omni.h"
 #include "Runtime/Core/CoreAPI.h"
 #include "Runtime/Core/System/Module.h"
+#include "Runtime/Core/Platform/WindowUtils.h"
 
 
 namespace Omni
@@ -18,6 +19,8 @@ namespace Omni
 
 		void GetBackbufferSize(u32& width, u32& height);
 		void RequestSetBackbufferSize(u32 width, u32 height);
+		WindowHandle GetMainWindowHandle();
+
 	protected:
 		static WindowModule* gWindowModule;
 	};
