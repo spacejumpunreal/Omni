@@ -11,6 +11,12 @@
 #include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
 
 #include <d3d12.h>
+#include <dxgidebug.h>
+
+#define DEBUG_DX_OBJECT_LEAK_ON_QUIT 0
+
+
+EXTERN_C const GUID DECLSPEC_SELECTANY DXGI_DEBUG_ALL =  { 0xe48ae283, 0xda80, 0x490b, 0x87, 0xe6, 0x43, 0xe9, 0xa9, 0xcf, 0xda, 0x8  };
 
 
 namespace Omni
@@ -31,6 +37,9 @@ namespace Omni
 #include "Runtime/Core/GfxApi/GfxApiMethodList.inl"
 #undef GfxApiMethod
     private:
+#if DEBUG_DX_OBJECT_LEAK_ON_QUIT
+        void ReportAllLivingObjects();
+#endif
     };
 
 
@@ -73,6 +82,10 @@ namespace Omni
         MemoryModule& mm = MemoryModule::Get();
         Module::Finalize();
         mm.Release();
+
+#if DEBUG_DX_OBJECT_LEAK_ON_QUIT
+        ReportAllLivingObjects();
+#endif
     }
 
 
@@ -121,6 +134,15 @@ namespace Omni
         (void)context;
     }
 
+#if DEBUG_DX_OBJECT_LEAK_ON_QUIT
+    void DX12Module::ReportAllLivingObjects()
+    {
+        IDXGIDebug* dxgiDebug;
+        CheckSucceeded(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug)));
+        CheckSucceeded(dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL));
+        OmniDebugBreak();
+    }
+#endif
 
     /*
     * DX12Module ctors

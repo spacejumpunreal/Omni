@@ -4,7 +4,7 @@
 #include "Runtime/Base/Misc/ArrayUtils.h"
 #include "Runtime/Core/Allocator/SNMallocWrapper.h"
 
-#define OMNI_SNALLOCATOR_TRACK_EVERY_ALLOC 0
+#define OMNI_SNALLOCATOR_TRACK_EVERY_ALLOC 1
 
 namespace Omni
 {
@@ -26,10 +26,12 @@ namespace Omni
 			{
 				mTraceLock.lock();
 				++mTraceIndex;
-				if (alignedSize == 24 && 50 <= mTraceIndex && mTraceIndex <= 60)
+		#if 0
+				if (mTraceIndex == 38)
 				{
 					Omni::OmniDebugBreak();
 				}
+		#endif
 				mTraceLivingAllocations.insert(std::make_pair(p, AllocInfo{ .Size = (u32)alignedSize, .Index = mTraceIndex }));
 				mTraceLock.unlock();
 			}
@@ -115,6 +117,10 @@ namespace Omni
 	}
 
 	void SNAllocator::Shrink()
-	{}
+	{
+		//SNAllocatorPrivate& self = mData.Ref<SNAllocatorPrivate>();
+		//(void)self;
+		//Omni::OmniDebugBreak();
+	}
 }
 

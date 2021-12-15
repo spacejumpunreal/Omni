@@ -27,10 +27,11 @@ namespace Omni
             }
         }
 
-        FORCEINLINE virtual void Destroy()
-        {
-            this->~SharedObject();
-        }
+        /**
+        * won't provide a basic implementation, 
+        * because it's not just about calling dtor but also about freeing memory
+        */
+        virtual void Destroy() = 0;
     private:
         std::atomic<u64>    mRefCount;
     };

@@ -9,7 +9,6 @@ namespace Omni
 	{
 		CheckAlways(SUCCEEDED(result));
 	}
-
 }
 
 #endif//OMNI_WINDOWS

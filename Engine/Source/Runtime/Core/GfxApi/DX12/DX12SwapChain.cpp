@@ -1,8 +1,10 @@
 #include "Runtime/Core/CorePCH.h"
 #if OMNI_WINDOWS
 #include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
+#include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Context.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
+
 
 namespace Omni
 {
@@ -41,6 +43,16 @@ namespace Omni
 			nullptr,
 			nullptr,
 			&mDX12SwapChain));
+	}
+	void DX12SwapChain::Destroy()
+	{
+		auto self = this;
+		OMNI_DELETE(self, MemoryKind::GfxApi);
+	}
+	DX12SwapChain::~DX12SwapChain()
+	{
+		mDX12SwapChain->Release();
+		mDX12SwapChain = nullptr;
 	}
 	void DX12SwapChain::Present()
 	{

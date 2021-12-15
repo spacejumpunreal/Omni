@@ -1,8 +1,9 @@
 #include "Runtime/Core/CorePCH.h"
 #if OMNI_WINDOWS
 #include "Runtime/Core/GfxApi/DX12/DX12Context.h"
-#include "Runtime/Core/Platform/WindowsMacros.h"
 #include "Runtime/Base/Misc/AssertUtils.h"
+#include "Runtime/Core/Platform/WindowsMacros.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
 
 
 namespace Omni
@@ -31,6 +32,7 @@ namespace Omni
 
                     // Enable additional debug layers.
                     dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+                    SafeRelease(debugController);
                 }
             }
         }
