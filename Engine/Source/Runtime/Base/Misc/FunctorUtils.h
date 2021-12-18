@@ -44,7 +44,7 @@ namespace Omni
 	public:
 		virtual void operator()() = 0;
 		virtual ~ICallback() {};
-		static void Run(ICallback* callback) { (*callback)(); }
+		static void Run(ICallback** callback) { (**callback)(); }
 	};
 
 }

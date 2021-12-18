@@ -39,17 +39,17 @@ namespace Omni
 		return *ret;
 	}
 
-	static int XXX;
+	//static int XXX;
 
 	DispatchWorkItem::DispatchWorkItem(void* fptr, MemoryKind memKind, u32 size, bool autoRelease)
 		: SListNode(nullptr)
 		, mFPtr(fptr)
 		, mMemKind(memKind)
 		, mSize(autoRelease ? (i32)size : -(i32)size)
-		, YYY(XXX)
+		//, YYY(XXX)
 	{
 		CheckDebug(fptr != nullptr);
-		++XXX;
+		//++XXX;
 	}
 
 	struct DispatchGroupPrivate

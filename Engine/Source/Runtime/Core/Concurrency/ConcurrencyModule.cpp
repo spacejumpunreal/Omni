@@ -173,8 +173,6 @@ namespace Omni
         DispatchWorkItem* p = &head;
         while (p)
         {
-            if (p->mFPtr == nullptr)
-                OmniDebugBreak();
             p = static_cast<DispatchWorkItem*>(p->Next);
         }
 #endif

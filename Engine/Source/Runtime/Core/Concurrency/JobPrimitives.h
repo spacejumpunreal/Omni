@@ -73,7 +73,7 @@ namespace Omni
 			Next = nullptr;
 
 		}
-	public:
+	private:
 		void*				mFPtr;
 		MemoryKind			mMemKind;
 		i32					mSize;

@@ -200,12 +200,11 @@ namespace Omni
         self->mLock.lock();
 
         PMRVector<EngineFrameTickItem>& frameQ = self->mFrameTickQueue[(u32)frameType];
-        auto it = frameQ.begin();
-        for (; it != frameQ.end(); ++it)
+        for (i32 idx = (i32)frameQ.size() - 1; idx >= 0; --idx)
         {
-            if (it->Priority == priority)
+            if (frameQ[idx].Priority == priority)
             {
-                frameQ.erase(it);
+                frameQ.erase(frameQ.begin() + idx);
             }
         }
         self->mLock.unlock();
