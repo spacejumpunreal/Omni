@@ -169,11 +169,15 @@ namespace Omni
 
     void ConcurrencyModule::EnqueueWork(DispatchWorkItem& head, QueueKind queueKind)
     {
+#if 1
         DispatchWorkItem* p = &head;
         while (p)
         {
+            if (p->mFPtr == nullptr)
+                OmniDebugBreak();
             p = static_cast<DispatchWorkItem*>(p->Next);
         }
+#endif
         ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
         self->mQueues[(u32)queueKind].Enqueue(&head);
     }

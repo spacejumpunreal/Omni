@@ -2,6 +2,7 @@
 #include "Runtime/Prelude/Omni.h"
 #include "Runtime/Core/CoreAPI.h"
 #include "Runtime/Core/CoreAPI.h"
+#include "Runtime/Base/Misc/FunctorUtils.h"
 #include "Runtime/Base/Container/LinkedList.h"
 #include "Runtime/Base/Memory/MemoryDefs.h"
 #include "Runtime/Base/Misc/PrivateData.h"
@@ -27,6 +28,14 @@ namespace Omni
 			return r;
 		}
 
+		static DispatchWorkItem& CreateWithCallback(ICallback* callback, MemoryKind memKind, bool autoRelease)
+		{
+			DispatchWorkItem& r = CreatePrivate((void*)ICallback::Run, sizeof(ICallback*), memKind, autoRelease);
+			void* ap = GetArgPtr(&r);
+			*(ICallback**)ap = callback;
+			return r;
+		}
+
 		template<typename T>
 		static DispatchWorkItem& Create(void (*func)(T*), const T* argPtr, MemoryKind memKind, bool autoRelease)
 		{
@@ -48,24 +57,27 @@ namespace Omni
 		}
 		CORE_API void Perform();
 		CORE_API void Release(bool isAutoRelease);
-		CORE_API bool IsAutoRelease() { return mSize == 0; }
+		CORE_API bool IsAutoRelease() { return mSize > 0; }
 	private:
 		CORE_API static DispatchWorkItem& CreatePrivate(void* f, size_t aSize, MemoryKind memKind, bool autoRelease);
 		FORCEINLINE static void* GetArgPtr(DispatchWorkItem* item)
 		{
 			return ((u8*)item) + sizeof(DispatchWorkItem);
 		}
-		CORE_API DispatchWorkItem(void* fptr, MemoryKind kind, u32 size);
+		CORE_API DispatchWorkItem(void* fptr, MemoryKind kind, u32 size, bool autoRelease);
 		CORE_API ~DispatchWorkItem()
 		{
 			mFPtr = nullptr;
 			mMemKind = MemoryKind::Max;
-			mSize = (u32) - 1;
+			mSize = -1;
+			Next = nullptr;
+
 		}
-	private:
+	public:
 		void*				mFPtr;
 		MemoryKind			mMemKind;
-		u32					mSize;
+		i32					mSize;
+		int					YYY;
 	};
 
 

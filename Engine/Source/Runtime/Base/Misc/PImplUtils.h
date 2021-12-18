@@ -7,7 +7,7 @@ namespace Omni
 	template<typename TInterface, typename TData>
 	struct PImplCombine final : public TInterface, public TData
 	{
-		static_assert(!std::is_polymorphic_v<TData>, "TData should have no vtable");
+		//static_assert(!std::is_polymorphic_v<TData>, "TData should have no vtable");
 		static PImplCombine* GetCombinePtr(TInterface* tp) 
 		{ 
 			PImplCombine* p = (PImplCombine*)0x10000;

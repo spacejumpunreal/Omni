@@ -25,11 +25,7 @@ namespace Omni
 		if (isAutoRelease != IsAutoRelease())
 			return;
 		PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(mMemKind);
-		size_t sz = mSize;
-		if (isAutoRelease)
-			CheckDebug(sz == 0);
-		else
-			CheckDebug(sz != 0);
+		size_t sz = isAutoRelease ? mSize : -mSize;
 		this->~DispatchWorkItem();
 		alloc.resource()->deallocate(this, sz);
 	}
@@ -39,17 +35,21 @@ namespace Omni
 		PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(memKind);
 		u32 size = (u32)(sizeof(DispatchWorkItem) + aSize);
 		DispatchWorkItem* ret = (DispatchWorkItem*)alloc.resource()->allocate(size);
-		new (ret)DispatchWorkItem(f, memKind, autoRelease ? 0 : size);
+		new (ret)DispatchWorkItem(f, memKind, size, autoRelease);
 		return *ret;
 	}
 
-	DispatchWorkItem::DispatchWorkItem(void* fptr, MemoryKind memKind, u32 size)
+	static int XXX;
+
+	DispatchWorkItem::DispatchWorkItem(void* fptr, MemoryKind memKind, u32 size, bool autoRelease)
 		: SListNode(nullptr)
 		, mFPtr(fptr)
 		, mMemKind(memKind)
-		, mSize(size)
+		, mSize(autoRelease ? (i32)size : -(i32)size)
+		, YYY(XXX)
 	{
 		CheckDebug(fptr != nullptr);
+		++XXX;
 	}
 
 	struct DispatchGroupPrivate
@@ -58,7 +58,7 @@ namespace Omni
 		DispatchWorkItem*				mNotifyTask;
 		LockQueue*						mNotifyQueue; //if speicified, mNotifyTask will execute on this queue
 #if OMNI_DEBUG
-		std::atomic<bool>		mLocked;
+		std::atomic<bool>				mLocked;
 #endif
 		DispatchGroupPrivate(size_t enterCount)
 			: mEnterCount(enterCount)

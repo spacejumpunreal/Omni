@@ -17,15 +17,15 @@ namespace Omni
 
     struct EngineFrameTickItem
     {
-        DispatchWorkItem*   WorkItem;
-        QueueKind           Queue;
-        u32                 Priority;
+        ICallback*      WorkItem;
+        QueueKind       Queue;
+        u32             Priority;
     };
 
     struct TimerCallbackItem
     {
-        DispatchWorkItem*   WorkItem;
-        QueueKind           Queue;
+        ICallback*      WorkItem;
+        QueueKind       Queue;
     };
 
     enum class ClockThreadState : u32
@@ -94,6 +94,7 @@ namespace Omni
         }
     };
 
+
     void TimingModule::Initialize(const EngineInitArgMap& args)
     {
         MemoryModule& mm = MemoryModule::Get();
@@ -146,7 +147,7 @@ namespace Omni
         return *gTimingModule;
     }
 
-    void TimingModule::AddTimerCallback_OnAnyThread(TimePoint timePoint, DispatchWorkItem& callback, QueueKind queue)
+    void TimingModule::AddTimerCallback_OnAnyThread(TimePoint timePoint, ICallback* callback, QueueKind queue)
     {
         //TimingImpl* self = TimingImpl::GetCombinePtr(this);
         (void)timePoint;
@@ -168,7 +169,7 @@ namespace Omni
         self->mTicksPerFrame[(u32)frameType] = ticksPerFrame;
     }
 
-    void TimingModule::RegisterFrameTick_OnAnyThread(EngineFrameType frameType, u32 priority, DispatchWorkItem& callback, QueueKind queue)
+    void TimingModule::RegisterFrameTick_OnAnyThread(EngineFrameType frameType, u32 priority, ICallback* callback, QueueKind queue)
     {
         TimingImpl* self = TimingImpl::GetCombinePtr(this);
         self->mLock.lock();
@@ -185,7 +186,7 @@ namespace Omni
             }
         }
         frameQ.insert(it, EngineFrameTickItem{
-            .WorkItem = &callback,
+            .WorkItem = callback,
             .Queue = queue,
             .Priority = priority,
             });
@@ -259,7 +260,10 @@ namespace Omni
             mLock.unlock();
             for (auto& item : expiredItems)
             {
-                cm.EnqueueWork(*item.WorkItem, item.Queue);
+
+                //TODO: change other locations similar to this
+                auto& workItem = DispatchWorkItem::CreateWithCallback(item.WorkItem, MemoryKind::CacheLine, true);
+                cm.EnqueueWork(workItem, item.Queue);
             }
         }
         //frame ticks
@@ -285,7 +289,7 @@ namespace Omni
             mLock.unlock();
             for (auto& item : todoItems)
             {
-                cm.EnqueueWork(*item.WorkItem, item.Queue);
+                cm.EnqueueWork(DispatchWorkItem::CreateWithCallback(item.WorkItem, MemoryKind::CacheLine, true), item.Queue);
             }
         }
         cm.EnqueueWork(DispatchWorkItem::CreateWithFunctor(TickFrameJob{ this }, MemoryKind::CacheLine, true), QueueKind::Main);

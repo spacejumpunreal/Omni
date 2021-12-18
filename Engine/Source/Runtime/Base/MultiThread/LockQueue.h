@@ -137,6 +137,7 @@ namespace Omni
                 --mTodoCount;
                 ret = mHead;
                 mHead = mHead->Next;
+                ret->Next = nullptr;
                 if (mHead == nullptr)
                     mTail = nullptr;
             }

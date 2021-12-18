@@ -1,6 +1,7 @@
 #pragma once
 #include "Runtime/Prelude/Omni.h"
 #include "Runtime/Engine/EngineAPI.h"
+#include "Runtime/Base/Misc/FunctorUtils.h"
 #include "Runtime/Base/Misc/TimeTypes.h"
 #include "Runtime/Core/Concurrency/ConcurrentDefs.h"
 #include "Runtime/Core/System/Module.h"
@@ -45,14 +46,14 @@ namespace Omni
         /**
         *   callback
         */
-        void AddTimerCallback_OnAnyThread(TimePoint timePoint, DispatchWorkItem& workItem, QueueKind queue);
+        void AddTimerCallback_OnAnyThread(TimePoint timePoint, ICallback* callback, QueueKind queue);
 
         /**
         *   frame
         */
         void SetTickInterval_OnMainThread(Duration duration);
         void SetFrameRate_OnMainThread(EngineFrameType frameType, u32 ticksPerFrame);
-        void RegisterFrameTick_OnAnyThread(EngineFrameType frameType, u32 priority, DispatchWorkItem& callback, QueueKind queue);
+        void RegisterFrameTick_OnAnyThread(EngineFrameType frameType, u32 priority, ICallback* callback, QueueKind queue);
         void UnregisterFrameTick_OnAnyThread(EngineFrameType frameType, u32 priority);
 
     };
