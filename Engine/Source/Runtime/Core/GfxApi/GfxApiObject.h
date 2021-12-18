@@ -109,7 +109,7 @@ namespace Omni
     class GfxApiSwapChain : public SharedObject
     {
     public:
-        virtual void Present() = 0;
+        virtual void Present(bool waitFotVSync) = 0;
         virtual SharedPtr<GfxApiTexture> GetCurrentBackbuffer() = 0;
     };
 

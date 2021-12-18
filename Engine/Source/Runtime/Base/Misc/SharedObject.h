@@ -39,7 +39,10 @@ namespace Omni
     template<typename T>
     class SharedPtr
     {
+    private:
+        T* mObject;
     public:
+        static_assert(std::is_base_of_v<SharedObject, T>, "T must be derived from IShared");
         FORCEINLINE SharedPtr()
             : mObject(nullptr)
         {
@@ -97,7 +100,6 @@ namespace Omni
                 mObject = nullptr;
             }
         }
-    private:
-        T* mObject;
     };
+
 }

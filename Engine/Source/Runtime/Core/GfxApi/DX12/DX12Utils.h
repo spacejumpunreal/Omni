@@ -3,12 +3,12 @@
 #if OMNI_WINDOWS
 #include "Runtime/Base/Misc/AssertUtils.h"
 
+
+#define CheckGfxApi(result) CheckAlways(SUCCEEDED(result))
+
 namespace Omni
 {
-	FORCEINLINE void CheckGfxApi(HRESULT result)
-	{
-		CheckAlways(SUCCEEDED(result));
-	}
+	void WaitGPUIdle();
 }
 
 #endif//OMNI_WINDOWS

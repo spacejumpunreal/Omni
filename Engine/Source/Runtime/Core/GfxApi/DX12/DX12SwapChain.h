@@ -1,3 +1,5 @@
+#pragma once
+#include "Runtime/Prelude/Omni.h"
 #if OMNI_WINDOWS
 #include "Runtime/Core/GfxApi/GfxApiObject.h"
 #include <d3d12.h>
@@ -9,9 +11,9 @@ namespace Omni
 	{
 	public:
 		DX12SwapChain(const GfxApiSwapChainDesc& desc);
-		void Destroy() override;
 		~DX12SwapChain();
-		void Present() override ;
+		void Destroy() override;
+		void Present(bool waitForVSync) override;
 		SharedPtr<GfxApiTexture> GetCurrentBackbuffer() override;
 	private:
 		GfxApiSwapChainDesc mDesc;

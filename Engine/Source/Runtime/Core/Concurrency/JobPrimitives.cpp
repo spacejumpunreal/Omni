@@ -16,29 +16,35 @@ namespace Omni
 		auto f = (UnaryFunctionType)mFPtr;
 		void* ap = GetArgPtr(this);
 		f(ap);
-		mFPtr = nullptr;
+		if (mAutoRelease)
+			mFPtr = nullptr;
 	}
 
-	void DispatchWorkItem::Destroy()
+	void DispatchWorkItem::Release(bool isAutoRelease)
 	{
+		if (isAutoRelease != mAutoRelease)
+			return;
 		PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(mMemKind);
 		this->~DispatchWorkItem();
 		alloc.resource()->deallocate(this, 0);
 	}
 
-	DispatchWorkItem& DispatchWorkItem::CreatePrivate(void* f, size_t aSize, MemoryKind memKind)
+	DispatchWorkItem& DispatchWorkItem::CreatePrivate(void* f, size_t aSize, MemoryKind memKind, bool autoRelease)
 	{
 		PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(memKind);
 		DispatchWorkItem* ret = (DispatchWorkItem*)alloc.resource()->allocate(sizeof(DispatchWorkItem) + aSize);
-		new (ret)DispatchWorkItem(f, memKind);
+		new (ret)DispatchWorkItem(f, memKind, autoRelease);
 		return *ret;
 	}
 
-	DispatchWorkItem::DispatchWorkItem(void* fptr, MemoryKind memKind)
+	DispatchWorkItem::DispatchWorkItem(void* fptr, MemoryKind memKind, bool autoRelease)
 		: SListNode(nullptr)
 		, mFPtr(fptr)
 		, mMemKind(memKind)
-	{}
+		, mAutoRelease(autoRelease)
+	{
+		CheckDebug(fptr != nullptr);
+	}
 
 
 	struct DispatchGroupPrivate

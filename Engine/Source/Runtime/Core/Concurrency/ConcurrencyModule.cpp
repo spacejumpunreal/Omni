@@ -93,7 +93,7 @@ namespace Omni
         DispatchWorkItem* lastJob = nullptr;
         for (u32 iThread = 0; iThread < self->mWorkerCount; ++iThread)
         {
-            DispatchWorkItem& item = DispatchWorkItem::Create(ThreadData::MarkQuitWork, MemoryKind::CacheLine);
+            DispatchWorkItem& item = DispatchWorkItem::Create(ThreadData::MarkQuitWork, MemoryKind::CacheLine, true);
             item.Next = lastJob;
             lastJob = &item;
         }
@@ -188,7 +188,7 @@ namespace Omni
             if (item == nullptr)
                 break;
             item->Perform();
-            item->Destroy();
+            item->Release(true);
         }
     }
 
@@ -200,7 +200,7 @@ namespace Omni
         if (item == nullptr)
             return;
         item->Perform();
-        item->Destroy();
+        item->Release(true);
     }
 
     void ConcurrencyModule::FinishPendingJobs()
@@ -217,7 +217,7 @@ namespace Omni
                     if (job == nullptr)
                         break;
                     job->Perform();
-                    job->Destroy();
+                    job->Release(true);
                     remain = true;
                 }
             }
@@ -239,7 +239,7 @@ namespace Omni
         {
             DispatchWorkItem* item = sharedQueue.Dequeue<DispatchWorkItem>();
             item->Perform();
-            item->Destroy();
+            item->Release(true);
         }
     }
 

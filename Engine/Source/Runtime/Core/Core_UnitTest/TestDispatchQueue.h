@@ -72,7 +72,7 @@ namespace Omni
 				DispatchWorkItem* head = nullptr;
 				for (u32 j = 0; j < JobBatch; ++j)
 				{
-					DispatchWorkItem& item = DispatchWorkItem::Create(&SerialJob, &tmpJd, MemoryKind::CacheLine);
+					DispatchWorkItem& item = DispatchWorkItem::Create(&SerialJob, &tmpJd, MemoryKind::CacheLine, true);
 					++tmpJd.Sequence;
 					item.Next = head;
 					head = &item;

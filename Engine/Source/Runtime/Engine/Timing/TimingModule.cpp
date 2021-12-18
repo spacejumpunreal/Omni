@@ -8,6 +8,7 @@
 #include "Runtime/Core/Concurrency/ConcurrencyModule.h"
 #include "Runtime/Core/System/ModuleExport.h"
 #include "Runtime/Core/System/ModuleImplHelpers.h"
+#include "Runtime/Base/Misc/SharedObject.h"
 
 namespace Omni
 {
@@ -64,6 +65,10 @@ namespace Omni
     using TimingImpl = PImplCombine<TimingModule, TimingModulePrivateImpl>;
 
 
+    //globals
+    TimingModule* gTimingModule;
+
+
     /**
       * TimingModule
       */
@@ -96,10 +101,13 @@ namespace Omni
         ConcurrencyModule& cm = ConcurrencyModule::Get();
         cm.Retain();
 
+        CheckAlways(gTimingModule == nullptr);
+        gTimingModule = this;
+
         TimingImpl* self = TimingImpl::GetCombinePtr(this);
         self->mLastTickTime = TClock::now();
 
-        cm.EnqueueWork(DispatchWorkItem::CreateWithFunctor(TickFrameJob{ self }, MemoryKind::CacheLine), QueueKind::Main);
+        cm.EnqueueWork(DispatchWorkItem::CreateWithFunctor(TickFrameJob{ self }, MemoryKind::CacheLine, true), QueueKind::Main);
 
         Module::Initialize(args);
     }
@@ -131,6 +139,11 @@ namespace Omni
     void TimingModule::Destroy()
     {
         InitMemFactory<TimingImpl>::Delete((TimingImpl*)this);
+    }
+
+    TimingModule& TimingModule::Get()
+    {
+        return *gTimingModule;
     }
 
     void TimingModule::AddTimerCallback_OnAnyThread(TimePoint timePoint, DispatchWorkItem& callback, QueueKind queue)
@@ -275,7 +288,7 @@ namespace Omni
                 cm.EnqueueWork(*item.WorkItem, item.Queue);
             }
         }
-        cm.EnqueueWork(DispatchWorkItem::CreateWithFunctor(TickFrameJob{ this }, MemoryKind::CacheLine), QueueKind::Main);
+        cm.EnqueueWork(DispatchWorkItem::CreateWithFunctor(TickFrameJob{ this }, MemoryKind::CacheLine, true), QueueKind::Main);
         mLastTickTime = now;
     }
 }

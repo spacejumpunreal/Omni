@@ -176,7 +176,7 @@ namespace Omni
 		SystemStatus v = SystemStatus::Ready;
 		if (self->mStatus.compare_exchange_strong(v, SystemStatus::ToBeFinalized))
 		{//mark main thread quit, main thread will drive the quit procedure
-			DispatchWorkItem& quitJob = DispatchWorkItem::Create(ThreadData::MarkQuitWork, MemoryKind::CacheLine);
+			DispatchWorkItem& quitJob = DispatchWorkItem::Create(ThreadData::MarkQuitWork, MemoryKind::CacheLine, true);
 			ConcurrencyModule::Get().EnqueueWork(quitJob, QueueKind::Main);
 		}
 		else if (assertOnMiss)

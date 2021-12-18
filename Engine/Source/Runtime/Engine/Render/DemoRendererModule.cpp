@@ -2,19 +2,34 @@
 #include "Runtime/Engine/Render/DemoRendererModule.h"
 #include "Runtime/Base/Misc/PImplUtils.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
+#include "Runtime/Core/Concurrency/JobPrimitives.h"
 #include "Runtime/Core/System/ModuleExport.h"
 #include "Runtime/Core/System/ModuleImplHelpers.h"
 #include "Runtime/Core/GfxApi/GfxApiModule.h"
 #include "Runtime/Core/Platform/WindowModule.h"
+#include "Runtime/Engine/Timing/TimingModule.h"
 
 namespace Omni
 {
+    /**
+    * declarations
+    */
     struct DemoRendererModulePrivateImpl
     {
     public:
+        void Tick();
+        static void _Tick(DemoRendererModulePrivateImpl** impl) { (**impl).Tick(); }
     public:
         SharedPtr<GfxApiSwapChain> SwapChain;
+        DispatchWorkItem* TickRegistry;
     };
+
+    /**
+    * constants
+    */
+    static constexpr u32 DemoRendererTickPriority = 100;
+
+
 
     using DemoRendererImpl = PImplCombine<DemoRendererModule, DemoRendererModulePrivateImpl>;
 
@@ -24,20 +39,34 @@ namespace Omni
         mm.Retain();
         WindowModule& wm = WindowModule::Get();
         wm.Retain();
+        TimingModule& tm = TimingModule::Get();
+        tm.Retain();
         GfxApiModule& gfxApi = GfxApiModule::Get();
         gfxApi.Retain();
-        {
-            DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
-            //create swapchain
-            GfxApiSwapChainDesc descSwapChain;
-            descSwapChain.BufferCount = 3;
-            descSwapChain.Width = 800;
-            descSwapChain.Height = 600;
-            descSwapChain.Format = GfxApiFormat::R8G8B8A8_UNORM;
-            descSwapChain.WindowHandle = wm.GetMainWindowHandle();
-            self.SwapChain = gfxApi.CreateGfxApiObject(descSwapChain);
-            self.SwapChain->Present();
-        }
+        
+        DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
+        //create swapchain
+        GfxApiSwapChainDesc descSwapChain;
+        descSwapChain.BufferCount = 3;
+        descSwapChain.Width = 800;
+        descSwapChain.Height = 600;
+        descSwapChain.Format = GfxApiFormat::R8G8B8A8_UNORM;
+        descSwapChain.WindowHandle = wm.GetMainWindowHandle();
+        self.SwapChain = gfxApi.CreateGfxApiObject(descSwapChain);
+        self.SwapChain->Present(true);
+
+        
+#if 0
+        DemoRendererModulePrivateImpl* selfPtr = static_cast<DemoRendererModulePrivateImpl*>(&self);
+        self.TickRegistry = &DispatchWorkItem::Create<DemoRendererModulePrivateImpl*>(
+            DemoRendererModulePrivateImpl::_Tick, 
+            &selfPtr, 
+            MemoryKind::GfxApi,
+            false);
+
+        tm.RegisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority, *self.TickRegistry, QueueKind::Main);
+        tm.SetFrameRate_OnMainThread(EngineFrameType::Render, 30);
+#endif
         Module::Initialize(args);
     }
 
@@ -47,13 +76,28 @@ namespace Omni
         if (GetUserCount() > 0)
             return;
 
-        Module::Finalize();
+        TimingModule& tm = TimingModule::Get();
         GfxApiModule& gfxApi = GfxApiModule::Get();
-        gfxApi.Release();
         WindowModule& wm = WindowModule::Get();
-        wm.Release();
         MemoryModule& mm = MemoryModule::Get();
+        DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
+        
+        self.SwapChain.Clear();
+#if 0
+        
+        self.TickRegistry->Release(false);
+        tm.UnregisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority);
+#endif
+        Module::Finalize();
+        gfxApi.Release();
+        tm.Release();
+        wm.Release();
         mm.Release();
+        
+    }
+
+    void DemoRendererModulePrivateImpl::Tick()
+    {
     }
 
     static Module* DemoRendererModuleCtor(const EngineInitArgMap&)

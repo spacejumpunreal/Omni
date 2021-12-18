@@ -171,7 +171,7 @@ namespace Omni
             CheckDebug(ScreenToClient(self->mWindow, &lp));
             updateMouseOnMain.MousePos = MousePos { .X = (i16)lp.x, .Y = (i16)lp.y };
 
-            DispatchWorkItem& dispatchWork = DispatchWorkItem::CreateWithFunctor(std::move(updateMouseOnMain), MemoryKind::CacheLine);
+            DispatchWorkItem& dispatchWork = DispatchWorkItem::CreateWithFunctor(std::move(updateMouseOnMain), MemoryKind::CacheLine, true);
             ConcurrencyModule::Get().EnqueueWork(dispatchWork, QueueKind::Main);
             break;
         }

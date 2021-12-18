@@ -36,10 +36,11 @@ namespace Omni
     class ENGINE_API TimingModule : public Module
     {
     public:
-        void Destroy() override;
         void Initialize(const EngineInitArgMap&) override;
         void StopThreads() override;
         void Finalize() override;
+        void Destroy() override;
+        static TimingModule& Get();
 
         /**
         *   callback

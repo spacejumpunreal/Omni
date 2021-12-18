@@ -3,7 +3,9 @@
 #include "Runtime/Core/GfxApi/DX12/DX12Context.h"
 #include "Runtime/Base/Misc/AssertUtils.h"
 #include "Runtime/Core/Platform/WindowsMacros.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Fence.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
+
 
 
 namespace Omni
@@ -44,7 +46,7 @@ namespace Omni
         D3D12_COMMAND_QUEUE_DESC queueDesc = {};
         queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
         queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-        CheckSucceeded(D3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&D3DCommandQueue)));
+        CheckSucceeded(D3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&D3DGraphicsCommandQueue)));
 
         Initialized = true;
 	}
@@ -54,7 +56,7 @@ namespace Omni
         DXGIFactory = nullptr;
         DXGIAdaptor = nullptr;
         D3DDevice = nullptr;
-        D3DCommandQueue = nullptr;
+        D3DGraphicsCommandQueue = nullptr;
 
         Initialized = false;
         //hack to check
@@ -66,6 +68,14 @@ namespace Omni
             CheckAlways(*cp == nullptr);
         }
 #endif
+    }
+
+    void DX12Context::WaitGPUIdle()
+    {
+        auto fence = CreateFence(0);
+        UpdateFenceOnGPU(fence, 1, D3DGraphicsCommandQueue);
+        WaitForFence(fence, 1);
+        ReleaseFence(fence);
     }
 }
 

@@ -53,7 +53,7 @@ namespace Omni
 
 				DoJobData djd;
 				djd.State = &state;
-				DispatchWorkItem& item = DispatchWorkItem::Create(DoJob, &djd, MemoryKind::CacheLine);
+				DispatchWorkItem& item = DispatchWorkItem::Create(DoJob, &djd, MemoryKind::CacheLine, true);
 				ConcurrencyModule::Get().EnqueueWork(item, QueueKind::Shared);
 
 				i64 ov = state.mInFlightCapacity.fetch_sub(1, std::memory_order_relaxed);

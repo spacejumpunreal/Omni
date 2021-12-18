@@ -45,7 +45,7 @@ namespace Omni
 			{
 				jobData.RawData = mLogic.Prepare(iWork);
 				jobData.ThisData = this;
-				DispatchWorkItem* item = &DispatchWorkItem::Create(&WorkerFunc, &jobData, MemoryKind::CacheLine);
+				DispatchWorkItem* item = &DispatchWorkItem::Create(&WorkerFunc, &jobData, MemoryKind::CacheLine, true);
 				item->Next = head;
 				head = item;
 			}

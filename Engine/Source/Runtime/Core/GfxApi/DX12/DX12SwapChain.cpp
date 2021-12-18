@@ -4,6 +4,7 @@
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Context.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Fence.h"
 
 
 namespace Omni
@@ -37,7 +38,7 @@ namespace Omni
 		winDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
 		CheckGfxApi(gDX12Context.DXGIFactory->CreateSwapChainForHwnd(
-			gDX12Context.D3DCommandQueue,
+			gDX12Context.D3DGraphicsCommandQueue,
 			desc.WindowHandle.ToNativeHandle(),
 			&winDesc,
 			nullptr,
@@ -51,11 +52,13 @@ namespace Omni
 	}
 	DX12SwapChain::~DX12SwapChain()
 	{
+		gDX12Context.WaitGPUIdle();
 		mDX12SwapChain->Release();
 		mDX12SwapChain = nullptr;
 	}
-	void DX12SwapChain::Present()
+	void DX12SwapChain::Present(bool waitForVSync)
 	{
+		CheckGfxApi(mDX12SwapChain->Present(waitForVSync ? 1 : 0, 0));
 	}
 	SharedPtr<GfxApiTexture> DX12SwapChain::GetCurrentBackbuffer()
 	{

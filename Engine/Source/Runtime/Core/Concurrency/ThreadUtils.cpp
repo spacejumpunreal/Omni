@@ -72,7 +72,7 @@ namespace Omni
         CheckAlways(IsOnMainThread());
         
         ConcurrencyModule::Get().EnqueueWork(
-            DispatchWorkItem::Create(initCb, MemoryKind::CacheLine),
+            DispatchWorkItem::Create(initCb, MemoryKind::CacheLine, true),
             QueueKind::Main);
         auto queue = ConcurrencyModule::Get().GetQueue(QueueKind::Main);
 
@@ -80,7 +80,7 @@ namespace Omni
         {
             auto item = queue->Dequeue<DispatchWorkItem>();
             item->Perform();
-            item->Destroy();
+            item->Release(true);
         }
         if (quitCb != nullptr)
             quitCb();

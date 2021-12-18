@@ -14,11 +14,12 @@ namespace Omni
 		DX12Context();
 		void Initialize();
 		void Finalize();
+		void WaitGPUIdle();
 	public:
 		ComPtr<IDXGIFactory7>				DXGIFactory;
 		ComPtr<IDXGIAdapter1>				DXGIAdaptor;
 		ComPtr<ID3D12Device>				D3DDevice;
-		ComPtr<ID3D12CommandQueue>			D3DCommandQueue;
+		ComPtr<ID3D12CommandQueue>			D3DGraphicsCommandQueue;
 		bool								Initialized;
 	};
 	
