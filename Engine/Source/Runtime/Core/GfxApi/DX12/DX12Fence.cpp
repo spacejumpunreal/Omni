@@ -25,7 +25,7 @@ namespace Omni
 	{
 		CheckGfxApi(fence->Signal(waitValue));
 		HANDLE winHandle = ::CreateEvent(nullptr, FALSE, FALSE, L"WaitForFenceInPlace");
-		if (winHandle != 0)
+		if (winHandle != nullptr)
 		{
 			CheckGfxApi(fence->SetEventOnCompletion(waitValue, winHandle));
 			::WaitForSingleObject(winHandle, INFINITE);
