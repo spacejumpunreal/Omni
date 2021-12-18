@@ -48,23 +48,24 @@ namespace Omni
 		}
 		CORE_API void Perform();
 		CORE_API void Release(bool isAutoRelease);
+		CORE_API bool IsAutoRelease() { return mSize == 0; }
 	private:
 		CORE_API static DispatchWorkItem& CreatePrivate(void* f, size_t aSize, MemoryKind memKind, bool autoRelease);
 		FORCEINLINE static void* GetArgPtr(DispatchWorkItem* item)
 		{
 			return ((u8*)item) + sizeof(DispatchWorkItem);
 		}
-		CORE_API DispatchWorkItem(void* fptr, MemoryKind kind, bool autoRelease);
+		CORE_API DispatchWorkItem(void* fptr, MemoryKind kind, u32 size);
 		CORE_API ~DispatchWorkItem()
 		{
 			mFPtr = nullptr;
 			mMemKind = MemoryKind::Max;
-			mAutoRelease = false;
+			mSize = (u32) - 1;
 		}
 	private:
 		void*				mFPtr;
 		MemoryKind			mMemKind;
-		bool				mAutoRelease;
+		u32					mSize;
 	};
 
 

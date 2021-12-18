@@ -34,7 +34,6 @@ namespace Omni
 		{
 			CheckAlways(false, "CreateEvent failed");
 		}
-		
 	}
 }
 

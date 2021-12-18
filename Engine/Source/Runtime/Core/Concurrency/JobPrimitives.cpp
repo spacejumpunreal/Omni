@@ -16,36 +16,41 @@ namespace Omni
 		auto f = (UnaryFunctionType)mFPtr;
 		void* ap = GetArgPtr(this);
 		f(ap);
-		if (mAutoRelease)
+		if (IsAutoRelease())
 			mFPtr = nullptr;
 	}
 
 	void DispatchWorkItem::Release(bool isAutoRelease)
 	{
-		if (isAutoRelease != mAutoRelease)
+		if (isAutoRelease != IsAutoRelease())
 			return;
 		PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(mMemKind);
+		size_t sz = mSize;
+		if (isAutoRelease)
+			CheckDebug(sz == 0);
+		else
+			CheckDebug(sz != 0);
 		this->~DispatchWorkItem();
-		alloc.resource()->deallocate(this, 0);
+		alloc.resource()->deallocate(this, sz);
 	}
 
 	DispatchWorkItem& DispatchWorkItem::CreatePrivate(void* f, size_t aSize, MemoryKind memKind, bool autoRelease)
 	{
 		PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(memKind);
-		DispatchWorkItem* ret = (DispatchWorkItem*)alloc.resource()->allocate(sizeof(DispatchWorkItem) + aSize);
-		new (ret)DispatchWorkItem(f, memKind, autoRelease);
+		u32 size = (u32)(sizeof(DispatchWorkItem) + aSize);
+		DispatchWorkItem* ret = (DispatchWorkItem*)alloc.resource()->allocate(size);
+		new (ret)DispatchWorkItem(f, memKind, autoRelease ? 0 : size);
 		return *ret;
 	}
 
-	DispatchWorkItem::DispatchWorkItem(void* fptr, MemoryKind memKind, bool autoRelease)
+	DispatchWorkItem::DispatchWorkItem(void* fptr, MemoryKind memKind, u32 size)
 		: SListNode(nullptr)
 		, mFPtr(fptr)
 		, mMemKind(memKind)
-		, mAutoRelease(autoRelease)
+		, mSize(size)
 	{
 		CheckDebug(fptr != nullptr);
 	}
-
 
 	struct DispatchGroupPrivate
 	{

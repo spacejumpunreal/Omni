@@ -56,16 +56,17 @@ namespace Omni
         self.SwapChain->Present(true);
 
         
-#if 0
+#if 1
         DemoRendererModulePrivateImpl* selfPtr = static_cast<DemoRendererModulePrivateImpl*>(&self);
+#if 1
         self.TickRegistry = &DispatchWorkItem::Create<DemoRendererModulePrivateImpl*>(
             DemoRendererModulePrivateImpl::_Tick, 
             &selfPtr, 
             MemoryKind::GfxApi,
             false);
-
-        tm.RegisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority, *self.TickRegistry, QueueKind::Main);
-        tm.SetFrameRate_OnMainThread(EngineFrameType::Render, 30);
+#endif
+        //tm.RegisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority, *self.TickRegistry, QueueKind::Main);
+        //tm.SetFrameRate_OnMainThread(EngineFrameType::Render, 30);
 #endif
         Module::Initialize(args);
     }
@@ -83,10 +84,9 @@ namespace Omni
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         
         self.SwapChain.Clear();
-#if 0
-        
+#if 1
         self.TickRegistry->Release(false);
-        tm.UnregisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority);
+        //tm.UnregisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority);
 #endif
         Module::Finalize();
         gfxApi.Release();
