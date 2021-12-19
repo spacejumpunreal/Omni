@@ -74,8 +74,9 @@ namespace Omni
     void DX12Context::WaitGPUIdle()
     {
         auto fence = CreateFence(0);
-        UpdateFenceOnGPU(fence, 1, D3DGraphicsCommandQueue);
-        WaitForFence(fence, 1);
+        u64 seq = 1;
+        UpdateFenceOnGPU(fence, seq, D3DGraphicsCommandQueue);
+        WaitForFence(fence, seq);
         ReleaseFence(fence);
     }
 }

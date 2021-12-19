@@ -79,7 +79,7 @@ int main(int, const char** )
 		"LoadModule=Window",
 		"LoadModule=DX12",
 		"LoadModule=DemoRenderer",
-		"--window-size=1920x1080",
+		"--window-size=800x600",
 	};
 	system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv, Omni::PlayGroundReady, Omni::PlayGroundWillQuit);
 #else

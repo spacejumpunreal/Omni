@@ -107,11 +107,6 @@ namespace Omni
         return ret;
     }
 
-    void DX12Module::UpdateSwapChain(GfxApiSwapChain& swapChain)
-    {
-        (void)swapChain;
-    }
-
     GfxApiRenderPass* DX12Module::BeginRenderPass(const GfxApiRenderPassDesc& desc)
     {
         (void)desc;
@@ -123,13 +118,13 @@ namespace Omni
         (void)desc;
     }
 
-    GfxApiContext* DX12Module::BeginContext(const GfxApiContextDesc& desc)
+    GfxApiCommandContext* DX12Module::BeginContext(const GfxApiCommandContextDesc& desc)
     {
         (void)desc;
         return nullptr;
     }
     
-    void DX12Module::EndContext(GfxApiContext* context)
+    void DX12Module::EndContext(GfxApiCommandContext* context)
     {
         (void)context;
     }

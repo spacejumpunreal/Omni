@@ -17,6 +17,7 @@ namespace Omni
 		~DX12SwapChain();
 		void Destroy() override;
 		void Present(bool waitForVSync) override;
+		void Update(const GfxApiSwapChainDesc& desc) override;
 		SharedPtr<GfxApiTexture> GetCurrentBackbuffer() override;
 	private:
 		GfxApiSwapChainDesc mDesc;

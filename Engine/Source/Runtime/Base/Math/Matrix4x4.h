@@ -5,10 +5,10 @@
 namespace Omni
 {
 
-	struct Vector3
+	struct Matrix4x4
 	{
 	public:
-		float X, Y, Z;
+
 	};
 }
 

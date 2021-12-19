@@ -80,8 +80,14 @@ namespace Omni
 	{
 		//printf("Buffer%d to be presented\n", mDX12SwapChain->GetCurrentBackBufferIndex());
 		CheckGfxApi(mDX12SwapChain->Present(waitForVSync ? 1 : 0, 0));
-		
 	}
+	void DX12SwapChain::Update(const GfxApiSwapChainDesc& desc)
+	{
+		//TODO: handle window resize
+		(void)desc;
+		NotImplemented("DX12SwapChain::Update");
+	}
+
 	SharedPtr<GfxApiTexture> DX12SwapChain::GetCurrentBackbuffer()
 	{
 		return SharedPtr<GfxApiTexture>();

@@ -9,6 +9,7 @@
 #include "Runtime/Core/Platform/WindowModule.h"
 #include "Runtime/Engine/Timing/TimingModule.h"
 
+
 namespace Omni
 {
     /**
@@ -21,18 +22,20 @@ namespace Omni
         void Tick();
         void operator()() override { Tick(); }
     public:
-        SharedPtr<GfxApiSwapChain> SwapChain;
-        DispatchWorkItem* TickRegistry;
+        DispatchWorkItem*               TickRegistry;
+        SharedPtr<GfxApiSwapChain>      SwapChain;
     };
+
+    using DemoRendererImpl = PImplCombine<DemoRendererModule, DemoRendererModulePrivateImpl>;
 
     /**
     * constants
     */
     static constexpr u32 DemoRendererTickPriority = 100;
 
-
-
-    using DemoRendererImpl = PImplCombine<DemoRendererModule, DemoRendererModulePrivateImpl>;
+    /**
+    * definitions
+    */
 
     void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     {
@@ -45,12 +48,15 @@ namespace Omni
         GfxApiModule& gfxApi = GfxApiModule::Get();
         gfxApi.Retain();
         
+        u32 w, h;
+        wm.GetBackbufferSize(w, h);
+
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         //create swapchain
         GfxApiSwapChainDesc descSwapChain;
         descSwapChain.BufferCount = 3;
-        descSwapChain.Width = 800;
-        descSwapChain.Height = 600;
+        descSwapChain.Width = w;
+        descSwapChain.Height = h;
         descSwapChain.Format = GfxApiFormat::R8G8B8A8_UNORM;
         descSwapChain.WindowHandle = wm.GetMainWindowHandle();
         self.SwapChain = gfxApi.CreateGfxApiObject(descSwapChain);
@@ -84,10 +90,21 @@ namespace Omni
 
     void DemoRendererModulePrivateImpl::Tick()
     {
-#if 1
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
+        GfxApiModule& gfxApiM = GfxApiModule::Get();
+
+        GfxApiRenderPassDesc passDesc;
+        passDesc.Color[0].Texture = self.SwapChain->GetCurrentBackbuffer();
+        GfxApiRenderPass* renderPass = gfxApiM.BeginRenderPass(passDesc);
+        
+        GfxApiCommandContextDesc cmdCtxDesc;
+        cmdCtxDesc.RenderPass = renderPass;
+        cmdCtxDesc.Type = GfxApiContextType::Render;
+        GfxApiCommandContext* cmdCtx = gfxApiM.BeginContext(cmdCtxDesc);
+
+        gfxApiM.EndContext(cmdCtx);
+
         self.SwapChain->Present(true);
-#endif
     }
 
     static Module* DemoRendererModuleCtor(const EngineInitArgMap&)

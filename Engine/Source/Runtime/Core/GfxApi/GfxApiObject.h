@@ -2,8 +2,10 @@
 #include "Runtime/Prelude/Omni.h"
 #include "Runtime/Base/Misc/EnumUtils.h"
 #include "Runtime/Base/Misc/SharedObject.h"
+#include "Runtime/Base/Math/Vector4.h"
 #include "Runtime/Core/CoreAPI.h"
 #include "Runtime/Core/Platform/WindowUtils.h"
+#include <variant>
 
 
 namespace Omni
@@ -12,7 +14,7 @@ namespace Omni
      * forward decls
      */
     class GfxApiTexture;
-    class GfxApiContext; //for threaded recording
+    class GfxApiCommandContext; //for threaded recording
     class GfxApiRenderPass;
     class GfxApiSwapChain;
 
@@ -40,12 +42,14 @@ namespace Omni
     enum class GfxApiAccessFlags : u32
     {
         CPUAccess = 1 << 0,
-        GPUAccess = 1 << 1,
+        GPURead = 1 << 1,
+        GPUWrite = 1 << 2,
     };
 
     /**
      * GfxApiObjectDesc definitions & GfxApiObject interface declarations
      */
+
     struct GfxApiObjectDesc
     {
     public:
@@ -83,9 +87,8 @@ namespace Omni
     class GfxApiTexture : public SharedObject
     {
     public:
-
+        virtual const GfxApiTextureDesc& GetDesc() = 0;
     };
-
 
     struct GfxApiSwapChainDesc : public GfxApiObjectDesc
     {
@@ -102,7 +105,6 @@ namespace Omni
             , Width(0)
             , Height(0)
             , Format(GfxApiFormat::R8G8B8A8_UNORM)
-
         {}
     };
 
@@ -110,6 +112,7 @@ namespace Omni
     {
     public:
         virtual void Present(bool waitFotVSync) = 0;
+        virtual void Update(const GfxApiSwapChainDesc& desc) = 0;
         virtual SharedPtr<GfxApiTexture> GetCurrentBackbuffer() = 0;
     };
 
@@ -130,14 +133,15 @@ namespace Omni
         Load = 1 << 0,
         Clear = 1 << 1,
         Store = 1 << 2,
-        DontCare = 1 << 3,
+        Discard = 1 << 3,
     };
     DEFINE_ENUM_CLASS_OPS(GfxApiLoadStoreActions)
 
     struct GfxApiRTConfig
     {
         SharedPtr<GfxApiTexture>    Texture;
-        GfxApiLoadStoreActions      Action = GfxApiLoadStoreActions::Clear | GfxApiLoadStoreActions::DontCare;
+        std::variant<u32, Vector4>  ClearValue;
+        GfxApiLoadStoreActions      Action = GfxApiLoadStoreActions::Clear | GfxApiLoadStoreActions::Store;
 
     };
 
@@ -149,9 +153,19 @@ namespace Omni
         GfxApiRTConfig      Stencil;
     };
 
-    struct GfxApiContextDesc
+    struct GfxApiCommandContextDesc
     {
         GfxApiContextType   Type;
         GfxApiRenderPass*   RenderPass;
+    };
+
+    class GfxApiRenderPass
+    {
+    public:
+    };
+
+    class GfxApiCommandContext
+    {
+    public:
     };
 }
