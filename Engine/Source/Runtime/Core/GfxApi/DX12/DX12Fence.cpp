@@ -23,12 +23,19 @@ namespace Omni
 	}
 	void WaitForFence(ID3D12Fence* fence, u64 waitValue)
 	{
-		CheckGfxApi(fence->Signal(waitValue));
 		HANDLE winHandle = ::CreateEvent(nullptr, FALSE, FALSE, L"WaitForFenceInPlace");
 		if (winHandle != nullptr)
 		{
 			CheckGfxApi(fence->SetEventOnCompletion(waitValue, winHandle));
-			::WaitForSingleObject(winHandle, INFINITE);
+			while (true)
+			{
+				if (::WaitForSingleObject(winHandle, INFINITE) == WAIT_OBJECT_0)
+				{
+					CloseHandle(winHandle);
+					return;
+				}
+			}
+
 		}
 		else
 		{

@@ -32,8 +32,9 @@ namespace Omni
         u32                 mThreadId;
         bool                mQuitAsked;
         std::atomic<bool>   mFinalized;
+        const wchar_t*      mName;
     public:
-        ThreadDataImpl(ThreadId tid); //only called on main thread, worker thread not created actually
+        ThreadDataImpl(ThreadId tid, const wchar_t* name); //only called on main thread, worker thread not created actually
     };
 
 
@@ -54,9 +55,9 @@ namespace Omni
         gMainThreadId = std::thread::id{};
     }
 
-    ThreadData& ThreadData::Create(ThreadId tid)
+    ThreadData& ThreadData::Create(ThreadId tid,const  wchar_t* name)
     {
-        return *OMNI_NEW(MemoryKind::SystemInit) ThreadDataImpl(tid);
+        return *OMNI_NEW(MemoryKind::SystemInit) ThreadDataImpl(tid, name);
     }
 
     void ThreadData::InitAsMainOnMain()
@@ -154,10 +155,11 @@ namespace Omni
         return self.mThreadId;
     }
 
-    ThreadDataImpl::ThreadDataImpl(ThreadId tid)
+    ThreadDataImpl::ThreadDataImpl(ThreadId tid, const wchar_t* name)
         : mThreadId(tid)
         , mQuitAsked(false)
         , mFinalized(false)
+        , mName(name)
     {
         CheckAlways(IsOnMainThread());
     }
@@ -165,6 +167,10 @@ namespace Omni
     void ThreadData::InitializeOnThread()
     {
         auto& self = *static_cast<ThreadDataImpl*>(this);
+#if OMNI_WINDOWS
+        
+        CheckSucceeded(SetThreadDescription(GetCurrentThread(), self.mName));
+#endif
         gThreadCount.fetch_add(1);
         gThreadData.GetRaw() = &self;
         MemoryModule::ThreadInitialize();

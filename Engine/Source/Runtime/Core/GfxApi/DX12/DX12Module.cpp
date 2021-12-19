@@ -13,7 +13,7 @@
 #include <d3d12.h>
 #include <dxgidebug.h>
 
-#define DEBUG_DX_OBJECT_LEAK_ON_QUIT 0
+#define DEBUG_DX_OBJECT_LEAK_ON_QUIT 1
 
 
 EXTERN_C const GUID DECLSPEC_SELECTANY DXGI_DEBUG_ALL =  { 0xe48ae283, 0xda80, 0x490b, 0x87, 0xe6, 0x43, 0xe9, 0xa9, 0xcf, 0xda, 0x8  };
@@ -140,10 +140,11 @@ namespace Omni
         IDXGIDebug* dxgiDebug;
         CheckSucceeded(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug)));
         CheckSucceeded(dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL));
-        OmniDebugBreak();
+        //OmniDebugBreak();
+        dxgiDebug->Release();
     }
 #endif
-
+     
     /*
     * DX12Module ctors
     */

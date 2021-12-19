@@ -191,7 +191,7 @@ namespace Omni
         std::promise<void> readyFlag;
         InitUIThreadArgs initArgs;
         initArgs.Args = &args;
-        initArgs.ThreadData = ConcurrencyModule::Get().RegisterExternalThread(UIThreadId);
+        initArgs.ThreadData = ConcurrencyModule::Get().RegisterExternalThread(UIThreadId, L"OmniWindowsUIThread");
         initArgs.ReadyFlag = &readyFlag;
 
         ResumeUIThread(std::function<void()>([=]() {

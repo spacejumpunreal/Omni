@@ -53,7 +53,7 @@ namespace Omni
 
         //1. main thread init
         {
-            ThreadData& mainThreadData = ThreadData::Create(MainThreadId);
+            ThreadData& mainThreadData = ThreadData::Create(MainThreadId, L"OmniMainThread");
             self->mThreadData.emplace(std::make_pair(MainThreadId, &mainThreadData));
             mainThreadData.InitAsMainOnMain(); //main thread
         }
@@ -158,11 +158,11 @@ namespace Omni
         return ret;
     }
 
-    ThreadData* ConcurrencyModule::RegisterExternalThread(ThreadId designatedTid)
+    ThreadData* ConcurrencyModule::RegisterExternalThread(ThreadId designatedTid, const wchar_t* extThreadName)
     {
         ConcurrencyModuleImpl* self = ConcurrencyModuleImpl::GetCombinePtr(this);
         ThreadId tid = designatedTid == InvalidThreadId ? self->mNextThreadId++ : designatedTid;
-        ThreadData* ret = &ThreadData::Create(tid);
+        ThreadData* ret = &ThreadData::Create(tid, extThreadName);
         self->mThreadData.emplace(std::make_pair(tid, ret));
         return ret;
     }

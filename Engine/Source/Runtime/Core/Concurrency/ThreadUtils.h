@@ -23,7 +23,7 @@ namespace Omni
     {
     public:
         //for Engine
-        static ThreadData& Create(ThreadId id);
+        static ThreadData& Create(ThreadId id, const wchar_t* name = L"OmniWorkerThread");
         void InitAsMainOnMain();
         void RunAndFinalizeAsMain(SystemInitializedCallback initCb, SystemWillQuitCallback quitCb);
 

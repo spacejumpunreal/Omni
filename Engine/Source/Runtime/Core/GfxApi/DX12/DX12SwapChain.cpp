@@ -53,6 +53,7 @@ namespace Omni
 			nullptr,
 			&swapchain));
 		CheckGfxApi(swapchain->QueryInterface(IID_PPV_ARGS(&mDX12SwapChain)));
+		swapchain->Release();
 		for (u32 iBuffer = 0; iBuffer < desc.BufferCount; ++iBuffer)
 		{
 			CheckGfxApi(mDX12SwapChain->GetBuffer(iBuffer, IID_PPV_ARGS(&mBackbuffers[iBuffer])));

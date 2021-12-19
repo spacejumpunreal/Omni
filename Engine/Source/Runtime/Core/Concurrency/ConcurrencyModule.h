@@ -29,7 +29,7 @@ namespace Omni
 		LockQueue* GetQueue(QueueKind queueKind);
 		ThreadData* CreateThread(const TThreadBody& body, ThreadId designatedTid = InvalidThreadId);
 		//for already existing thread, called on MainThread, return value should be passed to the existing thread, won't join it, but will check if it's finalized
-		ThreadData* RegisterExternalThread(ThreadId designatedTid = InvalidThreadId);
+		ThreadData* RegisterExternalThread(ThreadId designatedTid = InvalidThreadId, const wchar_t* extThreadName = L"OmniExternalThread");
 		void EnqueueWork(DispatchWorkItem& head, QueueKind queueKind);
 		void PollQueueUntil(QueueKind queueKind, const TimePoint* deadline);
 		void PollQueue(QueueKind queueKind);
