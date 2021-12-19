@@ -9,6 +9,13 @@
 
 namespace Omni
 {
+	//constants
+	const wchar_t* BackBufferNames[] = {
+		L"BackBuffer0",
+		L"BackBuffer1",
+		L"BackBuffer2",
+	};
+
 	DX12SwapChain::DX12SwapChain(const GfxApiSwapChainDesc& desc)
 		: mDesc(desc)
 		, mDX12SwapChain(nullptr)
@@ -37,13 +44,21 @@ namespace Omni
 		*/
 		winDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
+		IDXGISwapChain1* swapchain = nullptr;
 		CheckGfxApi(gDX12Context.DXGIFactory->CreateSwapChainForHwnd(
 			gDX12Context.D3DGraphicsCommandQueue,
 			desc.WindowHandle.ToNativeHandle(),
 			&winDesc,
 			nullptr,
 			nullptr,
-			&mDX12SwapChain));
+			&swapchain));
+		CheckGfxApi(swapchain->QueryInterface(IID_PPV_ARGS(&mDX12SwapChain)));
+		for (u32 iBuffer = 0; iBuffer < desc.BufferCount; ++iBuffer)
+		{
+			CheckGfxApi(mDX12SwapChain->GetBuffer(iBuffer, IID_PPV_ARGS(&mBackbuffers[iBuffer])));
+			mBackbuffers[iBuffer]->SetName(BackBufferNames[iBuffer]);
+		}
+		
 	}
 	void DX12SwapChain::Destroy()
 	{
@@ -52,13 +67,19 @@ namespace Omni
 	}
 	DX12SwapChain::~DX12SwapChain()
 	{
+		for (u32 iBuffer = 0; iBuffer < mDesc.BufferCount; ++iBuffer)
+		{
+			SafeRelease(mBackbuffers[iBuffer]);
+		}
 		gDX12Context.WaitGPUIdle();
 		mDX12SwapChain->Release();
 		mDX12SwapChain = nullptr;
 	}
 	void DX12SwapChain::Present(bool waitForVSync)
 	{
+		//printf("Buffer%d to be presented\n", mDX12SwapChain->GetCurrentBackBufferIndex());
 		CheckGfxApi(mDX12SwapChain->Present(waitForVSync ? 1 : 0, 0));
+		
 	}
 	SharedPtr<GfxApiTexture> DX12SwapChain::GetCurrentBackbuffer()
 	{

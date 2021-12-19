@@ -84,6 +84,8 @@ namespace Omni
 
     void DemoRendererModulePrivateImpl::Tick()
     {
+        DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
+        self.SwapChain->Present(true);
     }
 
     static Module* DemoRendererModuleCtor(const EngineInitArgMap&)
