@@ -3,53 +3,64 @@
 #include "Runtime/Base/BaseAPI.h"
 #include "Runtime/Base/Memory/MemoryDefs.h"
 #include "Runtime/Base/Misc/ArrayUtils.h"
-#include "Runtime/Base/Container/LinkedList.h"
 
 namespace Omni
 {
-	class BASE_API ObjectCacheBase
-	{
-	public:
-	protected:
-		ObjectCacheBase(u32 nodeSize, u16 align, u16 growSize, PMRResource* memResource);
-		~ObjectCacheBase();
-		SListNode* AllocImpl();
-		void FreeImpl(SListNode*);
-	private:
-		PMRResource*	mResource;
-		SListNode*		mStack;
-		u32				mNodeSize;
-		u16				mNodeAlign;
-		u16				mGrowSize;
-	};
-
 	template<typename T>
 	concept ReusableObject = requires
-		(T a) { a.Cleanup(); T{}; }	&& 
+		(T a) { a.CleanupForRecycle(); T{}; } &&
 		sizeof(T) >= sizeof(void*);
 
 	template<ReusableObject TObject>
-	class ObjectCache : ObjectCacheBase
+	class ObjectCache
 	{
+	private:
+		struct TObjectNode
+		{
+			TObject Object;
+			TObjectNode* Next;
+		};
 	public:
+		ObjectCache(PMRResource* resource, u32 growCount)
+			: mStack(nullptr)
+			, mGrowCount(growCount)
+			, mAllocator(resource)
+		{}
+		~ObjectCache()
+		{
+			Cleanup();
+		}
 		TObject* Alloc()
-		{ 
-			TObject* ret = (TObject*)AllocImpl();
-			return ret;
+		{
+			if (mStack)
+			{
+				TObjectNode* ret = mStack;
+				mStack = mStack->Next;
+				return (TObject*)ret;
+			}
+			TObjectNode* node = mAllocator.new_object<TObjectNode>();
+			return (TObject*)node;
 		}
 		void Free(TObject* obj) 
-		{ 
-			obj->Cleanup();
-			FreeImpl((SListNode*)obj);
+		{
+			obj->CleanupForRecycle();
+			TObjectNode* node = (TObjectNode*)obj;
+			node->Next = mStack;
+			mStack = node;
 		}
-	public:
-		ObjectCache(PMRResource* memResource, u32 growSize)
-			: ObjectCacheBase(
-				AlignUpSize(sizeof(TObject), alignof(TObject)),
-				alignof(TObject), growSize,
-				memResource)
-		{}
+		void Cleanup()
+		{
+			while (mStack)
+			{
+				TObjectNode* node = mStack;
+				mStack = mStack->Next;
+				TObjectNode* obj = (TObjectNode*)node;
+				mAllocator.delete_object(obj);
+			}
+		}
+	private:
+		TObjectNode* mStack;
+		u32 mGrowCount;
+		PMRAllocatorT<TObjectNode> mAllocator;
 	};
-
-	
 }

@@ -8,6 +8,7 @@
 #include "Runtime/Core/GfxApi/GfxApiModule.h"
 #include "Runtime/Core/Platform/WindowModule.h"
 #include "Runtime/Engine/Timing/TimingModule.h"
+#include "Runtime/Base/Memory/ObjectCache.h"
 
 
 namespace Omni
@@ -16,14 +17,41 @@ namespace Omni
     * declarations
     */
 
+    struct TestObject
+    {
+        TestObject()
+        {
+            Mem = OmniMalloc(MemoryKind::GfxApi, 1024);
+        }
+        ~TestObject()
+        {
+            if (Mem)
+            {
+                OmniFree(MemoryKind::GfxApi, 1024, Mem);
+                Mem = nullptr;
+            }
+        }
+        void CleanupForRecycle()
+        {
+
+        }
+
+        int X;
+        Vector4 V4;
+        void* Mem;
+    };
+
     struct DemoRendererModulePrivateImpl : public ICallback
     {
     public:
+        DemoRendererModulePrivateImpl();
         void Tick();
         void operator()() override { Tick(); }
     public:
-        DispatchWorkItem*               TickRegistry;
+        DispatchWorkItem*               TickRegistry = nullptr;
         SharedPtr<GfxApiSwapChain>      SwapChain;
+        ObjectCache<TestObject>         ObjectCache;
+        TestObject*                     TPtr = nullptr;
     };
 
     using DemoRendererImpl = PImplCombine<DemoRendererModule, DemoRendererModulePrivateImpl>;
@@ -36,6 +64,10 @@ namespace Omni
     /**
     * definitions
     */
+
+    DemoRendererModulePrivateImpl::DemoRendererModulePrivateImpl()
+        : ObjectCache(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi).resource(), 2)
+    {}
 
     void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     {
@@ -78,6 +110,10 @@ namespace Omni
         MemoryModule& mm = MemoryModule::Get();
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         
+        if (self.TPtr)
+            self.ObjectCache.Free(self.TPtr);
+        self.ObjectCache.Cleanup();
+
         self.SwapChain.Clear();
         tm.UnregisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority);
         Module::Finalize();
@@ -91,6 +127,11 @@ namespace Omni
     void DemoRendererModulePrivateImpl::Tick()
     {
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
+        if (TPtr)
+            self.ObjectCache.Free(TPtr);
+        TPtr = self.ObjectCache.Alloc();
+#if 0
+        
         GfxApiModule& gfxApiM = GfxApiModule::Get();
 
         GfxApiRenderPassDesc passDesc;
@@ -103,7 +144,7 @@ namespace Omni
         GfxApiCommandContext* cmdCtx = gfxApiM.BeginContext(cmdCtxDesc);
 
         gfxApiM.EndContext(cmdCtx);
-
+#endif
         self.SwapChain->Present(true);
     }
 
