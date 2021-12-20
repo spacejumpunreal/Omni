@@ -1,0 +1,11 @@
+# points
+- principle: unity, most code should be designed following 1 flavor
+- flavors to choose:
+	- C style: no class member functions, all apis in GfxApiModule
+	- c++ style: apis splitted into classes
+	
+- metrics
+	- redundancy -----declare/implentation means redundancy, parent class interface vs concete implementation means redundancy
+	- framework, multiple api implementation ----you will have to use class, virtual methods anyway
+	- opaqueness -----code no implementation member data should be exposeds
+	- one direction -----need to be efficiently one way(no readback), each call shoul be able to be translated into a command in a easy way

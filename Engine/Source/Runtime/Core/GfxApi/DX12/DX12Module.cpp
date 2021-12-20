@@ -24,7 +24,7 @@ namespace Omni
     //forward decls
     // 
     //declarations
-    class DX12Module : public GfxApiModule
+    class DX12Module final : public GfxApiModule
     {
     public:
         DX12Module(const EngineInitArgMap& args);
