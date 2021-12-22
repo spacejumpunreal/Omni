@@ -3,8 +3,9 @@
 #include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Context.h"
-#include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Fence.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Texture.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
 
 
 namespace Omni
@@ -54,11 +55,17 @@ namespace Omni
 			&swapchain));
 		CheckGfxApi(swapchain->QueryInterface(IID_PPV_ARGS(&mDX12SwapChain)));
 		swapchain->Release();
+		GfxApiTextureDesc texDesc;
+		texDesc.Width = desc.Width;
+		texDesc.Height = desc.Height;
+		texDesc.AccessFlags = GfxApiAccessFlags::GPUWrite;
+		texDesc.Format = desc.Format;
 		for (u32 iBuffer = 0; iBuffer < desc.BufferCount; ++iBuffer)
 		{
 			ID3D12Resource* res;
 			CheckGfxApi(mDX12SwapChain->GetBuffer(iBuffer, IID_PPV_ARGS(&res)));
 			res->SetName(BackBufferNames[iBuffer]);
+			mBackbuffers[iBuffer] = OMNI_NEW(MemoryKind::GfxApi) DX12Texture(texDesc, res);
 		}
 	}
 	void DX12SwapChain::Destroy()

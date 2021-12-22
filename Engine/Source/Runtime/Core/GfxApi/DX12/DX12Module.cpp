@@ -106,6 +106,14 @@ namespace Omni
         return {};
     }
 
+    GfxApiTextureRef DX12Module::WrapExternalTexture(const GfxApiTextureDesc& desc, void* texture)
+    {
+        (void)desc;
+        (void)texture;
+        //return GfxApiSwapChainRef(OMNI_NEW(MemoryKind::GfxApi)DX12SwapChain(desc));
+        return {};
+    }
+
     GfxApiSwapChainRef DX12Module::CreateSwapChain(const GfxApiSwapChainDesc& desc)
     {
         return GfxApiSwapChainRef(OMNI_NEW(MemoryKind::GfxApi)DX12SwapChain(desc));

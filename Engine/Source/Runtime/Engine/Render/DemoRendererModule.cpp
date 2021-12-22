@@ -91,7 +91,7 @@ namespace Omni
         descSwapChain.Height = h;
         descSwapChain.Format = GfxApiFormat::R8G8B8A8_UNORM;
         descSwapChain.WindowHandle = wm.GetMainWindowHandle();
-        self.SwapChain = gfxApi.CreateGfxApiObject(descSwapChain);
+        self.SwapChain = gfxApi.CreateSwapChain(descSwapChain);
         self.SwapChain->Present(true);
         tm.RegisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority, DemoRendererImpl::GetData(this), QueueKind::Main);
         tm.SetFrameRate_OnMainThread(EngineFrameType::Render, 30);
@@ -144,8 +144,9 @@ namespace Omni
         GfxApiCommandContext* cmdCtx = gfxApiM.BeginContext(cmdCtxDesc);
 
         gfxApiM.EndContext(cmdCtx);
-#endif
+
         self.SwapChain->Present(true);
+#endif
     }
 
     static Module* DemoRendererModuleCtor(const EngineInitArgMap&)

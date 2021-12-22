@@ -3,6 +3,7 @@ GfxApiMethod(GfxApiBufferRef CreateBuffer(const GfxApiBufferDesc& desc))
 
 //Texture
 GfxApiMethod(GfxApiTextureRef CreateTexture(const GfxApiTextureDesc& desc))
+GfxApiMethod(GfxApiTextureRef WrapExternalTexture(const GfxApiTextureDesc& desc, void* handle))
 
 //SwapChain
 GfxApiMethod(GfxApiSwapChainRef CreateSwapChain(const GfxApiSwapChainDesc& desc))

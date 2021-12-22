@@ -3,8 +3,9 @@
 #if OMNI_WINDOWS
 #include "Runtime/Core/GfxApi/GfxApiConstants.h"
 #include "Runtime/Core/GfxApi/GfxApiObject.h"
-#include <d3d12.h>
 
+//forward decl
+struct IDXGISwapChain3;
 
 namespace Omni
 {
