@@ -56,10 +56,10 @@ namespace Omni
 		swapchain->Release();
 		for (u32 iBuffer = 0; iBuffer < desc.BufferCount; ++iBuffer)
 		{
-			CheckGfxApi(mDX12SwapChain->GetBuffer(iBuffer, IID_PPV_ARGS(&mBackbuffers[iBuffer])));
-			mBackbuffers[iBuffer]->SetName(BackBufferNames[iBuffer]);
+			ID3D12Resource* res;
+			CheckGfxApi(mDX12SwapChain->GetBuffer(iBuffer, IID_PPV_ARGS(&res)));
+			res->SetName(BackBufferNames[iBuffer]);
 		}
-		
 	}
 	void DX12SwapChain::Destroy()
 	{
@@ -68,13 +68,17 @@ namespace Omni
 	}
 	DX12SwapChain::~DX12SwapChain()
 	{
+		gDX12Context.WaitGPUIdle();
 		for (u32 iBuffer = 0; iBuffer < mDesc.BufferCount; ++iBuffer)
 		{
-			SafeRelease(mBackbuffers[iBuffer]);
+			mBackbuffers[iBuffer].Clear();
 		}
-		gDX12Context.WaitGPUIdle();
 		mDX12SwapChain->Release();
 		mDX12SwapChain = nullptr;
+	}
+	const GfxApiSwapChainDesc& DX12SwapChain::GetDesc()
+	{
+		return mDesc;
 	}
 	void DX12SwapChain::Present(bool waitForVSync)
 	{
@@ -88,9 +92,14 @@ namespace Omni
 		NotImplemented("DX12SwapChain::Update");
 	}
 
-	SharedPtr<GfxApiTexture> DX12SwapChain::GetCurrentBackbuffer()
+	u32 DX12SwapChain::GetCurrentBackbufferIndex()
 	{
-		return SharedPtr<GfxApiTexture>();
+		return mDX12SwapChain->GetCurrentBackBufferIndex();
+	}
+
+	GfxApiTextureRef DX12SwapChain::GetCurrentBackbuffer()
+	{
+		return mBackbuffers[mDX12SwapChain->GetCurrentBackBufferIndex()];
 	}
 }
 

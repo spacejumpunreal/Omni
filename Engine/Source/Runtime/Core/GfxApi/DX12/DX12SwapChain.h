@@ -16,13 +16,15 @@ namespace Omni
 		DX12SwapChain(const GfxApiSwapChainDesc& desc);
 		~DX12SwapChain();
 		void Destroy() override;
+		const GfxApiSwapChainDesc& GetDesc();
 		void Present(bool waitForVSync) override;
 		void Update(const GfxApiSwapChainDesc& desc) override;
-		SharedPtr<GfxApiTexture> GetCurrentBackbuffer() override;
+		u32 GetCurrentBackbufferIndex() override;
+		GfxApiTextureRef GetCurrentBackbuffer() override;
 	private:
 		GfxApiSwapChainDesc mDesc;
 		IDXGISwapChain3* mDX12SwapChain;
-		ID3D12Resource* mBackbuffers[FrameResourceCount];
+		GfxApiTextureRef mBackbuffers[MaxBackbuffers];
 	};
 }
 

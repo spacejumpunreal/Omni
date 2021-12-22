@@ -9,3 +9,10 @@
 	- framework, multiple api implementation ----you will have to use class, virtual methods anyway
 	- opaqueness -----code no implementation member data should be exposeds
 	- one direction -----need to be efficiently one way(no readback), each call shoul be able to be translated into a command in a easy way
+	
+# cases
+- unity: Object lives on MainThread or RenderThread(for QS modification), GfxDevice and GfxApi implementation is seperated
+- unreal: object lives on RenderThread, GfxApi implementation and RenderThread have no strict seperation
+
+# decision
+- Object oriented style

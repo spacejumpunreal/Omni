@@ -72,6 +72,13 @@ namespace Omni
         GfxApiBufferDesc() : GfxApiObjectDesc(GfxApiObjectType::Buffer) {}
     };
 
+    class GfxApiBuffer : public SharedObject
+    {
+        virtual const GfxApiBufferDesc& GetDesc() = 0;
+    };
+
+    using GfxApiBufferRef = SharedPtr<GfxApiBuffer>;
+
     struct GfxApiTextureDesc : public GfxApiObjectDesc
     {
     public:
@@ -89,6 +96,8 @@ namespace Omni
     public:
         virtual const GfxApiTextureDesc& GetDesc() = 0;
     };
+
+    using GfxApiTextureRef = SharedPtr<GfxApiTexture>;
 
     struct GfxApiSwapChainDesc : public GfxApiObjectDesc
     {
@@ -111,10 +120,14 @@ namespace Omni
     class GfxApiSwapChain : public SharedObject
     {
     public:
+        virtual const GfxApiSwapChainDesc& GetDesc() = 0;
         virtual void Present(bool waitFotVSync) = 0;
         virtual void Update(const GfxApiSwapChainDesc& desc) = 0;
-        virtual SharedPtr<GfxApiTexture> GetCurrentBackbuffer() = 0;
+        virtual u32 GetCurrentBackbufferIndex() = 0;
+        virtual GfxApiTextureRef GetCurrentBackbuffer() = 0;
     };
+    
+    using GfxApiSwapChainRef = SharedPtr<GfxApiSwapChain>;
 
 
     /**

@@ -92,19 +92,23 @@ namespace Omni
     /*
     * GfxApiMethod implementations
     */
-    SharedPtr<SharedObject> DX12Module::CreateGfxApiObject(const GfxApiObjectDesc& desc)
+    GfxApiBufferRef DX12Module::CreateBuffer(const GfxApiBufferDesc& desc)
     {
-        SharedObject* ret = nullptr;
-        switch (desc.Type)
-        {
-        case GfxApiObjectType::Swapchain:
-            ret = OMNI_NEW(MemoryKind::GfxApi)DX12SwapChain(static_cast<const GfxApiSwapChainDesc&>(desc));
-            break;
-        default:
-            NotImplemented();
-            break;
-        }
-        return ret;
+        (void)desc;
+        //return GfxApiBufferRef(OMNI_NEW(MemoryKind::GfxApi)DX12SwapChain(desc));
+        return {};
+    }
+
+    GfxApiTextureRef DX12Module::CreateTexture(const GfxApiTextureDesc& desc)
+    {
+        (void)desc;
+        //return GfxApiSwapChainRef(OMNI_NEW(MemoryKind::GfxApi)DX12SwapChain(desc));
+        return {};
+    }
+
+    GfxApiSwapChainRef DX12Module::CreateSwapChain(const GfxApiSwapChainDesc& desc)
+    {
+        return GfxApiSwapChainRef(OMNI_NEW(MemoryKind::GfxApi)DX12SwapChain(desc));
     }
 
     GfxApiRenderPass* DX12Module::BeginRenderPass(const GfxApiRenderPassDesc& desc)
