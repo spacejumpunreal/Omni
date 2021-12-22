@@ -144,9 +144,9 @@ namespace Omni
         GfxApiCommandContext* cmdCtx = gfxApiM.BeginContext(cmdCtxDesc);
 
         gfxApiM.EndContext(cmdCtx);
-
-        self.SwapChain->Present(true);
 #endif
+        self.SwapChain->Present(true);
+
     }
 
     static Module* DemoRendererModuleCtor(const EngineInitArgMap&)

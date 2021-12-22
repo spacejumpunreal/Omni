@@ -22,8 +22,8 @@ namespace Omni
         :Initialized(false) 
     {}
 
-	void DX12Context::Initialize()
-	{
+    void DX12Context::Initialize()
+    {
         UINT dxgiFactoryFlags = 0;
         if constexpr (EnableDebugLayer)
         {
@@ -72,7 +72,7 @@ namespace Omni
         CheckSucceeded(D3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&D3DGraphicsCommandQueue)));
         D3DGraphicsCommandQueue->SetName(L"OmniGraphicsQueue");
         Initialized = true;
-	}
+    }
 
     void DX12Context::Finalize()
     {
