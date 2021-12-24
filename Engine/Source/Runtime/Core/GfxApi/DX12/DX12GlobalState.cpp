@@ -1,7 +1,8 @@
 #include "Runtime/Core/CorePCH.h"
 #if OMNI_WINDOWS
-#include "Runtime/Core/GfxApi/DX12/DX12Context.h"
+#include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
 #include "Runtime/Base/Misc/AssertUtils.h"
+#include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/Platform/WindowsMacros.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Fence.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
@@ -16,13 +17,14 @@ namespace Omni
     static constexpr bool EnableDebugLayer = OMNI_DEBUG;
 
     //global variable
-    DX12Context gDX12Context;
+    DX12GlobalState gDX12GlobalState;
 
-    DX12Context::DX12Context() 
-        :Initialized(false) 
+    DX12GlobalState::DX12GlobalState() 
+        : RenderPassObjectCache(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi).resource(), 1)
+        , Initialized(false)
     {}
 
-    void DX12Context::Initialize()
+    void DX12GlobalState::Initialize()
     {
         UINT dxgiFactoryFlags = 0;
         if constexpr (EnableDebugLayer)
@@ -74,8 +76,10 @@ namespace Omni
         Initialized = true;
     }
 
-    void DX12Context::Finalize()
+    void DX12GlobalState::Finalize()
     {
+        RenderPassObjectCache.Cleanup();
+
         DXGIFactory = nullptr;
         DXGIAdaptor = nullptr;
         D3DGraphicsCommandQueue = nullptr;
@@ -93,7 +97,7 @@ namespace Omni
 #endif
     }
 
-    void DX12Context::WaitGPUIdle()
+    void DX12GlobalState::WaitGPUIdle()
     {
         auto fence = CreateFence(0);
         u64 seq = 1;

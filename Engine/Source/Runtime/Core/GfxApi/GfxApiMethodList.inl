@@ -13,5 +13,5 @@ GfxApiMethod(GfxApiRenderPass* BeginRenderPass(const GfxApiRenderPassDesc& desc)
 GfxApiMethod(void EndRenderPass(const GfxApiRenderPass* desc))
 
 //Command Context
-GfxApiMethod(GfxApiCommandContext* BeginContext(const GfxApiCommandContextDesc& desc)) //for threaded recording
-GfxApiMethod(void EndContext(GfxApiCommandContext* context))
+//GfxApiMethod(GfxApiCommandContext* BeginContext(const GfxApiCommandContextDesc& desc)) //for threaded recording
+//GfxApiMethod(void EndContext(GfxApiCommandContext* context))

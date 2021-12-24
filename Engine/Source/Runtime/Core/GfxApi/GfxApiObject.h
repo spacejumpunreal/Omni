@@ -172,9 +172,12 @@ namespace Omni
         GfxApiRenderPass*   RenderPass;
     };
 
+    
     class GfxApiRenderPass
     {
     public:
+        virtual GfxApiCommandContext* BeginContext() = 0;
+        virtual void EndContext(GfxApiCommandContext* ctx) = 0;
     };
 
     class GfxApiCommandContext

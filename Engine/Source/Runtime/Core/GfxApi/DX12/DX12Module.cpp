@@ -7,7 +7,7 @@
 #include "Runtime/Core/System/ModuleExport.h"
 #include "Runtime/Core/System/ModuleImplHelpers.h"
 #include "Runtime/Core/GfxApi/GfxApiModule.h"
-#include "Runtime/Core/GfxApi/DX12/DX12Context.h"
+#include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
 #include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
 
 #include <d3d12.h>
@@ -57,8 +57,8 @@ namespace Omni
         MemoryModule& mm = MemoryModule::Get();
         mm.Retain();
 
-        CheckDebug(!gDX12Context.Initialized);
-        gDX12Context.Initialize();
+        CheckDebug(!gDX12GlobalState.Initialized);
+        gDX12GlobalState.Initialize();
 
         Module::Initialize(args);
         CheckAlways(gGfxApiModule == nullptr);
@@ -77,7 +77,7 @@ namespace Omni
         CheckAlways(gGfxApiModule != nullptr);
         gGfxApiModule = nullptr;
 
-        gDX12Context.Finalize();
+        gDX12GlobalState.Finalize();
 
         MemoryModule& mm = MemoryModule::Get();
         Module::Finalize();
@@ -128,17 +128,6 @@ namespace Omni
     void DX12Module::EndRenderPass(const GfxApiRenderPass* desc)
     {
         (void)desc;
-    }
-
-    GfxApiCommandContext* DX12Module::BeginContext(const GfxApiCommandContextDesc& desc)
-    {
-        (void)desc;
-        return nullptr;
-    }
-    
-    void DX12Module::EndContext(GfxApiCommandContext* context)
-    {
-        (void)context;
     }
 
 #if DEBUG_DX_OBJECT_LEAK_ON_QUIT

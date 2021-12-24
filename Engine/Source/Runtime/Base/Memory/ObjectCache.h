@@ -11,6 +11,7 @@ namespace Omni
 		(T a) { a.CleanupForRecycle(); T{}; } &&
 		sizeof(T) >= sizeof(void*);
 
+    //TODO: add refiller, make it virtual to avoid dependency
 	template<ReusableObject TObject>
 	class ObjectCache
 	{

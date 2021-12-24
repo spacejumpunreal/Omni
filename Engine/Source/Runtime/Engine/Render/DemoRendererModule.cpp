@@ -130,21 +130,15 @@ namespace Omni
         if (TPtr)
             self.ObjectCache.Free(TPtr);
         TPtr = self.ObjectCache.Alloc();
-#if 0
         
         GfxApiModule& gfxApiM = GfxApiModule::Get();
 
         GfxApiRenderPassDesc passDesc;
         passDesc.Color[0].Texture = self.SwapChain->GetCurrentBackbuffer();
+        passDesc.Color[0].ClearValue = Vector4(1, 0, 0, 0);
         GfxApiRenderPass* renderPass = gfxApiM.BeginRenderPass(passDesc);
         
-        GfxApiCommandContextDesc cmdCtxDesc;
-        cmdCtxDesc.RenderPass = renderPass;
-        cmdCtxDesc.Type = GfxApiContextType::Render;
-        GfxApiCommandContext* cmdCtx = gfxApiM.BeginContext(cmdCtxDesc);
-
-        gfxApiM.EndContext(cmdCtx);
-#endif
+        gfxApiM.EndRenderPass(renderPass);
         self.SwapChain->Present(true);
 
     }

@@ -2,7 +2,7 @@
 #if OMNI_WINDOWS
 #include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
-#include "Runtime/Core/GfxApi/DX12/DX12Context.h"
+#include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Fence.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Texture.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
@@ -46,8 +46,8 @@ namespace Omni
 		winDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
 		IDXGISwapChain1* swapchain = nullptr;
-		CheckGfxApi(gDX12Context.DXGIFactory->CreateSwapChainForHwnd(
-			gDX12Context.D3DGraphicsCommandQueue,
+		CheckGfxApi(gDX12GlobalState.DXGIFactory->CreateSwapChainForHwnd(
+			gDX12GlobalState.D3DGraphicsCommandQueue,
 			desc.WindowHandle.ToNativeHandle(),
 			&winDesc,
 			nullptr,
@@ -75,7 +75,7 @@ namespace Omni
 	}
 	DX12SwapChain::~DX12SwapChain()
 	{
-		gDX12Context.WaitGPUIdle();
+		gDX12GlobalState.WaitGPUIdle();
 		for (u32 iBuffer = 0; iBuffer < mDesc.BufferCount; ++iBuffer)
 		{
 			mBackbuffers[iBuffer].Clear();
