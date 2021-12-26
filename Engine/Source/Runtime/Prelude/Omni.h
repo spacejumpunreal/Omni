@@ -1,6 +1,7 @@
 #pragma once
 
 #define NOMINMAX
+#define _HAS_EXCEPTIONS 0
 #include "Runtime/Prelude/MacroUtils.h"
 #include <stddef.h>
 #include <stdint.h>
@@ -29,6 +30,7 @@
 ////////////////////////////////configs
 #if _DEBUG
 #define OMNI_DEBUG 1
+#define _ITERATOR_DEBUG_LEVEL 0
 #else
 #define OMNI_DEBUG 0
 #endif

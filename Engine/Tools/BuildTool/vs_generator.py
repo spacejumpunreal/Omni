@@ -204,6 +204,7 @@ class VS2022Generator(base_generator.BaseGenerator):
                     XmlNode("TreatWarningAsError", "true"),
                     XmlNode("PrecompiledHeader", "Use" if target.pch else "NotUsing"),
                     XmlNode("PrecompiledHeaderFile", pch_path),
+                    #XmlNode("ExceptionHandling", "false"),  TODO:make ExceptionHandling a flag, things like GTest still needs it
                 ))
 
                 subsystem = {

@@ -2,66 +2,47 @@
 #include "Runtime/Prelude/Omni.h"
 #include "Runtime/Base/BaseAPI.h"
 #include "Runtime/Base/Memory/MemoryDefs.h"
-#include "Runtime/Base/Misc/ArrayUtils.h"
+#include "Runtime/Base/Container/PMRContainers.h"
 
 namespace Omni
 {
-	template<typename T>
-	concept ReusableObject = requires
-		(T a) { a.CleanupForRecycle(); T{}; } &&
-		sizeof(T) >= sizeof(void*);
+    struct IObjectCacheFactory
+    {
+        virtual void* CreateObject() = 0;
+        virtual void DestroyObject(void* obj) = 0;
+        virtual void RecycleCleanup(void* obj)  = 0;
+        virtual void Destroy() = 0;
+    };
 
-    //TODO: add refiller, make it virtual to avoid dependency
-	template<ReusableObject TObject>
-	class ObjectCache
+    struct ObjectCacheBase
+    {
+    public:
+        BASE_API void Initialize(PMRAllocator allocator, IObjectCacheFactory* factory, u32 growCount);
+        BASE_API ~ObjectCacheBase();
+        BASE_API void* Alloc();
+        BASE_API void Free(void* obj);
+        BASE_API void Cleanup();
+    protected:
+        PMRVector<void*>            mObjects;
+        IObjectCacheFactory*        mFactory;
+        u32                         mGrowCount;
+    };
+
+	template<typename TObject>
+	class ObjectCache final : public ObjectCacheBase
 	{
-	private:
-		struct TObjectNode
-		{
-			TObject Object;
-			TObjectNode* Next;
-		};
 	public:
-		ObjectCache(PMRResource* resource, u32 growCount)
-			: mStack(nullptr)
-			, mGrowCount(growCount)
-			, mAllocator(resource)
-		{}
-		~ObjectCache()
+        ObjectCache(PMRAllocator allocator = {}, IObjectCacheFactory* factory = nullptr, u32 growCount = 1)
 		{
-			Cleanup();
-		}
+            Initialize(allocator, factory, growCount);
+        }
 		TObject* Alloc()
 		{
-			if (mStack)
-			{
-				TObjectNode* ret = mStack;
-				mStack = mStack->Next;
-				return (TObject*)ret;
-			}
-			TObjectNode* node = mAllocator.new_object<TObjectNode>();
-			return (TObject*)node;
+            return (TObject*)ObjectCacheBase::Alloc();
 		}
 		void Free(TObject* obj) 
 		{
-			obj->CleanupForRecycle();
-			TObjectNode* node = (TObjectNode*)obj;
-			node->Next = mStack;
-			mStack = node;
+            ObjectCacheBase::Free(obj);
 		}
-		void Cleanup()
-		{
-			while (mStack)
-			{
-				TObjectNode* node = mStack;
-				mStack = mStack->Next;
-				TObjectNode* obj = (TObjectNode*)node;
-				mAllocator.delete_object(obj);
-			}
-		}
-	private:
-		TObjectNode* mStack;
-		u32 mGrowCount;
-		PMRAllocatorT<TObjectNode> mAllocator;
 	};
 }

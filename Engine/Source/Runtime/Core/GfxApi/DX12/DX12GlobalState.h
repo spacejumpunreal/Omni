@@ -25,7 +25,6 @@ namespace Omni
     public://DX12 object pools
 
     public://object pools
-        ObjectCache<DX12RenderPass>         RenderPassObjectCache;
     public://state flags
 		bool								Initialized;
 	};

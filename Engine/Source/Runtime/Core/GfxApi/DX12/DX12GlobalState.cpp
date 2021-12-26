@@ -20,8 +20,7 @@ namespace Omni
     DX12GlobalState gDX12GlobalState;
 
     DX12GlobalState::DX12GlobalState() 
-        : RenderPassObjectCache(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi).resource(), 1)
-        , Initialized(false)
+        : Initialized(false)
     {}
 
     void DX12GlobalState::Initialize()
@@ -78,8 +77,6 @@ namespace Omni
 
     void DX12GlobalState::Finalize()
     {
-        RenderPassObjectCache.Cleanup();
-
         DXGIFactory = nullptr;
         DXGIAdaptor = nullptr;
         D3DGraphicsCommandQueue = nullptr;
