@@ -18,6 +18,7 @@ namespace Omni
     {
     public:
         BASE_API void Initialize(PMRAllocator allocator, IObjectCacheFactory* factory, u32 growCount);
+        BASE_API ObjectCacheBase();
         BASE_API ~ObjectCacheBase();
         BASE_API void* Alloc();
         BASE_API void Free(void* obj);
@@ -26,6 +27,7 @@ namespace Omni
         PMRVector<void*>            mObjects;
         IObjectCacheFactory*        mFactory;
         u32                         mGrowCount;
+        u32                         mAllocCount;
     };
 
 	template<typename TObject>

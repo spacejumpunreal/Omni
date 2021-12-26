@@ -6,6 +6,7 @@
 #include "Runtime/Core/Platform/WindowsMacros.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Fence.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
+#include "Runtime/Core/GfxApi/DX12/DX12ObjectFactories.h"
 #include <dxgidebug.h>
 
 
@@ -25,6 +26,9 @@ namespace Omni
 
     void DX12GlobalState::Initialize()
     {
+        /**
+        * DX12 global obejcts
+        */
         UINT dxgiFactoryFlags = 0;
         if constexpr (EnableDebugLayer)
         {
@@ -72,11 +76,34 @@ namespace Omni
         queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
         CheckSucceeded(D3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&D3DGraphicsCommandQueue)));
         D3DGraphicsCommandQueue->SetName(L"OmniGraphicsQueue");
+        
+        /**
+        * DX12 object cache
+        */
+        mDirectCommandListCache.Initialize(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi), new ID3D12CommandListCacheFactory(D3DDevice), 4);
+
+
+        /**
+        * object cache
+        */
+
         Initialized = true;
     }
 
     void DX12GlobalState::Finalize()
     {
+        /**
+        * DX12 object cache
+        */
+        mDirectCommandListCache.Cleanup();
+
+        /**
+        * object cache
+        */
+
+        /**
+        * DX12 global obejcts
+        */
         DXGIFactory = nullptr;
         DXGIAdaptor = nullptr;
         D3DGraphicsCommandQueue = nullptr;
@@ -86,7 +113,7 @@ namespace Omni
         //hack to check
 #if OMNI_DEBUG
         void* checkBegin = this;
-        void* checkEnd = &Initialized;
+        void* checkEnd = &D3DDummyPtr;
         for (void** cp = (void**)checkBegin; cp < checkEnd; ++cp)
         {
             CheckAlways(*cp == nullptr);

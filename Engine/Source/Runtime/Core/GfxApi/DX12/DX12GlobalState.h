@@ -22,9 +22,11 @@ namespace Omni
 		ComPtr<IDXGIAdapter1>				DXGIAdaptor;
 		ComPtr<ID3D12Device>				D3DDevice;
 		ComPtr<ID3D12CommandQueue>			D3DGraphicsCommandQueue;
+        ComPtr<ID3D12Resource>			    D3DDummyPtr;
     public://DX12 object pools
-
+        ObjectCache<ID3D12CommandList>      mDirectCommandListCache;
     public://object pools
+        ObjectCache<DX12RenderPass>         mRenderPassCache;
     public://state flags
 		bool								Initialized;
 	};
