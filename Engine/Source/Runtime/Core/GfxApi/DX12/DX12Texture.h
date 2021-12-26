@@ -1,7 +1,6 @@
 #pragma once
 #include "Runtime/Prelude/Omni.h"
 #if OMNI_WINDOWS
-#include "Runtime/Core/GfxApi/GfxApiConstants.h"
 #include "Runtime/Core/GfxApi/GfxApiObject.h"
 
 //forward decl

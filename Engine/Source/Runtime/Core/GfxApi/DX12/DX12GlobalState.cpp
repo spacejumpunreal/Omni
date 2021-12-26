@@ -81,6 +81,7 @@ namespace Omni
         * DX12 object cache
         */
         mDirectCommandListCache.Initialize(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi), new ID3D12CommandListCacheFactory(D3DDevice), 4);
+        mCommandAllocatorCache.Initialize(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi), new ID3D12CommandAllocatorCacheFactory(D3DDevice), 4);
 
 
         /**
@@ -92,10 +93,12 @@ namespace Omni
 
     void DX12GlobalState::Finalize()
     {
+        WaitGPUIdle();
         /**
         * DX12 object cache
         */
         mDirectCommandListCache.Cleanup();
+        mCommandAllocatorCache.Cleanup();
 
         /**
         * object cache

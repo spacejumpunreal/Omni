@@ -20,6 +20,9 @@ namespace Omni
 	template<typename T>
 	using PMRVector = StdPmr::vector<T>;
 
+    template<typename T>
+    using PMRList = StdPmr::list<T>;
+
 	template<typename T>
 	using PMRDeque = StdPmr::deque<T>;
 
