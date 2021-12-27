@@ -7,6 +7,8 @@
 #include "Runtime/Core/GfxApi/DX12/DX12Fence.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
 #include "Runtime/Core/GfxApi/DX12/DX12ObjectFactories.h"
+#include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
+
 #include <dxgidebug.h>
 
 
@@ -22,6 +24,7 @@ namespace Omni
 
     DX12GlobalState::DX12GlobalState() 
         : Initialized(false)
+        , ObjectLifeTimeManager(nullptr)
     {}
 
     void DX12GlobalState::Initialize()
@@ -80,13 +83,17 @@ namespace Omni
         /**
         * DX12 object cache
         */
-        mDirectCommandListCache.Initialize(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi), new ID3D12CommandListCacheFactory(D3DDevice), 4);
-        mCommandAllocatorCache.Initialize(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi), new ID3D12CommandAllocatorCacheFactory(D3DDevice), 4);
-
+        DirectCommandListCache.Initialize(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi), new ID3D12CommandListCacheFactory(D3DDevice), 4);
+        DirectCommandAllocatorCache.Initialize(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi), new ID3D12CommandAllocatorCacheFactory(D3DDevice), 4);
 
         /**
         * object cache
         */
+
+        /**
+        * managers
+        */
+        ObjectLifeTimeManager = OMNI_NEW(MemoryKind::GfxApi) DX12ObjectLifeTimeManager();
 
         Initialized = true;
     }
@@ -94,11 +101,22 @@ namespace Omni
     void DX12GlobalState::Finalize()
     {
         WaitGPUIdle();
+
+        /**
+        * managers
+        */
+        OMNI_DELETE(ObjectLifeTimeManager, MemoryKind::GfxApi);
+
+        /**
+        * object cache
+        */
+
+
         /**
         * DX12 object cache
         */
-        mDirectCommandListCache.Cleanup();
-        mCommandAllocatorCache.Cleanup();
+        DirectCommandListCache.Cleanup();
+        DirectCommandAllocatorCache.Cleanup();
 
         /**
         * object cache

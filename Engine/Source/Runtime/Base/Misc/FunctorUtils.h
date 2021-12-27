@@ -32,7 +32,7 @@ namespace Omni
 		{}
 		TReturn operator()() const
 		{
-			return mPtr(mArg0);
+			return mFunc(mArg0);
 		}
 	private:
 		TFunc mFunc;

@@ -15,7 +15,6 @@ namespace Omni
         struct CacheFactory : public GfxApiObjectCacheFactory<DX12RenderPass, CacheFactory>
         {
             CacheFactory();
-            void* operator new(size_t size);
             void* CreateObject() override;
             void DestroyObject(void* obj) override;
             void RecycleCleanup(void* obj) override;

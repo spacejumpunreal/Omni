@@ -2,6 +2,7 @@
 #if OMNI_WINDOWS
 #include "Runtime/Core/GfxApi/DX12/DX12CommandContext.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
+#include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
 
 namespace Omni
 {
@@ -38,6 +39,10 @@ namespace Omni
     
     DX12RenderPass::DX12RenderPass()
     {
+        ID3D12CommandAllocator* allocator = gDX12GlobalState.DirectCommandAllocatorCache.Alloc();
+        ID3D12GraphicsCommandList* cmdLst = gDX12GlobalState.DirectCommandListCache.Alloc();
+        cmdLst->Reset(allocator, nullptr);
+        cmdList->
     }
 
     DX12RenderPass::~DX12RenderPass()

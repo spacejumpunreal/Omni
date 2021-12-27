@@ -10,6 +10,8 @@
 
 namespace Omni
 {
+    //forward decls
+
 	struct DX12GlobalState
 	{
 	public:
@@ -18,18 +20,20 @@ namespace Omni
 		void Finalize();
 		void WaitGPUIdle();
 	public://DX12 global objects
-		ComPtr<IDXGIFactory7>				DXGIFactory;
-		ComPtr<IDXGIAdapter1>				DXGIAdaptor;
-		ComPtr<ID3D12Device>				D3DDevice;
-		ComPtr<ID3D12CommandQueue>			D3DGraphicsCommandQueue;
-        ComPtr<ID3D12Resource>			    D3DDummyPtr; //keep this the last one
+		ComPtr<IDXGIFactory7>				            DXGIFactory;
+		ComPtr<IDXGIAdapter1>				            DXGIAdaptor;
+		ComPtr<ID3D12Device>				            D3DDevice;
+		ComPtr<ID3D12CommandQueue>			            D3DGraphicsCommandQueue;
+        ComPtr<ID3D12Resource>			                D3DDummyPtr; //keep this the last one
     public://DX12 object pools
-        ObjectCache<ID3D12CommandList>      mDirectCommandListCache;
-        ObjectCache<ID3D12CommandAllocator> mCommandAllocatorCache;
+        ObjectCache<ID3D12GraphicsCommandList>          DirectCommandListCache;
+        ObjectCache<ID3D12CommandAllocator>             DirectCommandAllocatorCache;
     public://object pools
-        ObjectCache<DX12RenderPass>         mRenderPassCache;
+        ObjectCache<DX12RenderPass>                     RenderPassCache;
     public://state flags
-		bool								Initialized;
+        bool								            Initialized;
+    public://managers
+        class DX12ObjectLifeTimeManager*                ObjectLifeTimeManager;
 	};
 	
 	extern DX12GlobalState gDX12GlobalState;

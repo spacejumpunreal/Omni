@@ -33,6 +33,6 @@ namespace Omni
         GraphicsQueue,
         ComputeQueue,
         CopyQueue,
-        MaxQueues,
+        Count,
     };
 }

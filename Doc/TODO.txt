@@ -1,16 +1,22 @@
 # todo
-- revisit dx12 demo
-- GfxApi
-	- all api
-		- add ResizeBackBuffer()
-		- refactor BeginRenderPass, load/store action, clear params
-		- add create buffer desc
-		- add update buffer
-	- dx12
-		- implement create swapchain
-		- implement GetBackBuffer()
-		- implement create buffer
-		- implement update buffer
-
-	
+- GfxApi::DX12
+	- Clear/Present
+		- DX12RenderPass
+		- CommandContext
+	- ResizeBackbuffer
+- DiffuseShading
+	- Buffer
+	- ConstantBuffer
+	- Texture
+- ShadowMap
+- ComputeShader
+- VisibilityBuffer
+- run on Metal
+	- Metal
+	- Metal Window system
+- run on Android
+	- android build system
+	- android build
+	- android window system
+	- vulkan
 

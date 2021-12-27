@@ -10,6 +10,9 @@ namespace Omni
 {
     //forward decl
 
+    //constants
+    constexpr u64 BatchIdResetValue = 0;
+
     //declaration
     class DX12ObjectLifeTimeManager
     {
@@ -18,8 +21,9 @@ namespace Omni
     public:
         DX12ObjectLifeTimeManager();
         ~DX12ObjectLifeTimeManager();
-        void OnEvent(u64 eventSeq, GfxApiQueueType queueType);
-        void AddEvent(GfxApiQueueType queueType, DX12RecycleCB action);
+        u64 CloseBatch(GfxApiQueueType queueType);
+        void OnBatchFinished(GfxApiQueueType queueType, u64 batchId);
+        u64 AddEvent(GfxApiQueueType queueType, DX12RecycleCB action);
     private:
         PrivateData<1024, 16> mData;
     };
