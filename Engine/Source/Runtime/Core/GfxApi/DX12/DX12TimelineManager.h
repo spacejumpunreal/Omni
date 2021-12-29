@@ -26,7 +26,7 @@ namespace Omni
         ~DX12TimelineManager();
         u64 CloseBatchAndSignalOnGPU(GfxApiQueueType queueType, ID3D12CommandQueue* queue);
         void WaitBatchFinishOnGPU(GfxApiQueueType queueType, u64 batchId);
-        void IsBatchFinishedOnGPU(GfxApiQueueType queueType, u64 batchId);
+        bool IsBatchFinishedOnGPU(GfxApiQueueType queueType, u64 batchId);
         u64 AddBatchEvent(GfxApiQueueType queueType, DX12RecycleCB action);
     private:
         PrivateData<1024, 16> mData;

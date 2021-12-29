@@ -2,6 +2,7 @@
 #include "Runtime/Prelude/Omni.h"
 #if OMNI_WINDOWS
 #include "Runtime/Core/GfxApi/GfxApiObject.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Basics.h"
 
 //forward decl
 struct ID3D12Resource;
@@ -16,6 +17,9 @@ namespace Omni
 		~DX12Texture();
 		void Destroy() override;
 		const GfxApiTextureDesc& GetDesc() override;
+
+        DX12Descriptor GetCPUDescriptor();
+
 	private:
 		GfxApiTextureDesc	mDesc;
 		ID3D12Resource*		mTexture;

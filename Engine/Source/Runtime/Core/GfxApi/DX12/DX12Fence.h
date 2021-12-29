@@ -7,9 +7,9 @@ struct ID3D12Device;
 namespace Omni
 {
 	ID3D12Fence* CreateFence(u64 initValue, ID3D12Device* dev = nullptr);
-	FORCEINLINE void UpdateFenceOnGPU(ID3D12Fence* fence, u64 newValue, ID3D12CommandQueue* queue);
-    FORCEINLINE void ReleaseFence(ID3D12Fence* fence);
-    FORCEINLINE void WaitForFence(ID3D12Fence* fence, u64 waitValue);
+	void UpdateFenceOnGPU(ID3D12Fence* fence, u64 newValue, ID3D12CommandQueue* queue);
+    void ReleaseFence(ID3D12Fence* fence);
+    void WaitForFence(ID3D12Fence* fence, u64 waitValue);
 }
 
 #endif//OMNI_WINDOWS

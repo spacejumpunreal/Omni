@@ -117,6 +117,7 @@ namespace Omni
         auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
         auto& queueData = self.QueueData[(u8)queueType];
         ID3D12Fence* fence = queueData.Fence;
+        CheckAlways(queueData.Head->BatchId <= batchId, "can not wait on future batch");
         //add waiting and checking
         while (true)
         {
@@ -136,10 +137,11 @@ namespace Omni
                 break;
         }
     }
-    void DX12TimelineManager::IsBatchFinishedOnGPU(GfxApiQueueType queueType, u64 batchId)
+    bool DX12TimelineManager::IsBatchFinishedOnGPU(GfxApiQueueType queueType, u64 batchId)
     {
-        (void)queueType;
-        (void)batchId;
+        auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
+        auto& queueData = self.QueueData[(u8)queueType];
+        return queueData.Head->BatchId > batchId;
     }
     u64 DX12TimelineManager::AddBatchEvent(GfxApiQueueType queueType, DX12RecycleCB action)
     {

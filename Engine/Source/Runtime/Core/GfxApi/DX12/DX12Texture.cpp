@@ -33,6 +33,10 @@ namespace Omni
 	{
 		return mDesc;
 	}
+    D3D12_CPU_DESCRIPTOR_HANDLE DX12Texture::GetCPUDescriptor()
+    {
+        mTexture->GetGPUVirtualAddress();
+    }
 }
 
 #endif

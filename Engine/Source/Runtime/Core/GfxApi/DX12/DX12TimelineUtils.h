@@ -3,6 +3,7 @@
 #if OMNI_WINDOWS
 #include "Runtime/Core/GfxApi/GfxApiDefs.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
+#include "Runtime/Base/Misc/SharedObject.h"
 
 //forward decl
 struct ID3D12CommandAllocator;
@@ -17,7 +18,8 @@ namespace Omni
     struct TimelineHelpers
     {
         static void RecycleDirectCommandAllocator(ID3D12CommandAllocator* commandAllocator);
-        static void ReleaseObject(IUnknown* obj);
+        static void ReleaseD3DObject(IUnknown* obj);
+        static void ReleaseSharedObject(SharedObject* obj);
 
         template<typename TObject>
         static DX12TimelineManager::DX12RecycleCB CreateRecycleCB(
@@ -31,4 +33,4 @@ namespace Omni
 
 }
 
-#endif
+#endif//OMNI_WINDOWS

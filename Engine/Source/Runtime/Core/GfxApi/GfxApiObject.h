@@ -123,14 +123,15 @@ namespace Omni
     {
         Load = 1 << 0,
         Clear = 1 << 1,
-        Store = 1 << 2,
-        Discard = 1 << 3,
+        DontCare = 1 << 2,
+        Store = 1 << 3,
+        Discard = 1 << 4,
     };
     DEFINE_ENUM_CLASS_OPS(GfxApiLoadStoreActions)
 
     struct GfxApiRTConfig
     {
-        SharedPtr<GfxApiTexture>    Texture;
+        GfxApiTexture*              Texture = nullptr;
         std::variant<u32, Vector4>  ClearValue;
         GfxApiLoadStoreActions      Action = GfxApiLoadStoreActions::Clear | GfxApiLoadStoreActions::Store;
 
@@ -147,7 +148,7 @@ namespace Omni
     struct GfxApiCommandContextDesc
     {
         GfxApiContextType   Type;
-        GfxApiRenderPass*   RenderPass;
+        GfxApiRenderPass*   RenderPass = nullptr;
     };
 
     
