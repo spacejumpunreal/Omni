@@ -3,6 +3,8 @@
 #include "Runtime/Core/GfxApi/DX12/DX12CommandContext.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
+#include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
+#include "Runtime/Core/GfxApi/DX12/DX12TimelineUtils.h"
 
 namespace Omni
 {
@@ -38,16 +40,37 @@ namespace Omni
     }
     
     DX12RenderPass::DX12RenderPass()
-    {
-        ID3D12CommandAllocator* allocator = gDX12GlobalState.DirectCommandAllocatorCache.Alloc();
-        ID3D12GraphicsCommandList* cmdLst = gDX12GlobalState.DirectCommandListCache.Alloc();
-        cmdLst->Reset(allocator, nullptr);
-        cmdList->
-    }
+    {}
 
     DX12RenderPass::~DX12RenderPass()
     {
     }
+
+    void DX12RenderPass::RecycleInit(const GfxApiRenderPassDesc& desc)
+    {
+        //auto xxx = (void (*)(void*))&TimelineHelpers::RecycleCommandAllocator;
+        ID3D12CommandAllocator* allocator = gDX12GlobalState.DirectCommandAllocatorCache.Alloc();
+        ID3D12GraphicsCommandList4* cmdLst = gDX12GlobalState.DirectCommandListCache.Alloc();
+
+        gDX12GlobalState.TimelineManager->AddBatchEvent(
+            GfxApiQueueType::GraphicsQueue, 
+            TimelineHelpers::CreateRecycleCB(&TimelineHelpers::RecycleDirectCommandAllocator, allocator));
+        cmdLst->Reset(allocator, nullptr);
+        
+        u32 mrtCount;
+        for (mrtCount = 0; mrtCount < MaxMRTCount; ++mrtCount)
+        {
+            if (desc.Color[mrtCount].Texture.GetRaw() == nullptr)
+                break;
+            desc.Color[mrtCount].Texture.GetRaw()->Acquire();
+            gDX12GlobalState.TimelineManager->AddBatchEvent(
+                GfxApiQueueType::GraphicsQueue,
+                TimelineHelpers::CreateRecycleCB(&TimelineHelpers::RecycleDirectCommandAllocator, allocator));
+        }
+        //cmdLst->BeginRenderPass(mrtCount, rtDescs, dsDescs, )
+    }
+
+    
 }
 
 

@@ -23,6 +23,8 @@ namespace Omni
         DX12RenderPass();
         ~DX12RenderPass();
 
+        void RecycleInit(const GfxApiRenderPassDesc& desc);
+
         GfxApiCommandContext* BeginContext() override { return nullptr; };
         void EndContext(GfxApiCommandContext* ctx) override { (void)ctx; };
     private:

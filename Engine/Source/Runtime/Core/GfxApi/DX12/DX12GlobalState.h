@@ -26,14 +26,15 @@ namespace Omni
 		ComPtr<ID3D12CommandQueue>			            D3DGraphicsCommandQueue;
         ComPtr<ID3D12Resource>			                D3DDummyPtr; //keep this the last one
     public://DX12 object pools
-        ObjectCache<ID3D12GraphicsCommandList>          DirectCommandListCache;
+        ObjectCache<ID3D12GraphicsCommandList4>         DirectCommandListCache;
         ObjectCache<ID3D12CommandAllocator>             DirectCommandAllocatorCache;
+        //we can have a ID3D12Fence cache here
     public://object pools
         ObjectCache<DX12RenderPass>                     RenderPassCache;
     public://state flags
         bool								            Initialized;
     public://managers
-        class DX12ObjectLifeTimeManager*                ObjectLifeTimeManager;
+        class DX12TimelineManager*                      TimelineManager;
 	};
 	
 	extern DX12GlobalState gDX12GlobalState;

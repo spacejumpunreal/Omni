@@ -2,6 +2,8 @@
 - GfxApi::DX12
 	- Clear/Present
 		- DX12RenderPass
+			- review TimelineManager code
+			- implement DX12RenderPass, begin/end render pass, setup command buffer, resume/suspend renderpass
 		- CommandContext
 	- ResizeBackbuffer
 - DiffuseShading

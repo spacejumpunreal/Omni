@@ -4,6 +4,11 @@
 #include "Runtime/Base/Container/PMRContainers.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/GfxApi/GfxApiDefs.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Fence.h"
+#include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
+
+#include <d3d12.h>
 
 #if OMNI_WINDOWS
 
@@ -28,20 +33,22 @@ namespace Omni
         void operator delete(void* ptr, size_t size);
         LifeTimeBatch(u64 batchId);
     public:
-        u64 BatchId;
-        PMRVector<DX12ObjectLifeTimeManager::DX12RecycleCB> Callbacks;
+        u64                                             BatchId;
+        PMRVector<DX12TimelineManager::DX12RecycleCB>   Callbacks;
+        
     };
 
-    struct DX12ObjectLifeTimeManagerPrivateData
+    struct DX12TimelineManagerPrivateData
     {
     public:
         struct QueueData
         {
-            LifeTimeBatch* Head;
-            LifeTimeBatch* Tail;
+            LifeTimeBatch*  Head;
+            LifeTimeBatch*  Tail;
+            ID3D12Fence*    Fence;
         };
     public:
-        QueueData QueueData[(u8)GfxApiQueueType::Count];
+        QueueData       QueueData[(u8)GfxApiQueueType::Count];
     };
 
     /**
@@ -62,63 +69,81 @@ namespace Omni
         , BatchId(batchId)
     {}
 
-    //DX12ObjectLifeTimeManagerPrivateData
+    //DX12TimelineManagerPrivateData
 
 
-    //DX12ObjectLifeTimeManager
-    DX12ObjectLifeTimeManager::DX12ObjectLifeTimeManager()
-        : mData(PrivateDataType<DX12ObjectLifeTimeManagerPrivateData>{})
+    //DX12TimelineManager
+    DX12TimelineManager::DX12TimelineManager(ID3D12Device* dev)
+        : mData(PrivateDataType<DX12TimelineManagerPrivateData>{})
     {
-        auto& self = mData.Ref<DX12ObjectLifeTimeManagerPrivateData>();
+        auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
         for (u32 iQueue = 0; iQueue < (u8)GfxApiQueueType::Count; ++iQueue)
         {
-            self.QueueData[iQueue].Head = self.QueueData[iQueue].Tail = new LifeTimeBatch(BatchIdInitValue);
+            self.QueueData[iQueue].Head = self.QueueData[iQueue].Tail = new LifeTimeBatch(BatchIdInitValue + 1);
+            self.QueueData[iQueue].Fence = CreateFence(BatchIdResetValue, dev);
         }
     }
-    DX12ObjectLifeTimeManager::~DX12ObjectLifeTimeManager()
+    DX12TimelineManager::~DX12TimelineManager()
     {
-        auto& self = mData.Ref<DX12ObjectLifeTimeManagerPrivateData>();
+        auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
         for (u32 iQueue = 0; iQueue < (u8)GfxApiQueueType::Count; ++iQueue)
         {
             CheckAlways(
                 self.QueueData[iQueue].Head == self.QueueData[iQueue].Tail,
-                "DX12ObjectLifeTimeManager should only have empty batches opended on dtor");
+                "DX12TimelineManager should only have empty batches opended on dtor");
 
             CheckAlways(
                 self.QueueData[iQueue].Head->Callbacks.size() == 0,
-                "DX12ObjectLifeTimeManager should only have empty batches opended on dtor");
+                "DX12TimelineManager should only have empty batches opended on dtor");
 
+            ReleaseFence(self.QueueData[iQueue].Fence);
             delete self.QueueData[iQueue].Head;
         }
-        mData.DestroyAs<DX12ObjectLifeTimeManagerPrivateData>();
+        mData.DestroyAs<DX12TimelineManagerPrivateData>();
     }
-    u64 DX12ObjectLifeTimeManager::CloseBatch(GfxApiQueueType queueType)
+    u64 DX12TimelineManager::CloseBatchAndSignalOnGPU(GfxApiQueueType queueType, ID3D12CommandQueue* queue)
     {
-        auto& self = mData.Ref<DX12ObjectLifeTimeManagerPrivateData>();
+        auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
         auto& queueData = self.QueueData[(u8)queueType];
         LifeTimeBatch* newBatch = new LifeTimeBatch(queueData.Tail->BatchId + 1);
         u64 bid = queueData.Tail->BatchId;
         queueData.Tail->Next = newBatch;
         queueData.Tail = newBatch;
+        UpdateFenceOnGPU(queueData.Fence, bid, queue);
         return bid;
     }
-    void DX12ObjectLifeTimeManager::OnBatchFinished(GfxApiQueueType queueType, u64 batchId)
+    void DX12TimelineManager::WaitBatchFinishOnGPU(GfxApiQueueType queueType, u64 batchId)
     {
-        auto& self = mData.Ref<DX12ObjectLifeTimeManagerPrivateData>();
+        auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
         auto& queueData = self.QueueData[(u8)queueType];
-        CheckAlways(batchId == queueData.Head->BatchId);
-        auto& cbs = queueData.Head->Callbacks;
-        for (DX12RecycleCB& cb : cbs)
+        ID3D12Fence* fence = queueData.Fence;
+        //add waiting and checking
+        while (true)
         {
-            cb();
+            LifeTimeBatch*& batch = queueData.Head;
+            u64 bid = batch->BatchId;
+            auto& cbs = batch->Callbacks;
+            WaitForFence(fence, bid);
+            for (DX12RecycleCB& cb : cbs)
+            {
+                cb();
+            }
+            cbs.clear();
+            LifeTimeBatch* next = (LifeTimeBatch*)batch->Next;
+            CheckAlways(next != nullptr);
+            batch = next;
+            if (bid == batchId)
+                break;
         }
-        LifeTimeBatch* next = (LifeTimeBatch*)queueData.Head->Next;
-        CheckAlways(next != nullptr);
-        queueData.Head = next;
     }
-    u64 DX12ObjectLifeTimeManager::AddEvent(GfxApiQueueType queueType, DX12RecycleCB action)
+    void DX12TimelineManager::IsBatchFinishedOnGPU(GfxApiQueueType queueType, u64 batchId)
     {
-        auto& self = mData.Ref<DX12ObjectLifeTimeManagerPrivateData>();
+        (void)queueType;
+        (void)batchId;
+    }
+    u64 DX12TimelineManager::AddBatchEvent(GfxApiQueueType queueType, DX12RecycleCB action)
+    {
+        auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
         auto& queueData = self.QueueData[(u8)queueType];
         auto& cbs = queueData.Head->Callbacks;
         cbs.push_back(action);

@@ -12,10 +12,10 @@
 namespace Omni
 {
     //cache object factories
-    struct ID3D12CommandListCacheFactory final 
-        : public GfxApiObjectCacheFactory<ID3D12CommandList, ID3D12CommandListCacheFactory>
+    struct ID3D12GraphicsCommandList4CacheFactory final 
+        : public GfxApiObjectCacheFactory<ID3D12GraphicsCommandList4, ID3D12GraphicsCommandList4CacheFactory>
     {
-        ID3D12CommandListCacheFactory(ID3D12Device* device)
+        ID3D12GraphicsCommandList4CacheFactory(ID3D12Device* device)
             : mDevice(device)
         {
             mDevice->AddRef();
@@ -23,11 +23,11 @@ namespace Omni
         void Destroy() override
         {
             SafeRelease(mDevice);
-            GfxApiObjectCacheFactory<ID3D12CommandList, ID3D12CommandListCacheFactory>::Destroy();
+            GfxApiObjectCacheFactory<ID3D12GraphicsCommandList4, ID3D12GraphicsCommandList4CacheFactory>::Destroy();
         }
         void* CreateObject() override
         {
-            ID3D12CommandList* p;
+            ID3D12GraphicsCommandList4* p;
             CheckGfxApi(mDevice->CreateCommandList(
                 0, D3D12_COMMAND_LIST_TYPE_DIRECT,
                 nullptr, nullptr,
@@ -36,7 +36,7 @@ namespace Omni
         }
         void DestroyObject(void* obj) override
         {
-            ID3D12CommandList* p = (ID3D12CommandList*)obj;
+            ID3D12GraphicsCommandList4* p = (ID3D12GraphicsCommandList4*)obj;
             p->Release();
         }
         void RecycleCleanup(void* obj) override

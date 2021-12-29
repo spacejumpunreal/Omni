@@ -24,7 +24,7 @@ namespace Omni
 
     DX12GlobalState::DX12GlobalState() 
         : Initialized(false)
-        , ObjectLifeTimeManager(nullptr)
+        , TimelineManager(nullptr)
     {}
 
     void DX12GlobalState::Initialize()
@@ -83,7 +83,7 @@ namespace Omni
         /**
         * DX12 object cache
         */
-        DirectCommandListCache.Initialize(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi), new ID3D12CommandListCacheFactory(D3DDevice), 4);
+        DirectCommandListCache.Initialize(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi), new ID3D12GraphicsCommandList4CacheFactory(D3DDevice), 4);
         DirectCommandAllocatorCache.Initialize(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi), new ID3D12CommandAllocatorCacheFactory(D3DDevice), 4);
 
         /**
@@ -93,7 +93,7 @@ namespace Omni
         /**
         * managers
         */
-        ObjectLifeTimeManager = OMNI_NEW(MemoryKind::GfxApi) DX12ObjectLifeTimeManager();
+        TimelineManager = OMNI_NEW(MemoryKind::GfxApi) DX12TimelineManager((ID3D12Device*)D3DDevice);
 
         Initialized = true;
     }
@@ -105,7 +105,7 @@ namespace Omni
         /**
         * managers
         */
-        OMNI_DELETE(ObjectLifeTimeManager, MemoryKind::GfxApi);
+        OMNI_DELETE(TimelineManager, MemoryKind::GfxApi);
 
         /**
         * object cache
