@@ -22,13 +22,20 @@ namespace Omni
     public:
         DX12RenderPass();
         ~DX12RenderPass();
-
         void RecycleInit(const GfxApiRenderPassDesc& desc);
-
-        GfxApiCommandContext* BeginContext() override { return nullptr; };
-        void EndContext(GfxApiCommandContext* ctx) override { (void)ctx; };
+        GfxApiRenderCommandContext* BeginContext() override;
+        void EndContext(GfxApiRenderCommandContext* ctx) override;
     private:
-        PMRVector<ID3D12CommandList*>   mCommandLists;
+        using CommandListVec = PMRVector<ID3D12CommandList*>;
+        PMRVector<CommandListVec>   mCommandLists;
+    };
+
+    class DX12RenderCommandContext : public GfxApiRenderCommandContext
+    {
+    public:
+        void Use() override {}
+    private:
+        ID3D12CommandList* mCommandList;
     };
 }
 

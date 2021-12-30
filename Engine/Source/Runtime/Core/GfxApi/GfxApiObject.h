@@ -143,6 +143,7 @@ namespace Omni
         GfxApiRTConfig      Color[MaxMRTCount];
         GfxApiRTConfig      Depth;
         GfxApiRTConfig      Stencil;
+        u32                 StageCount = 1;
     };
 
     struct GfxApiCommandContextDesc
@@ -155,12 +156,13 @@ namespace Omni
     class GfxApiRenderPass
     {
     public:
-        virtual GfxApiCommandContext* BeginContext() = 0;
-        virtual void EndContext(GfxApiCommandContext* ctx) = 0;
+        virtual GfxApiRenderCommandContext* BeginContext() = 0;
+        virtual void EndContext(GfxApiRenderCommandContext* ctx) = 0;
     };
 
-    class GfxApiCommandContext
+    class GfxApiRenderCommandContext
     {
     public:
+        virtual void Use() = 0;
     };
 }
