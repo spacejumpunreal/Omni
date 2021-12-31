@@ -11,12 +11,14 @@ namespace Omni
 	DX12Texture::DX12Texture(const GfxApiTextureDesc& desc)
 		: mDesc(desc)
 		, mTexture(nullptr)
+        , mTmpCPUDescriptor(NullDX12Descriptor)
 	{
 		NotImplemented();
 	}
-	DX12Texture::DX12Texture(const GfxApiTextureDesc& desc, ID3D12Resource* res)
+	DX12Texture::DX12Texture(const GfxApiTextureDesc& desc, ID3D12Resource* res, DX12Descriptor descriptor)
 		: mDesc(desc)
 		, mTexture(res)
+        , mTmpCPUDescriptor(descriptor)
 	{
 	}
 	DX12Texture::~DX12Texture()
@@ -33,9 +35,9 @@ namespace Omni
 	{
 		return mDesc;
 	}
-    D3D12_CPU_DESCRIPTOR_HANDLE DX12Texture::GetCPUDescriptor()
+    DX12Descriptor DX12Texture::GetCPUDescriptor()
     {
-        mTexture->GetGPUVirtualAddress();
+        return mTmpCPUDescriptor;
     }
 }
 

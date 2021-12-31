@@ -101,7 +101,8 @@ namespace Omni
         GfxApiModule& gfxApiM = GfxApiModule::Get();
 
         GfxApiRenderPassDesc passDesc;
-        passDesc.Color[0].Texture = self.SwapChain->GetCurrentBackbuffer();
+        GfxApiTextureRef backbufferTexture = self.SwapChain->GetCurrentBackbuffer();
+        passDesc.Color[0].Texture = backbufferTexture.GetRaw();
         passDesc.Color[0].ClearValue = Vector4(1, 0, 0, 0);
         GfxApiRenderPass* renderPass = gfxApiM.BeginRenderPass(passDesc);
         

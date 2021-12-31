@@ -6,6 +6,7 @@
 
 //forward decl
 struct IDXGISwapChain3;
+struct ID3D12DescriptorHeap;
 
 namespace Omni
 {
@@ -23,9 +24,10 @@ namespace Omni
 		u32 GetCurrentBackbufferIndex() override;
 		GfxApiTextureRef GetCurrentBackbuffer() override;
 	private:
-		GfxApiSwapChainDesc mDesc;
-		IDXGISwapChain3* mDX12SwapChain;
-		GfxApiTextureRef mBackbuffers[MaxBackbuffers];
+		GfxApiSwapChainDesc         mDesc;
+		IDXGISwapChain3*            mDX12SwapChain;
+        ID3D12DescriptorHeap*       mTmpDescriptorHeap;
+		GfxApiTextureRef            mBackbuffers[MaxBackbuffers];
 	};
 }
 

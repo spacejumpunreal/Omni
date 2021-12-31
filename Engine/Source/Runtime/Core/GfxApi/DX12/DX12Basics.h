@@ -6,6 +6,7 @@ namespace Omni
 {
     //typedefs
     using DX12Descriptor = u64;
+    constexpr DX12Descriptor NullDX12Descriptor = 0;
 }
 
 #endif//OMNI_WINDOWS

@@ -31,6 +31,7 @@ namespace Omni
         //we can have a ID3D12Fence cache here
     public://object pools
         ObjectCache<DX12RenderPass>                     RenderPassCache;
+        ObjectCache<DX12RenderCommandContext>           RenderCommandContextCache;
     public://state flags
         bool								            Initialized;
     public://managers

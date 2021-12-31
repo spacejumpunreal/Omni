@@ -6,7 +6,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12Fence.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Texture.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
-
+#include "Runtime/Core/GfxApi/DX12/d3dx12.h"
 
 namespace Omni
 {
@@ -60,12 +60,26 @@ namespace Omni
 		texDesc.Height = desc.Height;
 		texDesc.AccessFlags = GfxApiAccessFlags::GPUWrite;
 		texDesc.Format = desc.Format;
+        D3D12_DESCRIPTOR_HEAP_TYPE heapType = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+        {
+            D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
+            heapDesc.Type = heapType;
+            heapDesc.NumDescriptors = desc.BufferCount;
+            heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+            heapDesc.NodeMask = 0;
+            CheckGfxApi(gDX12GlobalState.D3DDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mTmpDescriptorHeap)));
+        }
+        
+        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
+            mTmpDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), 
+            gDX12GlobalState.D3DDevice->GetDescriptorHandleIncrementSize(heapType));
 		for (u32 iBuffer = 0; iBuffer < desc.BufferCount; ++iBuffer)
 		{
 			ID3D12Resource* res;
 			CheckGfxApi(mDX12SwapChain->GetBuffer(iBuffer, IID_PPV_ARGS(&res)));
 			res->SetName(BackBufferNames[iBuffer]);
-			mBackbuffers[iBuffer] = OMNI_NEW(MemoryKind::GfxApi) DX12Texture(texDesc, res);
+			mBackbuffers[iBuffer] = OMNI_NEW(MemoryKind::GfxApi) DX12Texture(texDesc, res, rtvHandle.ptr);
+            rtvHandle.Offset(1);
 		}
 	}
 	void DX12SwapChain::Destroy()
@@ -80,8 +94,8 @@ namespace Omni
 		{
 			mBackbuffers[iBuffer].Clear();
 		}
-		mDX12SwapChain->Release();
-		mDX12SwapChain = nullptr;
+        SafeRelease(mDX12SwapChain);
+        SafeRelease(mTmpDescriptorHeap);
 	}
 	const GfxApiSwapChainDesc& DX12SwapChain::GetDesc()
 	{

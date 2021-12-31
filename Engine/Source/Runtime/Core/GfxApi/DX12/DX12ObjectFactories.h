@@ -11,7 +11,9 @@
 
 namespace Omni
 {
-    //cache object factories
+    /**
+    * DX12 object cache
+    */
     struct ID3D12GraphicsCommandList4CacheFactory final 
         : public GfxApiObjectCacheFactory<ID3D12GraphicsCommandList4, ID3D12GraphicsCommandList4CacheFactory>
     {
@@ -85,6 +87,10 @@ namespace Omni
         ID3D12Device* mDevice;
     };
 
+    /**
+    * object cache
+    */
+    //non ID3D12 object cache factory should be declared within object definition itself, not here
 }
 
 

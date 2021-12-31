@@ -13,7 +13,7 @@ namespace Omni
 	{
 	public:
 		DX12Texture(const GfxApiTextureDesc& desc);
-		DX12Texture(const GfxApiTextureDesc& desc, ID3D12Resource* res); //create from existing texture
+		DX12Texture(const GfxApiTextureDesc& desc, ID3D12Resource* res, DX12Descriptor descriptor); //create from existing texture
 		~DX12Texture();
 		void Destroy() override;
 		const GfxApiTextureDesc& GetDesc() override;
@@ -23,6 +23,7 @@ namespace Omni
 	private:
 		GfxApiTextureDesc	mDesc;
 		ID3D12Resource*		mTexture;
+        DX12Descriptor      mTmpCPUDescriptor;
 	};
 }
 

@@ -18,6 +18,7 @@ namespace Omni
     class GfxApiCommandContext; //for threaded recording
     class GfxApiRenderPass;
     class GfxApiSwapChain;
+    class GfxApiRenderCommandContext;
 
     /**
      * enums
@@ -156,7 +157,7 @@ namespace Omni
     class GfxApiRenderPass
     {
     public:
-        virtual GfxApiRenderCommandContext* BeginContext() = 0;
+        virtual GfxApiRenderCommandContext* BeginContext(u32 phase) = 0;
         virtual void EndContext(GfxApiRenderCommandContext* ctx) = 0;
     };
 
