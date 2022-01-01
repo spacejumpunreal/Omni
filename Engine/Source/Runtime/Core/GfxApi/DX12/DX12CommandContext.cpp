@@ -28,7 +28,7 @@ namespace Omni
     * definitions
     */
 
-    //DX12RenderPass
+    //DX12RenderPass::CacheFactory
     DX12RenderPass::CacheFactory::CacheFactory()
     {}
     void* DX12RenderPass::CacheFactory::CreateObject()
@@ -43,12 +43,13 @@ namespace Omni
     void DX12RenderPass::CacheFactory::RecycleCleanup(void* obj)
     {
         auto* pass = static_cast<DX12RenderPass*>(obj);
-        pass->mCommandLists.clear();
+        pass->mPhases.clear();
     }
     
+    //DX12RenderPass
     DX12RenderPass::DX12RenderPass()
+        : mPhases(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi))
     {}
-
     DX12RenderPass::~DX12RenderPass()
     {}
 
@@ -65,7 +66,7 @@ namespace Omni
         }
     }
 
-    void SetupRenderPass(const GfxApiRenderPassDesc& desc, ID3D12GraphicsCommandList4* cmdLst, bool suspend, bool resume) //TODO add flags here to specify order in render pass)
+    void SetupCommandListForPass(const GfxApiRenderPassDesc& desc, ID3D12GraphicsCommandList4* cmdLst, bool suspend, bool resume) //TODO add flags here to specify order in render pass)
     {
         D3D12_RENDER_PASS_RENDER_TARGET_DESC rtDescs[MaxMRTCount] = {};
         D3D12_RENDER_PASS_DEPTH_STENCIL_DESC dsDesc = {};
@@ -98,9 +99,25 @@ namespace Omni
     void DX12RenderPass::RecycleInit(const GfxApiRenderPassDesc& desc)
     {
         CheckDebug(desc.StageCount > 0, "at least 1 stage in a render pass");
-        mCommandLists.resize(desc.StageCount);
+        mPhases.resize(desc.StageCount);
         mDesc = desc;
         AcquireRenderPassTextures(desc);
+    }
+
+    void DX12RenderPass::CommitRenderPass()
+    {
+        CheckDebug(mPhases[0].size() != 0, "1st phase in render pass shall not be missing");
+        for (CommandListVec& phase : mPhases)
+        {
+            if (phase.size() == 0)
+                continue;
+            ID3D12CommandList** lists = (ID3D12CommandList**)phase.data();
+            gDX12GlobalState.D3DGraphicsCommandQueue->ExecuteCommandLists((u32)phase.size(), lists);
+            for (ID3D12GraphicsCommandList4* list : phase)
+            {
+                gDX12GlobalState.DirectCommandListCache.Free(list);
+            }
+        }
     }
 
     GfxApiRenderCommandContext* DX12RenderPass::BeginContext(u32 phase)
@@ -113,9 +130,9 @@ namespace Omni
             GfxApiQueueType::GraphicsQueue,
             TimelineHelpers::CreateRecycleCB(TimelineHelpers::RecycleDirectCommandAllocator, allocator));
         CheckGfxApi(cmdList->Reset(allocator, nullptr));
-        SetupRenderPass(mDesc, cmdList, phase == 0, phase == mDesc.StageCount - 1);
+        SetupCommandListForPass(mDesc, cmdList, phase == 0, phase == mDesc.StageCount - 1);
         ctx->RecycleInit(cmdList);
-        mCommandLists[phase].push_back(cmdList);
+        mPhases[phase].push_back(cmdList);
         return ctx;
     }
     void DX12RenderPass::EndContext(GfxApiRenderCommandContext* ctx)
@@ -123,6 +140,24 @@ namespace Omni
         DX12RenderCommandContext* _ctx = static_cast<DX12RenderCommandContext*>(ctx);
         _ctx->EndEncoding();
         gDX12GlobalState.RenderCommandContextCache.Free(_ctx);
+    }
+
+    //DX12RenderCommandContext::CacheFactory
+    DX12RenderCommandContext::CacheFactory::CacheFactory()
+    {}
+    void* DX12RenderCommandContext::CacheFactory::CreateObject()
+    {
+        return OMNI_NEW(MemoryKind::GfxApi)DX12RenderCommandContext();
+    }
+    void DX12RenderCommandContext::CacheFactory::DestroyObject(void* obj)
+    {
+        auto* context = static_cast<DX12RenderCommandContext*>(obj);
+        OMNI_DELETE(context, MemoryKind::GfxApi);
+    }
+    void DX12RenderCommandContext::CacheFactory::RecycleCleanup(void* obj)
+    {
+        auto* context = static_cast<DX12RenderCommandContext*>(obj);
+        context->mCommandList = nullptr;
     }
 
     //DX12RenderCommandContext
@@ -136,7 +171,7 @@ namespace Omni
     void DX12RenderCommandContext::EndEncoding()
     {
         CheckGfxApi(mCommandList->Close());
-        gDX12GlobalState.DirectCommandListCache.Free(mCommandList);
+        mCommandList->Reset(nullptr, nullptr);
     }
     void DX12RenderCommandContext::Use()
     {}

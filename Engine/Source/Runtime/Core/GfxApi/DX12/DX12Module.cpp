@@ -121,13 +121,15 @@ namespace Omni
 
     GfxApiRenderPass* DX12Module::BeginRenderPass(const GfxApiRenderPassDesc& desc)
     {
-        (void)desc;
-        return nullptr;
+        DX12RenderPass* renderPass = gDX12GlobalState.RenderPassCache.Alloc();
+        renderPass->RecycleInit(desc);
+        return renderPass;
     }
 
-    void DX12Module::EndRenderPass(const GfxApiRenderPass* desc)
+    void DX12Module::EndRenderPass(GfxApiRenderPass* pass)
     {
-        (void)desc;
+        DX12RenderPass* renderPass = static_cast<DX12RenderPass*>(pass);
+        gDX12GlobalState.RenderPassCache.Free(renderPass);
     }
 
 #if DEBUG_DX_OBJECT_LEAK_ON_QUIT

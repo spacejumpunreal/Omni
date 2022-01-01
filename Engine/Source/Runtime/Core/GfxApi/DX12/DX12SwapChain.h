@@ -18,7 +18,7 @@ namespace Omni
 		DX12SwapChain(const GfxApiSwapChainDesc& desc);
 		~DX12SwapChain();
 		void Destroy() override;
-		const GfxApiSwapChainDesc& GetDesc();
+		const GfxApiSwapChainDesc& GetDesc() override;
 		void Present(bool waitForVSync) override;
 		void Update(const GfxApiSwapChainDesc& desc) override;
 		u32 GetCurrentBackbufferIndex() override;

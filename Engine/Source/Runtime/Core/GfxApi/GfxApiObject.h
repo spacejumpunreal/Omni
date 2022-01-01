@@ -15,10 +15,16 @@ namespace Omni
      * forward decls
      */
     class GfxApiTexture;
-    class GfxApiCommandContext; //for threaded recording
-    class GfxApiRenderPass;
     class GfxApiSwapChain;
+    class GfxApiRenderPass;
     class GfxApiRenderCommandContext;
+    class GfxApiGpuEvent;
+
+    /**
+     * typedefs
+     */
+    using GfxApiGpuEventRef = SharedPtr<GfxApiGpuEvent>;
+
 
     /**
      * enums
@@ -96,12 +102,20 @@ namespace Omni
         {}
     };
 
+
     class GfxApiSwapChain : public SharedObject
     {
     public:
+        struct FrameStatistics
+        {
+            u64     PresentedFrameCount;
+            u64     CurrentFrameIndex;
+        };
+    public:
         virtual const GfxApiSwapChainDesc& GetDesc() = 0;
-        virtual void Present(bool waitFotVSync) = 0;
+        virtual GfxApiGpuEvent Present(bool waitFotVSync) = 0;
         virtual void Update(const GfxApiSwapChainDesc& desc) = 0;
+        virtual void Stats(FrameStatistics& stats) = 0;
         virtual u32 GetCurrentBackbufferIndex() = 0;
         virtual GfxApiTextureRef GetCurrentBackbuffer() = 0;
     };
@@ -147,13 +161,6 @@ namespace Omni
         u32                 StageCount = 1;
     };
 
-    struct GfxApiCommandContextDesc
-    {
-        GfxApiContextType   Type;
-        GfxApiRenderPass*   RenderPass = nullptr;
-    };
-
-    
     class GfxApiRenderPass
     {
     public:
@@ -165,5 +172,12 @@ namespace Omni
     {
     public:
         virtual void Use() = 0;
+    };
+
+    class GfxApiGpuEvent : public SharedObject //aka ID3D12Fence on DX12, MTLEvent on Metal
+    {
+    public:
+        virtual bool IsDone() = 0;
+        virtual void Wait() = 0;
     };
 }

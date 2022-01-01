@@ -6,33 +6,35 @@
 #include "Runtime/Core/GfxApi/GfxApiObjectCacheFactory.h"
 
 //forward decl
+struct ID3D12GraphicsCommandList4;
+
 
 namespace Omni
 {
     class DX12RenderPass: public GfxApiRenderPass
     {
     public:
-        struct CacheFactory : public GfxApiObjectCacheFactory<DX12RenderPass, CacheFactory>
-        {
-            CacheFactory();
-            void* CreateObject() override;
-            void DestroyObject(void* obj) override;
-            void RecycleCleanup(void* obj) override;
-        };
+        DECLARE_GFXAPI_OBJECT_CACHE_FACTORY_BEGIN(CacheFactory, DX12RenderPass)
+        DECLARE_GFXAPI_OBJECT_CACHE_FACTORY_END()
+
     public:
         DX12RenderPass();
         ~DX12RenderPass();
         void RecycleInit(const GfxApiRenderPassDesc& desc);
+        void CommitRenderPass();
         GfxApiRenderCommandContext* BeginContext(u32 phase) override;
         void EndContext(GfxApiRenderCommandContext* ctx) override;
     private:
-        using CommandListVec = PMRVector<ID3D12CommandList*>;
-        PMRVector<CommandListVec>   mCommandLists;
+        using CommandListVec = PMRVector<ID3D12GraphicsCommandList4*>;
+        PMRVector<CommandListVec>   mPhases;
         GfxApiRenderPassDesc        mDesc;
     };
 
     class DX12RenderCommandContext : public GfxApiRenderCommandContext
     {
+    public:
+        DECLARE_GFXAPI_OBJECT_CACHE_FACTORY_BEGIN(CacheFactory, DX12RenderCommandContext)
+        DECLARE_GFXAPI_OBJECT_CACHE_FACTORY_END()
     public:
         DX12RenderCommandContext();
         void RecycleInit(ID3D12GraphicsCommandList4* cmdList);

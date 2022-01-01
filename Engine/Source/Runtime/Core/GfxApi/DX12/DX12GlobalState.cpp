@@ -83,12 +83,15 @@ namespace Omni
         /**
         * DX12 object cache
         */
-        DirectCommandListCache.Initialize(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi), new ID3D12GraphicsCommandList4CacheFactory(D3DDevice), 4);
-        DirectCommandAllocatorCache.Initialize(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi), new ID3D12CommandAllocatorCacheFactory(D3DDevice), 4);
+        PMRAllocator gfxApiAllocator = MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi);
+        DirectCommandListCache.Initialize(gfxApiAllocator, new ID3D12GraphicsCommandList4CacheFactory(D3DDevice), 4);
+        DirectCommandAllocatorCache.Initialize(gfxApiAllocator, new ID3D12CommandAllocatorCacheFactory(D3DDevice), 4);
 
         /**
         * object cache
         */
+        RenderPassCache.Initialize(gfxApiAllocator, new DX12RenderPass::CacheFactory(), 1);
+        RenderCommandContextCache.Initialize(gfxApiAllocator, new DX12RenderCommandContext::CacheFactory(), 1);
 
         /**
         * managers

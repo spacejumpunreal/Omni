@@ -10,7 +10,7 @@ GfxApiMethod(GfxApiSwapChainRef CreateSwapChain(const GfxApiSwapChainDesc& desc)
 
 //Renderpass
 GfxApiMethod(GfxApiRenderPass* BeginRenderPass(const GfxApiRenderPassDesc& desc))
-GfxApiMethod(void EndRenderPass(const GfxApiRenderPass* desc))
+GfxApiMethod(void EndRenderPass(GfxApiRenderPass* pass))
 
 //Command Context
 //GfxApiMethod(GfxApiCommandContext* BeginContext(const GfxApiCommandContextDesc& desc)) //for threaded recording

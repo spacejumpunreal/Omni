@@ -1,10 +1,18 @@
 # todo
 - GfxApi::DX12
 	- Clear/Present
-		- DX12RenderPass
-			- review TimelineManager code
-			- implement DX12RenderPass, begin/end render pass, setup command buffer, resume/suspend renderpass
-		- CommandContext
+		- refactor GfxApi module to provide simple renderer interface
+			- rational: better isolation between render logic and GfxApi
+				- do not expose classes like command buffer
+				
+			- use temp allocation to pass parameters, perhaps need new batch allocator
+			- make it a one-way(with some query/wait api)
+			- very few APIs(like messiah or bgfx)
+				- Resource:Create/Update/Destroy
+				- Action: DrawPass, DispatchPass
+				- query: GpuEventHappened
+			
+		
 	- ResizeBackbuffer
 - DiffuseShading
 	- Buffer

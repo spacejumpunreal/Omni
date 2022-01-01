@@ -67,6 +67,7 @@ namespace Omni
     LifeTimeBatch::LifeTimeBatch(u64 batchId)
         : SListNode(nullptr)
         , BatchId(batchId)
+        , Callbacks(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi))
     {}
 
     //DX12TimelineManagerPrivateData
