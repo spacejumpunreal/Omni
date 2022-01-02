@@ -2,16 +2,15 @@
 - GfxApi::DX12
 	- Clear/Present
 		- refactor GfxApi module to provide simple renderer interface
-			- rational: better isolation between render logic and GfxApi
-				- do not expose classes like command buffer
-				
-			- use temp allocation to pass parameters, perhaps need new batch allocator
-			- make it a one-way(with some query/wait api)
-			- very few APIs(like messiah or bgfx)
-				- Resource:Create/Update/Destroy
-				- Action: DrawPass, DispatchPass
-				- query: GpuEventHappened
-			
+			- change DemoRendererModule code, use new interfaces
+			- change DX12Module, implement new interfaces
+				- implement DrawRenderPass
+					- DX12CommandContext
+			- build
+			- check
+				- clear corrrect
+				- frame capture
+				- quit clean
 		
 	- ResizeBackbuffer
 - DiffuseShading

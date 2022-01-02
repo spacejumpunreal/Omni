@@ -30,7 +30,7 @@ namespace Omni
         void* CreateObject() override
         {
             ID3D12GraphicsCommandList4* p;
-            CheckGfxApi(mDevice->CreateCommandList(
+            CheckDX12(mDevice->CreateCommandList(
                 0, D3D12_COMMAND_LIST_TYPE_DIRECT,
                 nullptr, nullptr,
                 IID_PPV_ARGS(&p)));

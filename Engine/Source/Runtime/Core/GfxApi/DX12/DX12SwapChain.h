@@ -2,6 +2,7 @@
 #include "Runtime/Prelude/Omni.h"
 #if OMNI_WINDOWS
 #include "Runtime/Core/GfxApi/GfxApiConstants.h"
+#include "Runtime/Core/GfxApi/GfxApiNewDelete.h"
 #include "Runtime/Core/GfxApi/GfxApiObject.h"
 
 //forward decl
@@ -10,24 +11,27 @@ struct ID3D12DescriptorHeap;
 
 namespace Omni
 {
-	class DX12SwapChain : public GfxApiSwapChain
+    //forward decl
+    class DX12Texture;
+
+	class DX12SwapChain final : public GfxApiSwapChain
 	{
 	public:
 		static const u32 MaxBackbuffers = 3;
 	public:
+        DEFINE_GFX_API_OBJECT_NEW_DELETE();
 		DX12SwapChain(const GfxApiSwapChainDesc& desc);
 		~DX12SwapChain();
-		void Destroy() override;
 		const GfxApiSwapChainDesc& GetDesc() override;
-		void Present(bool waitForVSync) override;
-		void Update(const GfxApiSwapChainDesc& desc) override;
-		u32 GetCurrentBackbufferIndex() override;
-		GfxApiTextureRef GetCurrentBackbuffer() override;
+		void Present(bool waitVSync);
+		void Update(const GfxApiSwapChainDesc& desc);
+		u32 GetCurrentBackbufferIndex();
+		void GetBackbufferTextures(GfxApiTextureRef backbuffers[], u32 count);
 	private:
 		GfxApiSwapChainDesc         mDesc;
 		IDXGISwapChain3*            mDX12SwapChain;
         ID3D12DescriptorHeap*       mTmpDescriptorHeap;
-		GfxApiTextureRef            mBackbuffers[MaxBackbuffers];
+		DX12Texture*                mBackbuffers[MaxBackbuffers];
 	};
 }
 

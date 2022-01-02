@@ -14,17 +14,22 @@ namespace Omni
     /**
      * forward decls
      */
+    //GfxApiObejcts
+    class GfxApiBuffer;
     class GfxApiTexture;
     class GfxApiSwapChain;
-    class GfxApiRenderPass;
-    class GfxApiRenderCommandContext;
     class GfxApiGpuEvent;
+    //AsyncActions
+    class GfxApiRenderPass;
+    class GfxApiComputePass;
 
     /**
      * typedefs
      */
-    using GfxApiGpuEventRef = SharedPtr<GfxApiGpuEvent>;
-
+    using GfxApiTextureRef = GfxApiTexture*;
+    using GfxApiBufferRef = GfxApiBuffer*;
+    using GfxApiSwapChainRef = GfxApiSwapChain*;
+    using GfxApiGpuEventRef = GfxApiGpuEvent*;
 
     /**
      * enums
@@ -34,7 +39,8 @@ namespace Omni
     /**
      * GfxApiObjectDesc definitions & GfxApiObject interface declarations
      */
-
+    
+    //GfxApiObjectDesc
     struct GfxApiObjectDesc
     {
     public:
@@ -47,6 +53,8 @@ namespace Omni
         {}
     };
 
+
+    //GfxApiBuffer
     struct GfxApiBufferDesc : public GfxApiObjectDesc
     {
     public:
@@ -57,13 +65,13 @@ namespace Omni
         GfxApiBufferDesc() : GfxApiObjectDesc(GfxApiObjectType::Buffer) {}
     };
 
-    class GfxApiBuffer : public SharedObject
+    class GfxApiBuffer
     {
         virtual const GfxApiBufferDesc& GetDesc() = 0;
     };
 
-    using GfxApiBufferRef = SharedPtr<GfxApiBuffer>;
 
+    //GfxApiTexture
     struct GfxApiTextureDesc : public GfxApiObjectDesc
     {
     public:
@@ -76,14 +84,14 @@ namespace Omni
         GfxApiTextureDesc() : GfxApiObjectDesc(GfxApiObjectType::Texture) {}
     };
 
-    class GfxApiTexture : public SharedObject
+    class GfxApiTexture
     {
     public:
         virtual const GfxApiTextureDesc& GetDesc() = 0;
     };
 
-    using GfxApiTextureRef = SharedPtr<GfxApiTexture>;
 
+    //GfxApiSwapChain
     struct GfxApiSwapChainDesc : public GfxApiObjectDesc
     {
     public:
@@ -102,82 +110,16 @@ namespace Omni
         {}
     };
 
-
-    class GfxApiSwapChain : public SharedObject
+    class GfxApiSwapChain
     {
-    public:
-        struct FrameStatistics
-        {
-            u64     PresentedFrameCount;
-            u64     CurrentFrameIndex;
-        };
     public:
         virtual const GfxApiSwapChainDesc& GetDesc() = 0;
-        virtual GfxApiGpuEvent Present(bool waitFotVSync) = 0;
-        virtual void Update(const GfxApiSwapChainDesc& desc) = 0;
-        virtual void Stats(FrameStatistics& stats) = 0;
-        virtual u32 GetCurrentBackbufferIndex() = 0;
-        virtual GfxApiTextureRef GetCurrentBackbuffer() = 0;
     };
     
-    using GfxApiSwapChainRef = SharedPtr<GfxApiSwapChain>;
 
-
-    /**
-      * Command related
-      */
-
-    enum class GfxApiContextType
-    {
-        Copy,
-        Compute,
-        Render,
-    };
-
-    enum class GfxApiLoadStoreActions : u32
-    {
-        Load = 1 << 0,
-        Clear = 1 << 1,
-        DontCare = 1 << 2,
-        Store = 1 << 3,
-        Discard = 1 << 4,
-    };
-    DEFINE_ENUM_CLASS_OPS(GfxApiLoadStoreActions)
-
-    struct GfxApiRTConfig
-    {
-        GfxApiTexture*              Texture = nullptr;
-        std::variant<u32, Vector4>  ClearValue;
-        GfxApiLoadStoreActions      Action = GfxApiLoadStoreActions::Clear | GfxApiLoadStoreActions::Store;
-
-    };
-
-    constexpr u32 MaxMRTCount = 8;
-    struct GfxApiRenderPassDesc
-    {
-        GfxApiRTConfig      Color[MaxMRTCount];
-        GfxApiRTConfig      Depth;
-        GfxApiRTConfig      Stencil;
-        u32                 StageCount = 1;
-    };
-
-    class GfxApiRenderPass
+    //GfxApiGpuEvent
+    class GfxApiGpuEvent //aka ID3D12Fence on DX12, MTLEvent on Metal
     {
     public:
-        virtual GfxApiRenderCommandContext* BeginContext(u32 phase) = 0;
-        virtual void EndContext(GfxApiRenderCommandContext* ctx) = 0;
-    };
-
-    class GfxApiRenderCommandContext
-    {
-    public:
-        virtual void Use() = 0;
-    };
-
-    class GfxApiGpuEvent : public SharedObject //aka ID3D12Fence on DX12, MTLEvent on Metal
-    {
-    public:
-        virtual bool IsDone() = 0;
-        virtual void Wait() = 0;
     };
 }

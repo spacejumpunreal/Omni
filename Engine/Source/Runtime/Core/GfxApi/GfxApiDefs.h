@@ -1,8 +1,17 @@
 #pragma once
 #include "Runtime/Prelude/Omni.h"
+#include "Runtime/Base/Misc/EnumUtils.h"
 
 namespace Omni
 {
+    /**
+    * Constants
+    */
+    constexpr u32 MaxMRTCount = 8;
+
+    /**
+    * Enums
+    */
     enum class GfxApiObjectType : u32
     {
         Buffer,
@@ -35,4 +44,13 @@ namespace Omni
         CopyQueue,
         Count,
     };
+    enum class GfxApiLoadStoreActions : u32
+    {
+        Load = 1 << 0,
+        Clear = 1 << 1,
+        DontCare = 1 << 2,
+        Store = 1 << 3,
+        Discard = 1 << 4,
+    };
+    DEFINE_ENUM_CLASS_OPS(GfxApiLoadStoreActions);
 }

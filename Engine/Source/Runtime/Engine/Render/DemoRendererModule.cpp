@@ -6,15 +6,20 @@
 #include "Runtime/Core/System/ModuleExport.h"
 #include "Runtime/Core/System/ModuleImplHelpers.h"
 #include "Runtime/Core/GfxApi/GfxApiModule.h"
+#include "Runtime/Core/GfxApi/GfxApiRenderPass.h"
 #include "Runtime/Core/Platform/WindowModule.h"
 #include "Runtime/Engine/Timing/TimingModule.h"
-#include "Runtime/Base/Memory/ObjectCache.h"
 
 
 namespace Omni
 {
     /**
-    * declarations
+    * Constants
+    */
+    constexpr u32 BackbufferCount = 3;
+
+    /**
+    * Declarations
     */
 
     struct DemoRendererModulePrivateImpl : public ICallback
@@ -25,7 +30,8 @@ namespace Omni
         void operator()() override { Tick(); }
     public:
         DispatchWorkItem*               TickRegistry = nullptr;
-        SharedPtr<GfxApiSwapChain>      SwapChain;
+        GfxApiSwapChainRef              SwapChain = {};
+        GfxApiTextureRef                Backbuffers[BackbufferCount];
     };
 
     using DemoRendererImpl = PImplCombine<DemoRendererModule, DemoRendererModulePrivateImpl>;
@@ -60,13 +66,13 @@ namespace Omni
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         //create swapchain
         GfxApiSwapChainDesc descSwapChain;
-        descSwapChain.BufferCount = 3;
+        descSwapChain.BufferCount = BackbufferCount;
         descSwapChain.Width = w;
         descSwapChain.Height = h;
         descSwapChain.Format = GfxApiFormat::R8G8B8A8_UNORM;
         descSwapChain.WindowHandle = wm.GetMainWindowHandle();
         self.SwapChain = gfxApi.CreateSwapChain(descSwapChain);
-        self.SwapChain->Present(true);
+        gfxApi.GetBackbufferTextures(self.SwapChain, self.Backbuffers, BackbufferCount);
         tm.RegisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority, DemoRendererImpl::GetData(this), QueueKind::Main);
         tm.SetFrameRate_OnMainThread(EngineFrameType::Render, 30);
         Module::Initialize(args);
@@ -84,7 +90,8 @@ namespace Omni
         MemoryModule& mm = MemoryModule::Get();
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         
-        self.SwapChain.Clear();
+        gfxApi.DestroySwapChain(self.SwapChain);
+        self.SwapChain = nullptr;
         tm.UnregisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority);
         Module::Finalize();
         gfxApi.Release();
@@ -97,18 +104,17 @@ namespace Omni
     void DemoRendererModulePrivateImpl::Tick()
     {
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
-        
-        GfxApiModule& gfxApiM = GfxApiModule::Get();
+        GfxApiModule& gfxApi = GfxApiModule::Get();
 
-        GfxApiRenderPassDesc passDesc;
-        GfxApiTextureRef backbufferTexture = self.SwapChain->GetCurrentBackbuffer();
-        passDesc.Color[0].Texture = backbufferTexture.GetRaw();
-        passDesc.Color[0].ClearValue = Vector4(1, 0, 0, 0);
-        GfxApiRenderPass* renderPass = gfxApiM.BeginRenderPass(passDesc);
-        
-        gfxApiM.EndRenderPass(renderPass);
-        self.SwapChain->Present(true);
+        u32 currentBuffer = gfxApi.GetCurrentBackbufferIndex(self.SwapChain);
+        GfxApiRenderPass* renderPass = new GfxApiRenderPass(0);
+        renderPass->RenderTargets[0].Texture = self.Backbuffers[currentBuffer];
+        renderPass->RenderTargets[0].ClearValue = Vector4(1, 0, 0, 0);
+        renderPass->RenderTargets[0].Action = GfxApiLoadStoreActions::Clear | GfxApiLoadStoreActions::Store;
 
+        gfxApi.DrawRenderPass(renderPass, nullptr);
+        gfxApi.Present(self.SwapChain, true, nullptr);
+        gfxApi.ScheduleGpuEvent(GfxApiQueueType::GraphicsQueue, nullptr);
     }
 
     static Module* DemoRendererModuleCtor(const EngineInitArgMap&)

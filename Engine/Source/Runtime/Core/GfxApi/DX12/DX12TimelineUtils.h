@@ -12,7 +12,7 @@ struct IUnknown;
 
 namespace Omni
 {
-    
+    //forward decl
 
     //declarations
     struct TimelineHelpers

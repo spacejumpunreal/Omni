@@ -15,21 +15,22 @@ namespace Omni
 	{
 		NotImplemented();
 	}
-	DX12Texture::DX12Texture(const GfxApiTextureDesc& desc, ID3D12Resource* res, DX12Descriptor descriptor)
+    //this is for texture that was owned by others
+	DX12Texture::DX12Texture(const GfxApiTextureDesc& desc, ID3D12Resource* res, DX12Descriptor descriptor, bool isOwner)
 		: mDesc(desc)
 		, mTexture(res)
         , mTmpCPUDescriptor(descriptor)
+        , mIsOwner(isOwner)
 	{
 	}
 	DX12Texture::~DX12Texture()
 	{
-		CheckDebug(mTexture);
-		SafeRelease(mTexture);
-	}
-	void DX12Texture::Destroy()
-	{
-		auto self = this;
-		OMNI_DELETE(self, MemoryKind::GfxApi);
+        if (mIsOwner)
+        {
+            CheckDebug(mTexture);
+            SafeRelease(mTexture);
+        }
+		
 	}
 	const GfxApiTextureDesc& DX12Texture::GetDesc()
 	{

@@ -4,7 +4,7 @@
 #include "Runtime/Base/Misc/AssertUtils.h"
 
 
-#define CheckGfxApi(result) CheckAlways(SUCCEEDED(result))
+#define CheckDX12(result) CheckAlways(SUCCEEDED(result))
 
 namespace Omni
 {

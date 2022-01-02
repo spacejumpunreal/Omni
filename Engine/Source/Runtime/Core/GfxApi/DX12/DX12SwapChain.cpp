@@ -46,14 +46,14 @@ namespace Omni
 		winDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
 		IDXGISwapChain1* swapchain = nullptr;
-		CheckGfxApi(gDX12GlobalState.DXGIFactory->CreateSwapChainForHwnd(
+		CheckDX12(gDX12GlobalState.DXGIFactory->CreateSwapChainForHwnd(
 			gDX12GlobalState.D3DGraphicsCommandQueue,
 			desc.WindowHandle.ToNativeHandle(),
 			&winDesc,
 			nullptr,
 			nullptr,
 			&swapchain));
-		CheckGfxApi(swapchain->QueryInterface(IID_PPV_ARGS(&mDX12SwapChain)));
+		CheckDX12(swapchain->QueryInterface(IID_PPV_ARGS(&mDX12SwapChain)));
 		swapchain->Release();
 		GfxApiTextureDesc texDesc;
 		texDesc.Width = desc.Width;
@@ -67,7 +67,12 @@ namespace Omni
             heapDesc.NumDescriptors = desc.BufferCount;
             heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
             heapDesc.NodeMask = 0;
-            CheckGfxApi(gDX12GlobalState.D3DDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mTmpDescriptorHeap)));
+            CheckDX12(gDX12GlobalState.D3DDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mTmpDescriptorHeap)));
+        }
+
+        for (u32 iBuffer = 0; iBuffer < MaxBackbuffers; ++iBuffer)
+        {
+            mBackbuffers[iBuffer] = {};
         }
         
         CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
@@ -76,23 +81,19 @@ namespace Omni
 		for (u32 iBuffer = 0; iBuffer < desc.BufferCount; ++iBuffer)
 		{
 			ID3D12Resource* res;
-			CheckGfxApi(mDX12SwapChain->GetBuffer(iBuffer, IID_PPV_ARGS(&res)));
+			CheckDX12(mDX12SwapChain->GetBuffer(iBuffer, IID_PPV_ARGS(&res)));
 			res->SetName(BackBufferNames[iBuffer]);
-			mBackbuffers[iBuffer] = OMNI_NEW(MemoryKind::GfxApi) DX12Texture(texDesc, res, rtvHandle.ptr);
+			mBackbuffers[iBuffer] = new DX12Texture(texDesc, res, rtvHandle.ptr, true);
             rtvHandle.Offset(1);
 		}
-	}
-	void DX12SwapChain::Destroy()
-	{
-		auto self = this;
-		OMNI_DELETE(self, MemoryKind::GfxApi);
 	}
 	DX12SwapChain::~DX12SwapChain()
 	{
 		gDX12GlobalState.WaitGPUIdle();
 		for (u32 iBuffer = 0; iBuffer < mDesc.BufferCount; ++iBuffer)
 		{
-			mBackbuffers[iBuffer].Clear();
+            delete mBackbuffers[iBuffer];
+            mBackbuffers[iBuffer] = nullptr;
 		}
         SafeRelease(mDX12SwapChain);
         SafeRelease(mTmpDescriptorHeap);
@@ -101,14 +102,12 @@ namespace Omni
 	{
 		return mDesc;
 	}
-	void DX12SwapChain::Present(bool waitForVSync)
+	void DX12SwapChain::Present(bool waitVSync)
 	{
-		//printf("Buffer%d to be presented\n", mDX12SwapChain->GetCurrentBackBufferIndex());
-		CheckGfxApi(mDX12SwapChain->Present(waitForVSync ? 1 : 0, 0));
+		CheckDX12(mDX12SwapChain->Present(waitVSync ? 1 : 0, 0));
 	}
 	void DX12SwapChain::Update(const GfxApiSwapChainDesc& desc)
 	{
-		//TODO: handle window resize
 		(void)desc;
 		NotImplemented("DX12SwapChain::Update");
 	}
@@ -118,9 +117,12 @@ namespace Omni
 		return mDX12SwapChain->GetCurrentBackBufferIndex();
 	}
 
-	GfxApiTextureRef DX12SwapChain::GetCurrentBackbuffer()
+	void DX12SwapChain::GetBackbufferTextures(GfxApiTextureRef backbuffers[], u32 count)
 	{
-		return mBackbuffers[mDX12SwapChain->GetCurrentBackBufferIndex()];
+        for (u32 i = 0; i < count; ++i)
+        {
+            backbuffers[i] = mBackbuffers[i];
+        }
 	}
 }
 

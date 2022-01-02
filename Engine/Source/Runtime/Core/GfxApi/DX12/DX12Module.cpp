@@ -9,6 +9,7 @@
 #include "Runtime/Core/GfxApi/GfxApiModule.h"
 #include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
 #include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
+#include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
 
 #include <d3d12.h>
 #include <dxgidebug.h>
@@ -92,45 +93,128 @@ namespace Omni
     /*
     * GfxApiMethod implementations
     */
+
+
+    //Buffer
     GfxApiBufferRef DX12Module::CreateBuffer(const GfxApiBufferDesc& desc)
     {
         (void)desc;
-        //return GfxApiBufferRef(OMNI_NEW(MemoryKind::GfxApi)DX12SwapChain(desc));
+        NotImplemented();
         return {};
     }
 
+    void DX12Module::DestroyBuffer(GfxApiBufferRef buffer)
+    {
+        (void)buffer;
+        NotImplemented();
+    }
+
+
+    //Texture
     GfxApiTextureRef DX12Module::CreateTexture(const GfxApiTextureDesc& desc)
     {
         (void)desc;
-        //return GfxApiSwapChainRef(OMNI_NEW(MemoryKind::GfxApi)DX12SwapChain(desc));
+        NotImplemented();
         return {};
     }
 
-    GfxApiTextureRef DX12Module::WrapExternalTexture(const GfxApiTextureDesc& desc, void* texture)
+    void DX12Module::DestroyTexture(GfxApiTextureRef texture)
     {
-        (void)desc;
         (void)texture;
-        //return GfxApiSwapChainRef(OMNI_NEW(MemoryKind::GfxApi)DX12SwapChain(desc));
-        return {};
+        NotImplemented();
     }
 
+
+    //SwapChain
     GfxApiSwapChainRef DX12Module::CreateSwapChain(const GfxApiSwapChainDesc& desc)
     {
-        return GfxApiSwapChainRef(OMNI_NEW(MemoryKind::GfxApi)DX12SwapChain(desc));
+        return new DX12SwapChain(desc);
     }
 
-    GfxApiRenderPass* DX12Module::BeginRenderPass(const GfxApiRenderPassDesc& desc)
+    void DX12Module::UpdateSwapChain(GfxApiSwapChainRef swapChain, const GfxApiSwapChainDesc& desc)
     {
-        DX12RenderPass* renderPass = gDX12GlobalState.RenderPassCache.Alloc();
-        renderPass->RecycleInit(desc);
-        return renderPass;
+        DX12SwapChain* dx12SwapChain = static_cast<DX12SwapChain*>(swapChain);
+        dx12SwapChain->Update(desc);
     }
 
-    void DX12Module::EndRenderPass(GfxApiRenderPass* pass)
+    void DX12Module::DestroySwapChain(GfxApiSwapChainRef swapChain)
     {
-        DX12RenderPass* renderPass = static_cast<DX12RenderPass*>(pass);
-        gDX12GlobalState.RenderPassCache.Free(renderPass);
+        DX12SwapChain* dx12SwapChain = static_cast<DX12SwapChain*>(swapChain);
+        delete dx12SwapChain;
     }
+
+    void DX12Module::GetBackbufferTextures(GfxApiSwapChainRef swapChain, GfxApiTextureRef backbuffers[], u32 count)
+    {
+        DX12SwapChain* dx12SwapChain = static_cast<DX12SwapChain*>(swapChain);
+        dx12SwapChain->GetBackbufferTextures(backbuffers, count);
+    }
+    
+    u32 DX12Module::GetCurrentBackbufferIndex(GfxApiSwapChainRef swapChain)
+    {
+        DX12SwapChain* dx12SwapChain = static_cast<DX12SwapChain*>(swapChain);
+        return dx12SwapChain->GetCurrentBackbufferIndex();
+    }
+
+
+    //GpuEvent
+    bool DX12Module::IsEventTriggered(GfxApiGpuEventRef gpuEvent)
+    {
+        (void)gpuEvent;
+        NotImplemented();
+        return false;
+    }
+
+    void DX12Module::WaitEvent(GfxApiGpuEventRef gpuEvent)
+    {
+        (void)gpuEvent;
+        NotImplemented();
+    }
+
+    void DX12Module::DestroyEvent(GfxApiGpuEventRef gpuEvent)
+    {
+        (void)gpuEvent;
+        NotImplemented();
+    }
+
+    //AsyncActions
+    void DX12Module::DrawRenderPass(GfxApiRenderPass* renderPass, GfxApiGpuEventRef* doneEvent)
+    {
+        (void)renderPass;
+        (void)doneEvent;
+        NotImplemented();
+    }
+
+    void DX12Module::DispatchComputePass(GfxApiComputePass* computePass, GfxApiGpuEventRef* doneEvent)
+    {
+        (void)computePass;
+        (void)doneEvent;
+        NotImplemented();
+    }
+
+    void DX12Module::Present(GfxApiSwapChainRef swapChain, bool waitVSync, GfxApiGpuEventRef* doneEvent)
+    {
+        (void)swapChain;
+        (void)waitVSync;
+        (void)doneEvent;
+        NotImplemented();
+    }
+
+    void DX12Module::ScheduleGpuEvent(GfxApiQueueType queueType, GfxApiGpuEventRef* doneEvent)
+    {
+        (void)doneEvent;
+        ID3D12CommandQueue* queue = nullptr;
+        switch (queueType)
+        {
+        case GfxApiQueueType::GraphicsQueue:
+            queue = gDX12GlobalState.D3DGraphicsCommandQueue;
+            break;
+        default:
+            break;
+        }
+        gDX12GlobalState.TimelineManager->CloseBatchAndSignalOnGPU(queueType, queue);
+    }
+
+    //Private functions
 
 #if DEBUG_DX_OBJECT_LEAK_ON_QUIT
     void DX12Module::ReportAllLivingObjects()

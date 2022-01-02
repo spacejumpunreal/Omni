@@ -61,7 +61,7 @@ namespace Omni
         CheckSucceeded(DXGIFactory->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE::DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&DXGIAdaptor)));
 
         CheckSucceeded(D3D12CreateDevice(DXGIAdaptor, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&D3DDevice)));
-        CheckGfxApi(D3DDevice->SetName(L"OmniDX12Device"));
+        CheckDX12(D3DDevice->SetName(L"OmniDX12Device"));
 
         ID3D12InfoQueue* d3d12InfoQueue;
         CheckSucceeded(D3DDevice->QueryInterface(IID_PPV_ARGS(&d3d12InfoQueue)));
@@ -90,8 +90,6 @@ namespace Omni
         /**
         * object cache
         */
-        RenderPassCache.Initialize(gfxApiAllocator, new DX12RenderPass::CacheFactory(), 1);
-        RenderCommandContextCache.Initialize(gfxApiAllocator, new DX12RenderCommandContext::CacheFactory(), 1);
 
         /**
         * managers

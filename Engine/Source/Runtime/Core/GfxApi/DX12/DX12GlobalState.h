@@ -3,7 +3,6 @@
 #if OMNI_WINDOWS
 #include "Runtime/Core/Platform/OSUtils_Windows.h"
 #include "Runtime/Base/Memory/ObjectCache.h"
-#include "Runtime/Core/GfxApi/DX12/DX12CommandContext.h"
 #include <d3d12.h>
 #include <dxgi1_6.h>
 
@@ -30,8 +29,7 @@ namespace Omni
         ObjectCache<ID3D12CommandAllocator>             DirectCommandAllocatorCache;
         //we can have a ID3D12Fence cache here
     public://object pools
-        ObjectCache<DX12RenderPass>                     RenderPassCache;
-        ObjectCache<DX12RenderCommandContext>           RenderCommandContextCache;
+
     public://state flags
         bool								            Initialized;
     public://managers

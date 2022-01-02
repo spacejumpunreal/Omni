@@ -11,12 +11,12 @@ namespace Omni
 	{
 		ID3D12Fence* ret = nullptr;
         dev = dev == nullptr ? ((ID3D12Device*)gDX12GlobalState.D3DDevice) : dev;
-		CheckGfxApi(dev->CreateFence(initValue, D3D12_FENCE_FLAGS::D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&ret)));
+		CheckDX12(dev->CreateFence(initValue, D3D12_FENCE_FLAGS::D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&ret)));
 		return ret;
 	}
 	void UpdateFenceOnGPU(ID3D12Fence* fence, u64 newValue, ID3D12CommandQueue* queue)
 	{
-		CheckGfxApi(queue->Signal(fence, newValue));
+		CheckDX12(queue->Signal(fence, newValue));
 	}
 	void ReleaseFence(ID3D12Fence* fence)
 	{
@@ -29,7 +29,7 @@ namespace Omni
 		HANDLE winHandle = ::CreateEvent(nullptr, FALSE, FALSE, L"WaitForFenceInPlace");
 		if (winHandle != nullptr)
 		{
-			CheckGfxApi(fence->SetEventOnCompletion(waitValue, winHandle));
+			CheckDX12(fence->SetEventOnCompletion(waitValue, winHandle));
 			while (true)
 			{
 				if (::WaitForSingleObject(winHandle, INFINITE) == WAIT_OBJECT_0)
