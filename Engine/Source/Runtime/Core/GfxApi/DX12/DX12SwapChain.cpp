@@ -7,6 +7,9 @@
 #include "Runtime/Core/GfxApi/DX12/DX12Texture.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
 #include "Runtime/Core/GfxApi/DX12/d3dx12.h"
+#include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
+#include "Runtime/Core/GfxApi/DX12/DX12TimelineUtils.h"
+#include "Runtime/Core/GfxApi/DX12/DX12CommandUtils.h"
 
 namespace Omni
 {
@@ -75,16 +78,16 @@ namespace Omni
             mBackbuffers[iBuffer] = {};
         }
         
-        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
-            mTmpDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), 
-            gDX12GlobalState.D3DDevice->GetDescriptorHandleIncrementSize(heapType));
+        u32 stride = gDX12GlobalState.D3DDevice->GetDescriptorHandleIncrementSize(heapType);
+        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mTmpDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 		for (u32 iBuffer = 0; iBuffer < desc.BufferCount; ++iBuffer)
 		{
 			ID3D12Resource* res;
 			CheckDX12(mDX12SwapChain->GetBuffer(iBuffer, IID_PPV_ARGS(&res)));
 			res->SetName(BackBufferNames[iBuffer]);
-			mBackbuffers[iBuffer] = new DX12Texture(texDesc, res, rtvHandle.ptr, true);
-            rtvHandle.Offset(1);
+            gDX12GlobalState.D3DDevice->CreateRenderTargetView(res, nullptr, rtvHandle);
+			mBackbuffers[iBuffer] = new DX12Texture(texDesc, res, D3D12_RESOURCE_STATE_COMMON, rtvHandle.ptr, true);
+            rtvHandle.Offset(stride);
 		}
 	}
 	DX12SwapChain::~DX12SwapChain()
@@ -104,6 +107,17 @@ namespace Omni
 	}
 	void DX12SwapChain::Present(bool waitVSync)
 	{
+        DX12Texture* backbuffer = mBackbuffers[mDX12SwapChain->GetCurrentBackBufferIndex()];
+        D3D12_RESOURCE_BARRIER barrier;
+        if (backbuffer->EmitBarrier(D3D12_RESOURCE_STATE_PRESENT, &barrier))
+        {
+            ID3D12GraphicsCommandList4* cmdList = SetupDirectCommandList();
+            cmdList->ResourceBarrier(1, &barrier);
+            CheckDX12(cmdList->Close());
+            ID3D12CommandList* cmd = cmdList;
+            gDX12GlobalState.D3DGraphicsCommandQueue->ExecuteCommandLists(1, &cmd);
+            gDX12GlobalState.DirectCommandListCache.Free(cmdList);
+        }
 		CheckDX12(mDX12SwapChain->Present(waitVSync ? 1 : 0, 0));
 	}
 	void DX12SwapChain::Update(const GfxApiSwapChainDesc& desc)

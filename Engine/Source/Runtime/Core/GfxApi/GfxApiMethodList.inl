@@ -10,7 +10,7 @@ GfxApiMethod(GfxApiTextureRef CreateTexture(const GfxApiTextureDesc& desc))
 GfxApiMethod(void DestroyTexture(GfxApiTextureRef))
 //SwapChain
 GfxApiMethod(GfxApiSwapChainRef CreateSwapChain(const GfxApiSwapChainDesc& desc))
-GfxApiMethod(void UpdateSwapChain(GfxApiSwapChainRef swapChain, const GfxApiSwapChainDesc& desc))
+GfxApiMethod(void UpdateSwapChain(GfxApiSwapChainRef swapChain, const GfxApiSwapChainDesc& desc)) //NOTE: this will WaitGPUIdle
 GfxApiMethod(void DestroySwapChain(GfxApiSwapChainRef))
 GfxApiMethod(void GetBackbufferTextures(GfxApiSwapChainRef swapChain, GfxApiTextureRef backbuffers[], u32 count))
 GfxApiMethod(u32 GetCurrentBackbufferIndex(GfxApiSwapChainRef swapChain))

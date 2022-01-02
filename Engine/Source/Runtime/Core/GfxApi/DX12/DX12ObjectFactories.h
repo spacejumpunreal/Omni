@@ -2,9 +2,10 @@
 #include "Runtime/Prelude/Omni.h"
 #if OMNI_WINDOWS
 #include "Runtime/Base/Misc/AssertUtils.h"
+#include "Runtime/Base/Memory/ObjectCache.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
-#include "Runtime/Core/GfxApi/GfxApiObjectCacheFactory.h"
+#include "Runtime/Core/GfxApi/GfxApiNewDelete.h"
 
 
 #include <d3d12.h>
@@ -14,26 +15,30 @@ namespace Omni
     /**
     * DX12 object cache
     */
-    struct ID3D12GraphicsCommandList4CacheFactory final 
-        : public GfxApiObjectCacheFactory<ID3D12GraphicsCommandList4, ID3D12GraphicsCommandList4CacheFactory>
+    struct ID3D12GraphicsCommandList4CacheFactory final : public IObjectCacheFactory
     {
+        DEFINE_GFX_API_OBJECT_NEW_DELETE();
+
         ID3D12GraphicsCommandList4CacheFactory(ID3D12Device* device)
             : mDevice(device)
         {
             mDevice->AddRef();
+            CheckDX12(mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mDummyAllocator)));
         }
         void Destroy() override
         {
+            SafeRelease(mDummyAllocator);
             SafeRelease(mDevice);
-            GfxApiObjectCacheFactory<ID3D12GraphicsCommandList4, ID3D12GraphicsCommandList4CacheFactory>::Destroy();
         }
         void* CreateObject() override
         {
             ID3D12GraphicsCommandList4* p;
-            CheckDX12(mDevice->CreateCommandList(
+            auto ret = mDevice->CreateCommandList(
                 0, D3D12_COMMAND_LIST_TYPE_DIRECT,
-                nullptr, nullptr,
-                IID_PPV_ARGS(&p)));
+                mDummyAllocator, nullptr,
+                IID_PPV_ARGS(&p));
+            CheckDX12(ret);
+            CheckDX12(p->Close());
             return p;
         }
         void DestroyObject(void* obj) override
@@ -48,12 +53,14 @@ namespace Omni
         }
 
     private:
-        ID3D12Device* mDevice;
+        ID3D12Device*               mDevice;
+        ID3D12CommandAllocator*     mDummyAllocator;
     };
 
-    struct ID3D12CommandAllocatorCacheFactory final 
-        : public GfxApiObjectCacheFactory<ID3D12CommandAllocator, ID3D12CommandAllocatorCacheFactory>
+    struct ID3D12CommandAllocatorCacheFactory final : public IObjectCacheFactory
     {
+        DEFINE_GFX_API_OBJECT_NEW_DELETE();
+
         ID3D12CommandAllocatorCacheFactory(ID3D12Device* device)
             : mDevice(device)
         {
@@ -62,7 +69,6 @@ namespace Omni
         void Destroy() override
         {
             SafeRelease(mDevice);
-            GfxApiObjectCacheFactory<ID3D12CommandAllocator, ID3D12CommandAllocatorCacheFactory>::Destroy();
         }
         void* CreateObject() override
         {
@@ -90,7 +96,6 @@ namespace Omni
     /**
     * object cache
     */
-    //non ID3D12 object cache factory should be declared within object definition itself, not here
 }
 
 

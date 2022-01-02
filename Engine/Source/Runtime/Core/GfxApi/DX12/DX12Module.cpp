@@ -10,6 +10,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
 #include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Command.h"
 
 #include <d3d12.h>
 #include <dxgidebug.h>
@@ -141,6 +142,7 @@ namespace Omni
     {
         DX12SwapChain* dx12SwapChain = static_cast<DX12SwapChain*>(swapChain);
         delete dx12SwapChain;
+
     }
 
     void DX12Module::GetBackbufferTextures(GfxApiSwapChainRef swapChain, GfxApiTextureRef backbuffers[], u32 count)
@@ -179,9 +181,7 @@ namespace Omni
     //AsyncActions
     void DX12Module::DrawRenderPass(GfxApiRenderPass* renderPass, GfxApiGpuEventRef* doneEvent)
     {
-        (void)renderPass;
-        (void)doneEvent;
-        NotImplemented();
+        DX12DrawRenderPass(renderPass, doneEvent);
     }
 
     void DX12Module::DispatchComputePass(GfxApiComputePass* computePass, GfxApiGpuEventRef* doneEvent)
@@ -193,10 +193,10 @@ namespace Omni
 
     void DX12Module::Present(GfxApiSwapChainRef swapChain, bool waitVSync, GfxApiGpuEventRef* doneEvent)
     {
-        (void)swapChain;
-        (void)waitVSync;
-        (void)doneEvent;
-        NotImplemented();
+        DX12SwapChain* dx12SwapChain = static_cast<DX12SwapChain*>(swapChain);
+        dx12SwapChain->Present(waitVSync);
+        if (doneEvent != nullptr)
+            NotImplemented("doneEvent");
     }
 
     void DX12Module::ScheduleGpuEvent(GfxApiQueueType queueType, GfxApiGpuEventRef* doneEvent)
@@ -209,6 +209,7 @@ namespace Omni
             queue = gDX12GlobalState.D3DGraphicsCommandQueue;
             break;
         default:
+            NotImplemented("ScheduleGpuEvent only implemented for GraphicsQueue");
             break;
         }
         gDX12GlobalState.TimelineManager->CloseBatchAndSignalOnGPU(queueType, queue);

@@ -32,6 +32,7 @@ namespace Omni
         DispatchWorkItem*               TickRegistry = nullptr;
         GfxApiSwapChainRef              SwapChain = {};
         GfxApiTextureRef                Backbuffers[BackbufferCount];
+        u32                             FrameIndex = 0;
     };
 
     using DemoRendererImpl = PImplCombine<DemoRendererModule, DemoRendererModulePrivateImpl>;
@@ -89,9 +90,13 @@ namespace Omni
         WindowModule& wm = WindowModule::Get();
         MemoryModule& mm = MemoryModule::Get();
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
-        
+
         gfxApi.DestroySwapChain(self.SwapChain);
         self.SwapChain = nullptr;
+        for (u32 iBuffer = 0; iBuffer < BackbufferCount; ++iBuffer)
+        {
+            self.Backbuffers[iBuffer] = nullptr;
+        }
         tm.UnregisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority);
         Module::Finalize();
         gfxApi.Release();

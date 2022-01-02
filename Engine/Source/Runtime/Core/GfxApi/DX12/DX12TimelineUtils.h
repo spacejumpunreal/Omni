@@ -22,11 +22,11 @@ namespace Omni
         static void ReleaseSharedObject(SharedObject* obj);
 
         template<typename TObject>
-        static DX12TimelineManager::DX12RecycleCB CreateRecycleCB(
+        static DX12TimelineManager::DX12BatchCB CreateBatchCB(
             void (*func)(TObject*), 
             TObject* obj)
         {
-            return DX12TimelineManager::DX12RecycleCB((void(*)(void*))func, (void*)obj);
+            return DX12TimelineManager::DX12BatchCB((void(*)(void*))func, (void*)obj);
         }
     };
     

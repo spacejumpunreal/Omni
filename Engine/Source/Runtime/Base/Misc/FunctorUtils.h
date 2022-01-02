@@ -34,7 +34,7 @@ namespace Omni
 		{
 			return mFunc(mArg0);
 		}
-	private:
+	protected:
 		TFunc mFunc;
 		TArg0 mArg0;
 	};

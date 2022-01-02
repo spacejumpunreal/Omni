@@ -48,7 +48,7 @@ namespace Omni
     {
         Load = 1 << 0,
         Clear = 1 << 1,
-        DontCare = 1 << 2,
+        NoAccess = 1 << 2,
         Store = 1 << 3,
         Discard = 1 << 4,
     };

@@ -7,6 +7,8 @@
 #include "Runtime/Core/GfxApi/DX12/DX12Fence.h"
 #include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
+#include "Runtime/Core/GfxApi/DX12/DX12TimelineUtils.h"
+#include "Runtime/Core/GfxApi/GfxApiNewDelete.h"
 
 #include <d3d12.h>
 
@@ -34,8 +36,19 @@ namespace Omni
         LifeTimeBatch(u64 batchId);
     public:
         u64                                             BatchId;
-        PMRVector<DX12TimelineManager::DX12RecycleCB>   Callbacks;
+        PMRVector<DX12TimelineManager::DX12BatchCB>   Callbacks;
         
+    };
+
+    struct DX12MultiQueueCallback
+    {
+    public:
+        DEFINE_GFX_API_OBJECT_NEW_DELETE();
+        DX12MultiQueueCallback(DX12TimelineManager::DX12BatchCB callback, u32 deps);
+        static void Satisfy(DX12MultiQueueCallback* obj);
+    private:
+        DX12TimelineManager::DX12BatchCB    mCallback;
+        u32                                 mDeps;
     };
 
     struct DX12TimelineManagerPrivateData
@@ -69,6 +82,23 @@ namespace Omni
         , BatchId(batchId)
         , Callbacks(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi))
     {}
+
+    //DX12MultiQueueCallback
+    DX12MultiQueueCallback::DX12MultiQueueCallback(DX12TimelineManager::DX12BatchCB callback, u32 deps)
+        : mCallback(callback)
+        , mDeps(deps)
+    {}
+
+    void DX12MultiQueueCallback::Satisfy(DX12MultiQueueCallback* obj)
+    {
+        --obj->mDeps;
+        if (obj->mDeps == 0)
+        {
+            obj->mCallback();
+            delete obj;
+        }
+    }
+
 
     //DX12TimelineManagerPrivateData
 
@@ -126,7 +156,7 @@ namespace Omni
             u64 bid = batch->BatchId;
             auto& cbs = batch->Callbacks;
             WaitForFence(fence, bid);
-            for (DX12RecycleCB& cb : cbs)
+            for (DX12BatchCB& cb : cbs)
             {
                 cb();
             }
@@ -144,13 +174,31 @@ namespace Omni
         auto& queueData = self.QueueData[(u8)queueType];
         return queueData.Head->BatchId > batchId;
     }
-    u64 DX12TimelineManager::AddBatchEvent(GfxApiQueueType queueType, DX12RecycleCB action)
+    void DX12TimelineManager::PollBatch(GfxApiQueueType queueType)
+    {
+        auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
+        auto& queueData = self.QueueData[(u8)queueType];
+        u64 completed = queueData.Fence->GetCompletedValue();
+        WaitBatchFinishOnGPU(queueType, completed);
+    }
+    u64 DX12TimelineManager::AddBatchCallback(GfxApiQueueType queueType, DX12BatchCB action)
     {
         auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
         auto& queueData = self.QueueData[(u8)queueType];
         auto& cbs = queueData.Head->Callbacks;
         cbs.push_back(action);
         return queueData.Head->BatchId;
+    }
+    void DX12TimelineManager::AddMultiQueueBatchCallback(GfxApiQueueType queuesTypes[], u32 queueCount, DX12BatchCB action)
+    {
+        DX12MultiQueueCallback* ccb = new DX12MultiQueueCallback(action, queueCount);
+        u32 mask = 0;
+        for (u32 iQueue = 0; iQueue < queueCount; ++iQueue)
+        {
+            GfxApiQueueType queueType = queuesTypes[iQueue];
+            CheckDebug(mask & (1 << (u32)queueType));
+            AddBatchCallback(queueType, TimelineHelpers::CreateBatchCB(DX12MultiQueueCallback::Satisfy, ccb));
+        }
     }
 }
 

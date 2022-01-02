@@ -20,16 +20,18 @@ namespace Omni
 
     //declaration
     class DX12TimelineManager
-    {
+    {//batch = a gpu event on a specific queue, and some CPU callbacks that should run after the gpu event happened
     public:
-        using DX12RecycleCB = Action1<void, void*>;
+        using DX12BatchCB = Action1<void, void*>;
     public:
         DX12TimelineManager(ID3D12Device* dev);
         ~DX12TimelineManager();
         u64 CloseBatchAndSignalOnGPU(GfxApiQueueType queueType, ID3D12CommandQueue* queue);
         void WaitBatchFinishOnGPU(GfxApiQueueType queueType, u64 batchId);
         bool IsBatchFinishedOnGPU(GfxApiQueueType queueType, u64 batchId);
-        u64 AddBatchEvent(GfxApiQueueType queueType, DX12RecycleCB action);
+        void PollBatch(GfxApiQueueType queueType);
+        u64 AddBatchCallback(GfxApiQueueType queueType, DX12BatchCB action);
+        void AddMultiQueueBatchCallback(GfxApiQueueType queues[], u32 queueCount, DX12BatchCB action);
     private:
         PrivateData<1024, 16> mData;
     };

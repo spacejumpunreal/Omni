@@ -2,10 +2,11 @@
 - GfxApi::DX12
 	- Clear/Present
 		- refactor GfxApi module to provide simple renderer interface
-			- change DemoRendererModule code, use new interfaces
-			- change DX12Module, implement new interfaces
-				- implement DrawRenderPass
-					- DX12CommandContext
+			- coding
+				- DestroySwapChain use TimelineManager to destroy
+					- DX12TimelineUtils::ExecuteAfterCurrentQueueItemFinish()
+					- DX12SwapChain::Destroy(void*)
+				- add action CheckGpuProgress/ sort those things out
 			- build
 			- check
 				- clear corrrect
