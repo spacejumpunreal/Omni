@@ -11,6 +11,8 @@
 #include "Runtime/Engine/Timing/TimingModule.h"
 
 
+#define DEMO_MODULE 1
+
 namespace Omni
 {
     /**
@@ -64,6 +66,7 @@ namespace Omni
         u32 w, h;
         wm.GetBackbufferSize(w, h);
 
+#if DEMO_MODULE
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         //create swapchain
         GfxApiSwapChainDesc descSwapChain;
@@ -74,8 +77,10 @@ namespace Omni
         descSwapChain.WindowHandle = wm.GetMainWindowHandle();
         self.SwapChain = gfxApi.CreateSwapChain(descSwapChain);
         gfxApi.GetBackbufferTextures(self.SwapChain, self.Backbuffers, BackbufferCount);
+#endif
         tm.RegisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority, DemoRendererImpl::GetData(this), QueueKind::Main);
         tm.SetFrameRate_OnMainThread(EngineFrameType::Render, 30);
+
         Module::Initialize(args);
     }
 
@@ -89,8 +94,10 @@ namespace Omni
         GfxApiModule& gfxApi = GfxApiModule::Get();
         WindowModule& wm = WindowModule::Get();
         MemoryModule& mm = MemoryModule::Get();
-        DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
+        
 
+#if DEMO_MODULE
+        DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         gfxApi.DestroySwapChain(self.SwapChain);
         self.SwapChain = nullptr;
         for (u32 iBuffer = 0; iBuffer < BackbufferCount; ++iBuffer)
@@ -98,6 +105,7 @@ namespace Omni
             self.Backbuffers[iBuffer] = nullptr;
         }
         tm.UnregisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority);
+#endif
         Module::Finalize();
         gfxApi.Release();
         tm.Release();
@@ -108,9 +116,9 @@ namespace Omni
 
     void DemoRendererModulePrivateImpl::Tick()
     {
-        DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
+#if DEMO_MODULE
         GfxApiModule& gfxApi = GfxApiModule::Get();
-
+        DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         gfxApi.CheckGpuEvents(AllQueueMask);
 
         u32 currentBuffer = gfxApi.GetCurrentBackbufferIndex(self.SwapChain);
@@ -122,6 +130,7 @@ namespace Omni
         gfxApi.DrawRenderPass(renderPass, nullptr);
         gfxApi.Present(self.SwapChain, true, nullptr);
         gfxApi.ScheduleGpuEvent(GfxApiQueueType::GraphicsQueue, nullptr);
+#endif
     }
 
     static Module* DemoRendererModuleCtor(const EngineInitArgMap&)
@@ -136,3 +145,5 @@ namespace Omni
 
     EXPORT_INTERNAL_MODULE(DemoRenderer, ModuleExportInfo(DemoRendererModuleCtor, true));
 }
+
+#undef DEMO_MODULE

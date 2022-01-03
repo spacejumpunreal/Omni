@@ -29,6 +29,7 @@ namespace Omni
         {
             SafeRelease(mDummyAllocator);
             SafeRelease(mDevice);
+            delete this;
         }
         void* CreateObject() override
         {
@@ -69,6 +70,7 @@ namespace Omni
         void Destroy() override
         {
             SafeRelease(mDevice);
+            delete this;
         }
         void* CreateObject() override
         {
