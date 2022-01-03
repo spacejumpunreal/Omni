@@ -92,7 +92,6 @@ namespace Omni
 	}
 	DX12SwapChain::~DX12SwapChain()
 	{
-		gDX12GlobalState.WaitGPUIdle();
 		for (u32 iBuffer = 0; iBuffer < mDesc.BufferCount; ++iBuffer)
 		{
             delete mBackbuffers[iBuffer];

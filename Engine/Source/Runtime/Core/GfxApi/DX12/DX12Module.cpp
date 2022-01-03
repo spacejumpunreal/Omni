@@ -11,6 +11,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Command.h"
+#include "Runtime/Core/GfxApi/DX12/DX12DeleteManager.h"
 
 #include <d3d12.h>
 #include <dxgidebug.h>
@@ -141,8 +142,7 @@ namespace Omni
     void DX12Module::DestroySwapChain(GfxApiSwapChainRef swapChain)
     {
         DX12SwapChain* dx12SwapChain = static_cast<DX12SwapChain*>(swapChain);
-        delete dx12SwapChain;
-
+        gDX12GlobalState.DeleteManager->AddForDelete(dx12SwapChain, AllQueueMask);
     }
 
     void DX12Module::GetBackbufferTextures(GfxApiSwapChainRef swapChain, GfxApiTextureRef backbuffers[], u32 count)
@@ -212,7 +212,22 @@ namespace Omni
             NotImplemented("ScheduleGpuEvent only implemented for GraphicsQueue");
             break;
         }
-        gDX12GlobalState.TimelineManager->CloseBatchAndSignalOnGPU(queueType, queue);
+        u64 batchId;
+        gDX12GlobalState.TimelineManager->CloseBatchAndSignalOnGPU(queueType, queue, batchId, true);
+        if (doneEvent != nullptr)
+        {
+            NotImplemented("doneEvent != nullptr for DX12Module::ScheduleGpuEvent");
+        }
+    }
+    //Maintain operations
+    void DX12Module::CloseBatchDelete()
+    {
+        gDX12GlobalState.DeleteManager->Flush();
+    }
+
+    void DX12Module::CheckGpuEvents(GfxApiQueueMask queueMask)
+    {
+        gDX12GlobalState.TimelineManager->PollBatch(queueMask);
     }
 
     //Private functions

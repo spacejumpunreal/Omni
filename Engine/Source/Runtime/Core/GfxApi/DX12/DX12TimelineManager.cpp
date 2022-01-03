@@ -2,6 +2,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
 #include "Runtime/Base/Container/LinkedList.h"
 #include "Runtime/Base/Container/PMRContainers.h"
+#include "Runtime/Base/Math/SepcialFunctions.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/GfxApi/GfxApiDefs.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Fence.h"
@@ -132,28 +133,32 @@ namespace Omni
         }
         mData.DestroyAs<DX12TimelineManagerPrivateData>();
     }
-    u64 DX12TimelineManager::CloseBatchAndSignalOnGPU(GfxApiQueueType queueType, ID3D12CommandQueue* queue)
+    bool DX12TimelineManager::CloseBatchAndSignalOnGPU(GfxApiQueueType queueType, ID3D12CommandQueue* queue, u64& batchId, bool force)
     {
         auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
         auto& queueData = self.QueueData[(u8)queueType];
-        LifeTimeBatch* newBatch = new LifeTimeBatch(queueData.Tail->BatchId + 1);
-        u64 bid = queueData.Tail->BatchId;
+        batchId = queueData.Head->BatchId;
+        if ((queueData.Head->Callbacks.size() == 0) && !force)
+            return false;
+        LifeTimeBatch* newBatch = new LifeTimeBatch(batchId + 1);
         queueData.Tail->Next = newBatch;
         queueData.Tail = newBatch;
-        UpdateFenceOnGPU(queueData.Fence, bid, queue);
-        return bid;
+        UpdateFenceOnGPU(queueData.Fence, batchId, queue);
+        return true;
     }
     void DX12TimelineManager::WaitBatchFinishOnGPU(GfxApiQueueType queueType, u64 batchId)
     {
         auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
         auto& queueData = self.QueueData[(u8)queueType];
         ID3D12Fence* fence = queueData.Fence;
-        CheckAlways(queueData.Head->BatchId <= batchId, "can not wait on future batch");
         //add waiting and checking
         while (true)
         {
             LifeTimeBatch*& batch = queueData.Head;
             u64 bid = batch->BatchId;
+            if (bid > batchId)
+                return;
+            CheckDebug(batch->Next != nullptr, "can not wait on batch that is still open");
             auto& cbs = batch->Callbacks;
             WaitForFence(fence, bid);
             for (DX12BatchCB& cb : cbs)
@@ -163,9 +168,8 @@ namespace Omni
             cbs.clear();
             LifeTimeBatch* next = (LifeTimeBatch*)batch->Next;
             CheckAlways(next != nullptr);
+            delete batch;
             batch = next;
-            if (bid == batchId)
-                break;
         }
     }
     bool DX12TimelineManager::IsBatchFinishedOnGPU(GfxApiQueueType queueType, u64 batchId)
@@ -174,12 +178,18 @@ namespace Omni
         auto& queueData = self.QueueData[(u8)queueType];
         return queueData.Head->BatchId > batchId;
     }
-    void DX12TimelineManager::PollBatch(GfxApiQueueType queueType)
+    void DX12TimelineManager::PollBatch(GfxApiQueueMask mask)
     {
         auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
-        auto& queueData = self.QueueData[(u8)queueType];
-        u64 completed = queueData.Fence->GetCompletedValue();
-        WaitBatchFinishOnGPU(queueType, completed);
+        while (mask != 0)
+        {
+            u32 iQueue = Mathf::FindMostSignificant1Bit(mask);
+            mask &= ~(GfxApiQueueMask(1) << iQueue);
+            GfxApiQueueType queueType = (GfxApiQueueType)iQueue;
+            auto& queueData = self.QueueData[iQueue];
+            u64 completed = queueData.Fence->GetCompletedValue();
+            WaitBatchFinishOnGPU(queueType, completed);
+        }
     }
     u64 DX12TimelineManager::AddBatchCallback(GfxApiQueueType queueType, DX12BatchCB action)
     {

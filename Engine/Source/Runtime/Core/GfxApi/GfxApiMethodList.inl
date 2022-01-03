@@ -28,4 +28,9 @@ GfxApiMethod(void DispatchComputePass(GfxApiComputePass* computePass, GfxApiGpuE
 GfxApiMethod(void Present(GfxApiSwapChainRef swapChain, bool waitVSync, GfxApiGpuEventRef* doneEvent))
 GfxApiMethod(void ScheduleGpuEvent(GfxApiQueueType queueType, GfxApiGpuEventRef* doneEvent))
 
+/**
+* Maintain operations
+*/
+GfxApiMethod(void CloseBatchDelete())
+GfxApiMethod(void CheckGpuEvents(GfxApiQueueMask queueMask))
 

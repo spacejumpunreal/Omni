@@ -8,6 +8,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
 #include "Runtime/Core/GfxApi/DX12/DX12ObjectFactories.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
+#include "Runtime/Core/GfxApi/DX12/DX12DeleteManager.h"
 
 #include <dxgidebug.h>
 
@@ -25,6 +26,7 @@ namespace Omni
     DX12GlobalState::DX12GlobalState() 
         : Initialized(false)
         , TimelineManager(nullptr)
+        , DeleteManager(nullptr)
     {}
 
     void DX12GlobalState::Initialize()
@@ -95,17 +97,20 @@ namespace Omni
         * managers
         */
         TimelineManager = OMNI_NEW(MemoryKind::GfxApi) DX12TimelineManager((ID3D12Device*)D3DDevice);
+        DeleteManager = OMNI_NEW(MemoryKind::GfxApi) DX12DeleteManager();
 
         Initialized = true;
     }
 
     void DX12GlobalState::Finalize()
     {
+        DeleteManager->Flush();
         WaitGPUIdle();
 
         /**
         * managers
         */
+        OMNI_DELETE(DeleteManager, MemoryKind::GfxApi);
         OMNI_DELETE(TimelineManager, MemoryKind::GfxApi);
 
         /**
@@ -145,11 +150,24 @@ namespace Omni
 
     void DX12GlobalState::WaitGPUIdle()
     {
-        auto fence = CreateFence(0);
-        u64 seq = 1;
-        UpdateFenceOnGPU(fence, seq, D3DGraphicsCommandQueue);
-        WaitForFence(fence, seq);
-        ReleaseFence(fence);
+        while (true)
+        {
+            u64 batchId;
+            bool newBatchClosed = gDX12GlobalState.TimelineManager->CloseBatchAndSignalOnGPU(
+                GfxApiQueueType::GraphicsQueue,
+                gDX12GlobalState.D3DGraphicsCommandQueue, batchId, false);
+            if (newBatchClosed)
+            {//this make sure all callbacks are clean, assuming only callbacks can add new gpu commands
+                gDX12GlobalState.TimelineManager->WaitBatchFinishOnGPU(GfxApiQueueType::GraphicsQueue, batchId);
+                continue;
+            }
+            //this make sure all in flight command finishes
+            gDX12GlobalState.TimelineManager->CloseBatchAndSignalOnGPU(
+                GfxApiQueueType::GraphicsQueue,
+                gDX12GlobalState.D3DGraphicsCommandQueue, batchId, true);
+            gDX12GlobalState.TimelineManager->WaitBatchFinishOnGPU(GfxApiQueueType::GraphicsQueue, batchId);
+            break;
+        }
     }
 }
 

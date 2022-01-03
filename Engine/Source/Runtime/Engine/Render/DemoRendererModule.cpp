@@ -111,6 +111,8 @@ namespace Omni
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         GfxApiModule& gfxApi = GfxApiModule::Get();
 
+        gfxApi.CheckGpuEvents(AllQueueMask);
+
         u32 currentBuffer = gfxApi.GetCurrentBackbufferIndex(self.SwapChain);
         GfxApiRenderPass* renderPass = new GfxApiRenderPass(0);
         renderPass->RenderTargets[0].Texture = self.Backbuffers[currentBuffer];

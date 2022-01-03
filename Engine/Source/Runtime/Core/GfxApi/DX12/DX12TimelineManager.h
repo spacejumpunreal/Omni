@@ -26,10 +26,10 @@ namespace Omni
     public:
         DX12TimelineManager(ID3D12Device* dev);
         ~DX12TimelineManager();
-        u64 CloseBatchAndSignalOnGPU(GfxApiQueueType queueType, ID3D12CommandQueue* queue);
+        bool CloseBatchAndSignalOnGPU(GfxApiQueueType queueType, ID3D12CommandQueue* queue, u64& batchId, bool force);
         void WaitBatchFinishOnGPU(GfxApiQueueType queueType, u64 batchId);
         bool IsBatchFinishedOnGPU(GfxApiQueueType queueType, u64 batchId);
-        void PollBatch(GfxApiQueueType queueType);
+        void PollBatch(GfxApiQueueMask queueMask);
         u64 AddBatchCallback(GfxApiQueueType queueType, DX12BatchCB action);
         void AddMultiQueueBatchCallback(GfxApiQueueType queues[], u32 queueCount, DX12BatchCB action);
     private:

@@ -34,6 +34,7 @@ namespace Omni
         bool								            Initialized;
     public://managers
         class DX12TimelineManager*                      TimelineManager;
+        class DX12DeleteManager*                        DeleteManager;
 	};
 	
 	extern DX12GlobalState gDX12GlobalState;
