@@ -157,7 +157,7 @@ namespace Omni
             LifeTimeBatch*& batch = queueData.Head;
             u64 bid = batch->BatchId;
             if (bid > batchId)
-                return;
+                return; //[0,batchId] baches have completed
             CheckDebug(batch->Next != nullptr, "can not wait on batch that is still open");
             auto& cbs = batch->Callbacks;
             WaitForFence(fence, bid);

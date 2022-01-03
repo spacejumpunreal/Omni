@@ -92,6 +92,11 @@ namespace Omni
 	}
 	DX12SwapChain::~DX12SwapChain()
 	{
+        auto fence = CreateFence(0, gDX12GlobalState.D3DDevice);
+        UpdateFenceOnGPU(fence, 1, gDX12GlobalState.D3DGraphicsCommandQueue);
+        WaitForFence(fence, 1);
+        ReleaseFence(fence);
+
 		for (u32 iBuffer = 0; iBuffer < mDesc.BufferCount; ++iBuffer)
 		{
             delete mBackbuffers[iBuffer];

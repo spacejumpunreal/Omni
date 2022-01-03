@@ -27,7 +27,7 @@ namespace Omni
 				mTraceLock.lock();
 				++mTraceIndex;
 		#if 0
-				if (mTraceIndex == 31)
+				if (mTraceIndex == 50)
 				{
 					Omni::OmniDebugBreak();
 				}

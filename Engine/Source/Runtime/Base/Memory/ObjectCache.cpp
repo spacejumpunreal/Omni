@@ -5,7 +5,9 @@
 namespace Omni
 {
     ObjectCacheBase::ObjectCacheBase()
-        : mAllocCount(0)
+        : mFactory(nullptr)
+        , mGrowCount(0)
+        , mAllocCount(0)
     {}
     void ObjectCacheBase::Initialize(PMRAllocator allocator, IObjectCacheFactory* factory, u32 growCount)
     {
@@ -24,7 +26,7 @@ namespace Omni
     {
         if (mObjects.size() == 0)
         {
-            mObjects.reserve(mObjects.size() + mGrowCount);
+            mObjects.reserve(mGrowCount);
             for (u32 i = 0; i < mGrowCount; ++i)
                 mObjects.emplace_back(mFactory->CreateObject());
             mAllocCount += mGrowCount;
@@ -45,7 +47,8 @@ namespace Omni
             mFactory->DestroyObject(obj);
         }
         mAllocCount = 0;
-        mObjects.clear();
+        (&mObjects)->~PMRVector<void*>();
+        new (&mObjects)PMRVector<void*>();//revert to original state
         if (mFactory)
         {
             mFactory->Destroy();
