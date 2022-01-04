@@ -34,6 +34,8 @@ namespace Omni
         DispatchWorkItem*               TickRegistry = nullptr;
         GfxApiSwapChainRef              SwapChain = {};
         GfxApiTextureRef                Backbuffers[BackbufferCount];
+        u32                             ClientAreaSizeX = 0;
+        u32                             ClientAreaSizeY = 0;
         u32                             FrameIndex = 0;
     };
 
@@ -62,17 +64,15 @@ namespace Omni
         tm.Retain();
         GfxApiModule& gfxApi = GfxApiModule::Get();
         gfxApi.Retain();
-        
-        u32 w, h;
-        wm.GetClientAreaSize(w, h);
 
 #if DEMO_MODULE
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         //create swapchain
+        wm.GetClientAreaSize(self.ClientAreaSizeX, self.ClientAreaSizeY);
         GfxApiSwapChainDesc descSwapChain;
         descSwapChain.BufferCount = BackbufferCount;
-        descSwapChain.Width = w;
-        descSwapChain.Height = h;
+        descSwapChain.Width = self.ClientAreaSizeX;
+        descSwapChain.Height = self.ClientAreaSizeY;
         descSwapChain.Format = GfxApiFormat::R8G8B8A8_UNORM;
         descSwapChain.WindowHandle = wm.GetMainWindowHandle();
         self.SwapChain = gfxApi.CreateSwapChain(descSwapChain);
@@ -118,9 +118,25 @@ namespace Omni
     {
 #if DEMO_MODULE
         GfxApiModule& gfxApi = GfxApiModule::Get();
-        //WindowModule& wm = WindowModule::Get();
+        
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         gfxApi.CheckGpuEvents(AllQueueMask);
+
+        {
+            u32 cwidth, cheight;
+            WindowModule& wm = WindowModule::Get();
+            wm.GetClientAreaSize(cwidth, cheight);
+            if (cwidth != self.ClientAreaSizeX || cheight != self.ClientAreaSizeY)
+            {
+                self.ClientAreaSizeX = cwidth;
+                self.ClientAreaSizeY = cheight;
+                GfxApiSwapChainDesc newDesc = self.SwapChain->GetDesc();
+                newDesc.Width = cwidth;
+                newDesc.Height = cheight;
+                gfxApi.UpdateSwapChain(self.SwapChain, newDesc);
+                gfxApi.GetBackbufferTextures(self.SwapChain, self.Backbuffers, BackbufferCount);
+            }
+        }
 
         u32 currentBuffer = gfxApi.GetCurrentBackbufferIndex(self.SwapChain);
         GfxApiRenderPass* renderPass = new GfxApiRenderPass(0);

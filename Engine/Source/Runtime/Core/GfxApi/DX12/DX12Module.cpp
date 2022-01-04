@@ -135,6 +135,7 @@ namespace Omni
 
     void DX12Module::UpdateSwapChain(GfxApiSwapChainRef swapChain, const GfxApiSwapChainDesc& desc)
     {
+        gDX12GlobalState.WaitGPUIdle();
         DX12SwapChain* dx12SwapChain = static_cast<DX12SwapChain*>(swapChain);
         dx12SwapChain->Update(desc);
     }

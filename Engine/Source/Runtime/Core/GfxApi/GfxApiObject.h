@@ -44,7 +44,7 @@ namespace Omni
     struct GfxApiObjectDesc
     {
     public:
-        const GfxApiObjectType Type;
+        GfxApiObjectType Type;
         const char* Name;
     public:
         GfxApiObjectDesc(GfxApiObjectType type, const char* name = "") 

@@ -27,6 +27,9 @@ namespace Omni
 		void Update(const GfxApiSwapChainDesc& desc);
 		u32 GetCurrentBackbufferIndex();
 		void GetBackbufferTextures(GfxApiTextureRef backbuffers[], u32 count);
+    protected:
+        void CleanupBackbufferTextures();
+        void SetupBackbufferTextures();
 	private:
 		GfxApiSwapChainDesc         mDesc;
 		IDXGISwapChain3*            mDX12SwapChain;

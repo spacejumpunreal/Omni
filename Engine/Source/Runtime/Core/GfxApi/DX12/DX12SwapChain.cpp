@@ -58,11 +58,6 @@ namespace Omni
 			&swapchain));
 		CheckDX12(swapchain->QueryInterface(IID_PPV_ARGS(&mDX12SwapChain)));
 		swapchain->Release();
-		GfxApiTextureDesc texDesc;
-		texDesc.Width = desc.Width;
-		texDesc.Height = desc.Height;
-		texDesc.AccessFlags = GfxApiAccessFlags::GPUWrite;
-		texDesc.Format = desc.Format;
         D3D12_DESCRIPTOR_HEAP_TYPE heapType = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
         {
             D3D12_DESCRIPTOR_HEAP_DESC heapDesc;
@@ -72,38 +67,11 @@ namespace Omni
             heapDesc.NodeMask = 0;
             CheckDX12(gDX12GlobalState.Singletons.D3DDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mTmpDescriptorHeap)));
         }
-
-        for (u32 iBuffer = 0; iBuffer < MaxBackbuffers; ++iBuffer)
-        {
-            mBackbuffers[iBuffer] = {};
-        }
-        
-        u32 stride = gDX12GlobalState.Singletons.D3DDevice->GetDescriptorHandleIncrementSize(heapType);
-        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mTmpDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-		for (u32 iBuffer = 0; iBuffer < desc.BufferCount; ++iBuffer)
-		{
-			ID3D12Resource* res;
-			CheckDX12(mDX12SwapChain->GetBuffer(iBuffer, IID_PPV_ARGS(&res)));
-			res->SetName(BackBufferNames[iBuffer]);
-            gDX12GlobalState.Singletons.D3DDevice->CreateRenderTargetView(res, nullptr, rtvHandle);
-			mBackbuffers[iBuffer] = new DX12Texture(texDesc, res, D3D12_RESOURCE_STATE_COMMON, rtvHandle.ptr, true);
-            rtvHandle.Offset(stride);
-		}
+        SetupBackbufferTextures();
 	}
 	DX12SwapChain::~DX12SwapChain()
 	{
-#if false
-        auto fence = CreateFence(0, gDX12GlobalState.Singletons.D3DDevice);
-        UpdateFenceOnGPU(fence, 1, gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue]);
-        WaitForFence(fence, 1);
-        ReleaseFence(fence);
-#endif
-
-		for (u32 iBuffer = 0; iBuffer < mDesc.BufferCount; ++iBuffer)
-		{
-            delete mBackbuffers[iBuffer];
-            mBackbuffers[iBuffer] = nullptr;
-		}
+        CleanupBackbufferTextures();
         SafeRelease(mDX12SwapChain);
         SafeRelease(mTmpDescriptorHeap);
 	}
@@ -128,8 +96,9 @@ namespace Omni
 	}
 	void DX12SwapChain::Update(const GfxApiSwapChainDesc& desc)
 	{
-		(void)desc;
-		NotImplemented("DX12SwapChain::Update");
+        mDesc = desc;
+        CleanupBackbufferTextures();
+        SetupBackbufferTextures();
 	}
 
 	u32 DX12SwapChain::GetCurrentBackbufferIndex()
@@ -144,6 +113,40 @@ namespace Omni
             backbuffers[i] = mBackbuffers[i];
         }
 	}
+    void DX12SwapChain::CleanupBackbufferTextures()
+    {
+        for (u32 iBuffer = 0; iBuffer < mDesc.BufferCount; ++iBuffer)
+        {
+            delete mBackbuffers[iBuffer];
+            mBackbuffers[iBuffer] = nullptr;
+        }
+    }
+    void DX12SwapChain::SetupBackbufferTextures()
+    {
+        for (u32 iBuffer = 0; iBuffer < MaxBackbuffers; ++iBuffer)
+        {
+            mBackbuffers[iBuffer] = {};
+        }
+
+        GfxApiTextureDesc texDesc;
+        texDesc.Width = mDesc.Width;
+        texDesc.Height = mDesc.Height;
+        texDesc.AccessFlags = GfxApiAccessFlags::GPUWrite;
+        texDesc.Format = mDesc.Format;
+
+        D3D12_DESCRIPTOR_HEAP_TYPE heapType = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+        u32 stride = gDX12GlobalState.Singletons.D3DDevice->GetDescriptorHandleIncrementSize(heapType);
+        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mTmpDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
+        for (u32 iBuffer = 0; iBuffer < mDesc.BufferCount; ++iBuffer)
+        {
+            ID3D12Resource* res;
+            CheckDX12(mDX12SwapChain->GetBuffer(iBuffer, IID_PPV_ARGS(&res)));
+            res->SetName(BackBufferNames[iBuffer]);
+            gDX12GlobalState.Singletons.D3DDevice->CreateRenderTargetView(res, nullptr, rtvHandle);
+            mBackbuffers[iBuffer] = new DX12Texture(texDesc, res, D3D12_RESOURCE_STATE_COMMON, rtvHandle.ptr, true);
+            rtvHandle.Offset(stride);
+        }
+    }
 }
 
 
