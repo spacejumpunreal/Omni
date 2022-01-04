@@ -1,13 +1,10 @@
 # todo
 - GfxApi::DX12 startup
-	- ResizeBackbuffer
-		- DemoRendererModule: 
-			- check if resize happened(window size changed)
-			- refactor, rename backbuffersize to client size
-		- implement UpdateSwapChain
-			- wait flush queue in place
-			- free all backbuffers
-			- implement handle/ObjectPool? at least do not make invalid pointer so fatal
+	- ObjectArrayAllocator
+	- Handle
+		- RawPtr
+		- IndexGeneration
+		- PtrGeneration?
 - DiffuseShading
 	- drawcall
 		- Buffer
