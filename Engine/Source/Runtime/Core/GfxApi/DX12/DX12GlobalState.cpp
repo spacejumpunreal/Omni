@@ -23,11 +23,25 @@ namespace Omni
     //global variable
     DX12GlobalState gDX12GlobalState;
 
-    DX12GlobalState::DX12GlobalState() 
+    DX12Singletons::DX12Singletons()
+    {
+        memset(this, 0, sizeof(*this));
+    }
+    void DX12Singletons::Finalize()
+    {
+        IUnknown** ptr = (IUnknown**)this;
+        for (u32 iPtr = 0; iPtr < sizeof(*this) / sizeof(void*); ++iPtr)
+        {
+            if (ptr[iPtr] != nullptr)
+                SafeRelease(ptr[iPtr]);
+        }
+    }
+    DX12GlobalState::DX12GlobalState()
         : Initialized(false)
         , TimelineManager(nullptr)
         , DeleteManager(nullptr)
-    {}
+    {
+    }
 
     void DX12GlobalState::Initialize()
     {
@@ -58,15 +72,15 @@ namespace Omni
             }
             SafeRelease(dxgiInfoQueue);
         }
-        CheckSucceeded(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&DXGIFactory)));
+        CheckSucceeded(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&Singletons.DXGIFactory)));
         //just use most powerful gpu
-        CheckSucceeded(DXGIFactory->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE::DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&DXGIAdaptor)));
+        CheckSucceeded(Singletons.DXGIFactory->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE::DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&Singletons.DXGIAdaptor)));
 
-        CheckSucceeded(D3D12CreateDevice(DXGIAdaptor, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&D3DDevice)));
-        CheckDX12(D3DDevice->SetName(L"OmniDX12Device"));
+        CheckSucceeded(D3D12CreateDevice(Singletons.DXGIAdaptor, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&Singletons.D3DDevice)));
+        CheckDX12(Singletons.D3DDevice->SetName(L"OmniDX12Device"));
 
         ID3D12InfoQueue* d3d12InfoQueue;
-        CheckSucceeded(D3DDevice->QueryInterface(IID_PPV_ARGS(&d3d12InfoQueue)));
+        CheckSucceeded(Singletons.D3DDevice->QueryInterface(IID_PPV_ARGS(&d3d12InfoQueue)));
         for (
             u32 iLevel = D3D12_MESSAGE_SEVERITY_CORRUPTION;
             iLevel < D3D12_MESSAGE_SEVERITY_MESSAGE;
@@ -79,15 +93,15 @@ namespace Omni
         D3D12_COMMAND_QUEUE_DESC queueDesc = {};
         queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
         queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-        CheckSucceeded(D3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&D3DGraphicsCommandQueue)));
-        D3DGraphicsCommandQueue->SetName(L"OmniGraphicsQueue");
+        CheckSucceeded(Singletons.D3DDevice->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue])));
+        Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue]->SetName(L"OmniGraphicsQueue");
         
         /**
         * DX12 object cache
         */
         PMRAllocator gfxApiAllocator = MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi);
-        DirectCommandListCache.Initialize(gfxApiAllocator, new ID3D12GraphicsCommandList4CacheFactory(D3DDevice), 4);
-        DirectCommandAllocatorCache.Initialize(gfxApiAllocator, new ID3D12CommandAllocatorCacheFactory(D3DDevice), 4);
+        DirectCommandListCache.Initialize(gfxApiAllocator, new ID3D12GraphicsCommandList4CacheFactory(Singletons.D3DDevice), 4);
+        DirectCommandAllocatorCache.Initialize(gfxApiAllocator, new ID3D12CommandAllocatorCacheFactory(Singletons.D3DDevice), 4);
 
         /**
         * object cache
@@ -96,7 +110,7 @@ namespace Omni
         /**
         * managers
         */
-        TimelineManager = OMNI_NEW(MemoryKind::GfxApi) DX12TimelineManager((ID3D12Device*)D3DDevice);
+        TimelineManager = OMNI_NEW(MemoryKind::GfxApi) DX12TimelineManager((ID3D12Device*)Singletons.D3DDevice);
         DeleteManager = OMNI_NEW(MemoryKind::GfxApi) DX12DeleteManager();
 
         Initialized = true;
@@ -131,21 +145,9 @@ namespace Omni
         /**
         * DX12 global obejcts
         */
-        DXGIFactory = nullptr;
-        DXGIAdaptor = nullptr;
-        D3DGraphicsCommandQueue = nullptr;
-        D3DDevice = nullptr;
+        Singletons.Finalize();
 
         Initialized = false;
-        //hack to check
-#if OMNI_DEBUG
-        void* checkBegin = this;
-        void* checkEnd = &D3DDummyPtr;
-        for (void** cp = (void**)checkBegin; cp < checkEnd; ++cp)
-        {
-            CheckAlways(*cp == nullptr);
-        }
-#endif
     }
 
     void DX12GlobalState::WaitGPUIdle()
@@ -155,7 +157,7 @@ namespace Omni
             u64 batchId;
             bool newBatchClosed = gDX12GlobalState.TimelineManager->CloseBatchAndSignalOnGPU(
                 GfxApiQueueType::GraphicsQueue,
-                gDX12GlobalState.D3DGraphicsCommandQueue, batchId, false);
+                gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue], batchId, false);
             if (newBatchClosed)
             {//this make sure all callbacks are clean, assuming only callbacks can add new gpu commands
                 gDX12GlobalState.TimelineManager->WaitBatchFinishOnGPU(GfxApiQueueType::GraphicsQueue, batchId);
@@ -164,7 +166,7 @@ namespace Omni
             //this make sure all in flight command finishes
             gDX12GlobalState.TimelineManager->CloseBatchAndSignalOnGPU(
                 GfxApiQueueType::GraphicsQueue,
-                gDX12GlobalState.D3DGraphicsCommandQueue, batchId, true);
+                gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue], batchId, true);
             gDX12GlobalState.TimelineManager->WaitBatchFinishOnGPU(GfxApiQueueType::GraphicsQueue, batchId);
             break;
         }

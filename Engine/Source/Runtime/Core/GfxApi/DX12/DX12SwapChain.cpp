@@ -49,8 +49,8 @@ namespace Omni
 		winDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
 		IDXGISwapChain1* swapchain = nullptr;
-		CheckDX12(gDX12GlobalState.DXGIFactory->CreateSwapChainForHwnd(
-			gDX12GlobalState.D3DGraphicsCommandQueue,
+		CheckDX12(gDX12GlobalState.Singletons.DXGIFactory->CreateSwapChainForHwnd(
+			gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue],
 			desc.WindowHandle.ToNativeHandle(),
 			&winDesc,
 			nullptr,
@@ -70,7 +70,7 @@ namespace Omni
             heapDesc.NumDescriptors = desc.BufferCount;
             heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
             heapDesc.NodeMask = 0;
-            CheckDX12(gDX12GlobalState.D3DDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mTmpDescriptorHeap)));
+            CheckDX12(gDX12GlobalState.Singletons.D3DDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&mTmpDescriptorHeap)));
         }
 
         for (u32 iBuffer = 0; iBuffer < MaxBackbuffers; ++iBuffer)
@@ -78,24 +78,26 @@ namespace Omni
             mBackbuffers[iBuffer] = {};
         }
         
-        u32 stride = gDX12GlobalState.D3DDevice->GetDescriptorHandleIncrementSize(heapType);
+        u32 stride = gDX12GlobalState.Singletons.D3DDevice->GetDescriptorHandleIncrementSize(heapType);
         CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mTmpDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 		for (u32 iBuffer = 0; iBuffer < desc.BufferCount; ++iBuffer)
 		{
 			ID3D12Resource* res;
 			CheckDX12(mDX12SwapChain->GetBuffer(iBuffer, IID_PPV_ARGS(&res)));
 			res->SetName(BackBufferNames[iBuffer]);
-            gDX12GlobalState.D3DDevice->CreateRenderTargetView(res, nullptr, rtvHandle);
+            gDX12GlobalState.Singletons.D3DDevice->CreateRenderTargetView(res, nullptr, rtvHandle);
 			mBackbuffers[iBuffer] = new DX12Texture(texDesc, res, D3D12_RESOURCE_STATE_COMMON, rtvHandle.ptr, true);
             rtvHandle.Offset(stride);
 		}
 	}
 	DX12SwapChain::~DX12SwapChain()
 	{
-        auto fence = CreateFence(0, gDX12GlobalState.D3DDevice);
-        UpdateFenceOnGPU(fence, 1, gDX12GlobalState.D3DGraphicsCommandQueue);
+#if true
+        auto fence = CreateFence(0, gDX12GlobalState.Singletons.D3DDevice);
+        UpdateFenceOnGPU(fence, 1, gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue]);
         WaitForFence(fence, 1);
         ReleaseFence(fence);
+#endif
 
 		for (u32 iBuffer = 0; iBuffer < mDesc.BufferCount; ++iBuffer)
 		{
@@ -119,7 +121,7 @@ namespace Omni
             cmdList->ResourceBarrier(1, &barrier);
             CheckDX12(cmdList->Close());
             ID3D12CommandList* cmd = cmdList;
-            gDX12GlobalState.D3DGraphicsCommandQueue->ExecuteCommandLists(1, &cmd);
+            gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue]->ExecuteCommandLists(1, &cmd);
             gDX12GlobalState.DirectCommandListCache.Free(cmdList);
         }
 		CheckDX12(mDX12SwapChain->Present(waitVSync ? 1 : 0, 0));

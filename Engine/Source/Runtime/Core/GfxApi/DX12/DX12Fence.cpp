@@ -10,7 +10,7 @@ namespace Omni
 	ID3D12Fence* CreateFence(u64 initValue, ID3D12Device* dev)
 	{
 		ID3D12Fence* ret = nullptr;
-        dev = dev == nullptr ? ((ID3D12Device*)gDX12GlobalState.D3DDevice) : dev;
+        dev = dev == nullptr ? ((ID3D12Device*)gDX12GlobalState.Singletons.D3DDevice) : dev;
 		CheckDX12(dev->CreateFence(initValue, D3D12_FENCE_FLAGS::D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&ret)));
 		return ret;
 	}

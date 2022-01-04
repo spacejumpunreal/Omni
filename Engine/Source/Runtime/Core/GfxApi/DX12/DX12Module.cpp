@@ -206,7 +206,7 @@ namespace Omni
         switch (queueType)
         {
         case GfxApiQueueType::GraphicsQueue:
-            queue = gDX12GlobalState.D3DGraphicsCommandQueue;
+            queue = gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue];
             break;
         default:
             NotImplemented("ScheduleGpuEvent only implemented for GraphicsQueue");

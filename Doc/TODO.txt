@@ -1,12 +1,6 @@
 # todo
 - GfxApi::DX12
 	- Clear/Present
-		- implement new interfaces on GfxApi module
-			- CloseBatchDelete
-			- CheckGpuEvents
-		- DX12SwapChain delete use batch
-		- review DemoRenderer logic
-		- debug
 		- refactor:do not use comptr for queues, use array, init DX12TimelineManager with queue array
 	- ResizeBackbuffer
 - DiffuseShading

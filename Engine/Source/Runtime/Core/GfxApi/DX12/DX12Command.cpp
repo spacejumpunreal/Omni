@@ -127,7 +127,7 @@ namespace Omni
         SetupCommandListForPass(renderPass, cmdList, false, false);
         CloseCommandListForPass(renderPass, cmdList);
         ID3D12CommandList* cmd = cmdList;
-        gDX12GlobalState.D3DGraphicsCommandQueue->ExecuteCommandLists(1, &cmd);
+        gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue]->ExecuteCommandLists(1, &cmd);
         gDX12GlobalState.DirectCommandListCache.Free(cmdList);
 
         delete renderPass;
