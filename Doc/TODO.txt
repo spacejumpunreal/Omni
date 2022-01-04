@@ -1,13 +1,21 @@
 # todo
-- GfxApi::DX12
-	- Clear/Present
-		- refactor:do not use comptr for queues, use array, init DX12TimelineManager with queue array
+- GfxApi::DX12 startup
 	- ResizeBackbuffer
+		- DemoRendererModule: 
+			- check if resize happened(window size changed)
+			- refactor, rename backbuffersize to client size
+		- implement UpdateSwapChain
+			- wait flush queue in place
+			- free all backbuffers
+			- implement handle/ObjectPool? at least do not make invalid pointer so fatal
 - DiffuseShading
 	- drawcall
 		- Buffer
 		- ConstantBuffer
 		- Texture
+		- Shader
+		- PSO
+
 - ShadowMap
 - ComputeShader
 - VisibilityBuffer

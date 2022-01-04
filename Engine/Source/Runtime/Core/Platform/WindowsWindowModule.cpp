@@ -46,8 +46,8 @@ namespace Omni
         struct MainThreadData
         {
             SpinLock    mMainThreadDataLock;
-            u32         mBackbufferWidth;
-            u32         mBackbufferHeight;
+            u32         mClientAreaWidth;
+            u32         mClientAreaHeight;
             u32         mWindowWidth;
             u32         mWindowHeight;
         };
@@ -224,15 +224,15 @@ namespace Omni
         MemoryModule::Get().Release();
         Module::Finalize();
     }
-    void WindowModule::GetBackbufferSize(u32& width, u32& height)
+    void WindowModule::GetClientAreaSize(u32& width, u32& height)
     {
         WindowsWindowModuleImpl* self = WindowsWindowModuleImpl::GetCombinePtr(this);
         self->mMainThreadData->mMainThreadDataLock.Lock();
-        width = self->mMainThreadData->mBackbufferWidth;
-        height = self->mMainThreadData->mBackbufferHeight;
+        width = self->mMainThreadData->mClientAreaWidth;
+        height = self->mMainThreadData->mClientAreaHeight;
         self->mMainThreadData->mMainThreadDataLock.Unlock();
     }
-    void WindowModule::RequestSetBackbufferSize(u32 width, u32 height)
+    void WindowModule::RequestSetClientAreaSize(u32 width, u32 height)
     {//can be called on any thread, for it will send a request to Window's internal message queue
         WindowsWindowModuleImpl* self = WindowsWindowModuleImpl::GetCombinePtr(this);
         RECT rect{};
@@ -251,8 +251,8 @@ namespace Omni
         : mMainThreadData(OMNI_NEW(MemoryKind::SystemInit)(MainThreadData))
         , mWindow(NULL)
     {
-        mMainThreadData->mBackbufferWidth = 0;
-        mMainThreadData->mBackbufferHeight = 0;
+        mMainThreadData->mClientAreaWidth = 0;
+        mMainThreadData->mClientAreaHeight = 0;
         mMainThreadData->mWindowWidth = 0;
         mMainThreadData->mWindowHeight = 0;
     }
@@ -279,8 +279,8 @@ namespace Omni
         u32 windowWidth = rect.right - rect.left; ;
         u32 windowHeight = rect.bottom - rect.top;
         self->mMainThreadData->mMainThreadDataLock.Lock();
-        self->mMainThreadData->mBackbufferWidth = clientWidth;
-        self->mMainThreadData->mBackbufferHeight = clientHeight;
+        self->mMainThreadData->mClientAreaWidth = clientWidth;
+        self->mMainThreadData->mClientAreaHeight = clientHeight;
         self->mMainThreadData->mWindowWidth = windowWidth;
         self->mMainThreadData->mWindowHeight = windowHeight;
         self->mMainThreadData->mMainThreadDataLock.Unlock();

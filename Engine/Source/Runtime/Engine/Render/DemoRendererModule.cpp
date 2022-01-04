@@ -64,7 +64,7 @@ namespace Omni
         gfxApi.Retain();
         
         u32 w, h;
-        wm.GetBackbufferSize(w, h);
+        wm.GetClientAreaSize(w, h);
 
 #if DEMO_MODULE
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
@@ -118,6 +118,7 @@ namespace Omni
     {
 #if DEMO_MODULE
         GfxApiModule& gfxApi = GfxApiModule::Get();
+        //WindowModule& wm = WindowModule::Get();
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         gfxApi.CheckGpuEvents(AllQueueMask);
 
