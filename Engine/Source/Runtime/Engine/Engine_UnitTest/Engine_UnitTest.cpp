@@ -10,9 +10,6 @@ namespace Omni
 }
 
 int main(int argc, char** argv) {
-	printf("Running main() from %s\n", __FILE__);
-
-
 	Omni::System::CreateSystem();
 	Omni::System& system = Omni::System::GetSystem();
 	system.InitializeAndJoin(0, nullptr, Omni::EngineUnitTestCode, nullptr);

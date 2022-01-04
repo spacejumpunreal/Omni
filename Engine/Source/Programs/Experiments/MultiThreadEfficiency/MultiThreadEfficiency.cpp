@@ -109,8 +109,6 @@ namespace Omni
         }
         auto tEnd = std::chrono::steady_clock::now();
         std::chrono::duration<double> durtion = tEnd - tBegin;
-
-        printf("\nExp2ThreadsPingpong(%d threads) duration:%fs\n", (int)nThreads, durtion.count());
     }
 
     template<size_t TestCount>
@@ -182,8 +180,6 @@ namespace Omni
         }
         auto tEnd = std::chrono::steady_clock::now();
         std::chrono::duration<double> durtion = tEnd - tBegin;
-
-        printf("\nExpLockfreeVSSingle(%d threads) duration:%fs\n", (int)nThreads, durtion.count());
     }
 
 	void PlayGroundCode()

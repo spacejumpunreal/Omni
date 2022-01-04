@@ -92,7 +92,7 @@ namespace Omni
 	}
 	DX12SwapChain::~DX12SwapChain()
 	{
-#if true
+#if false
         auto fence = CreateFence(0, gDX12GlobalState.Singletons.D3DDevice);
         UpdateFenceOnGPU(fence, 1, gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue]);
         WaitForFence(fence, 1);

@@ -137,8 +137,8 @@ namespace Omni
     {
         auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
         auto& queueData = self.QueueData[(u8)queueType];
-        batchId = queueData.Head->BatchId;
-        if ((queueData.Head->Callbacks.size() == 0) && !force)
+        batchId = queueData.Tail->BatchId;
+        if ((queueData.Tail->Callbacks.size() == 0) && !force)
             return false;
         LifeTimeBatch* newBatch = new LifeTimeBatch(batchId + 1);
         queueData.Tail->Next = newBatch;
@@ -195,9 +195,9 @@ namespace Omni
     {
         auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
         auto& queueData = self.QueueData[(u8)queueType];
-        auto& cbs = queueData.Head->Callbacks;
+        auto& cbs = queueData.Tail->Callbacks;
         cbs.push_back(action);
-        return queueData.Head->BatchId;
+        return queueData.Tail->BatchId;
     }
     void DX12TimelineManager::AddMultiQueueBatchCallback(GfxApiQueueType queuesTypes[], u32 queueCount, DX12BatchCB action)
     {

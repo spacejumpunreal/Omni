@@ -32,7 +32,7 @@ namespace Omni
 	{
 		void OnKeyEvent(KeyCode key, bool pressed) override
 		{
-			printf("Key[%x] is %s\n", key, pressed ? "down" : "up");
+            (void)pressed;
 			count++;
 			if (count > 10)
 			{

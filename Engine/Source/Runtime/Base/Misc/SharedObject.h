@@ -46,31 +46,26 @@ namespace Omni
         FORCEINLINE SharedPtr()
             : mObject(nullptr)
         {
-            //printf("%p.SharedPtr.ctor()\n", this);
         }
         template<typename U>
         FORCEINLINE SharedPtr(const SharedPtr<U>& other)
             : mObject(static_cast<T*>(other.GetRaw()))
         {//copy, ref+1
             mObject->Acquire(); 
-            //printf("%p.SharedPtr<U>.ctor(%p)\n", (void*)this, (void*)other.GetRaw());
         }
         FORCEINLINE SharedPtr(const SharedPtr& other)
             : mObject(other.GetRaw())
         {//copy, ref+1
             mObject->Acquire();
-            //printf("%p.SharedPtr.ctor(%p)\n", (void*)this, (void*)other.GetRaw());
         }
         template<typename U>
         FORCEINLINE SharedPtr(U*&& other)
             : mObject(static_cast<T*>(std::forward<U*>(other)))
         {//transfer ownership, ref not changed
-            //printf("%p.SharedPtr.ctor(%p)\n", (void*)this, (void*)other);
             other = nullptr;
         }
         FORCEINLINE ~SharedPtr()
         {
-            //printf("%p.SharedPtr.dtor()\n", (void*)this);
             Clear();
         }
         FORCEINLINE SharedPtr& operator=(T*& other)
@@ -78,7 +73,6 @@ namespace Omni
             other->Acquire();
             Clear();
             mObject = other;
-            //printf("%p.SharedPtr::operator=(%p)\n", (void*)this, (void*)other.GetRaw());
             other = nullptr;
             return *this;
         }
