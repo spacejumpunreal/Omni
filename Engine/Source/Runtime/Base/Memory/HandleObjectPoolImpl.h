@@ -1,6 +1,7 @@
 #pragma once
 #include "Runtime/Base/Memory/HandleObjectPool.h"
 #include "Runtime/Base/Misc/AssertUtils.h"
+#include "Runtime/Base//Misc/ArrayUtils.h"
 
 namespace Omni
 {
@@ -10,21 +11,24 @@ namespace Omni
         u32 pageObjCount = 1 << pageObjCountPow;
         u32 align = alignof(TObject);
         CheckAlways(align >= sizeof(THandleGen));
-        u32 size = AlignUpSize(sizeof(TObject) + sizeof(THandleGen), align);
+        u32 size = AlignUpSize((u32)(sizeof(TObject) + sizeof(THandleGen)), align);
         u32 pageSize = size * pageObjCount;
-        ObjectArrayPoolBase::Initialize(PMRAllocator allocator, pageObjCountPow, align, pageSize, size, sizeof(TObject));
+        ObjectArrayPoolBase::_Initialize(allocator, pageObjCountPow, align, pageSize, size, sizeof(TObject));
     }
 
     template<typename TObject>
-    std::pair<IndexHandle, TObject*> ObjectArrayPool<TObject>::Alloc()
+    std::tuple<IndexHandle, TObject*> ObjectArrayPool<TObject>::Alloc()
     {
-        auto pair = ObjectArrayPoolBase::Alloc();
-        return std::make_pair<IndexHandle, TObject*>(pair.first, (TObject*)pair.second);
+        IndexHandle handle;
+        u8* ptr;
+        std::tie(handle, ptr) = ObjectArrayPoolBase::_Alloc();
+        TObject* optr = (TObject*)ptr;
+        return std::tie(handle, optr);
     }
 
     template<typename TObject>
     TObject* ObjectArrayPool<TObject>::ToPtr(IndexHandle handle)
     {
-        return (TObject*)ObjectArrayPoolBase::ToPtr(handle);
+        return (TObject*)ObjectArrayPoolBase::_ToPtr(handle);
     }
 }

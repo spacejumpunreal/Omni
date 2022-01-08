@@ -4,7 +4,11 @@
 #include "Runtime/Base/Container/Queue.h"
 #include "Runtime/Base/Memory/MemoryArena.h"
 #include "Runtime/Base/Misc/PrivateData.h"
+#include "Runtime/Base/Memory/HandleObjectPoolImpl.h"
 #include <deque>
+#include <memory_resource>
+
+#if 0
 
 TEST(Base, Queue)
 {
@@ -65,6 +69,65 @@ TEST(Base, PrivateData)
     using namespace Omni;
     PrivateData<128, 64> TestData(PrivateDataType<MyStruct>{});
     TestData.DestroyAs<MyStruct>();
+}
+
+#endif
+
+class HandleObjectPoolTestObject
+{
+public:
+    HandleObjectPoolTestObject(int x, float y, const std::string& z)
+        : X(x)
+        , Y(y)
+        , Z(z)
+    {}
+public:
+    int X;
+    float Y;
+    std::string Z;
+};
+
+
+
+TEST(Base, HandleObjectPool)
+{
+    using namespace Omni;
+
+    ObjectArrayPool<HandleObjectPoolTestObject> pool;
+    pool.Initialize(std::pmr::get_default_resource(), 4);
+    std::pmr::vector<IndexHandle> handles;
+    
+    for (int i = 0; i < 16; ++i)
+    {
+        IndexHandle handle;
+        HandleObjectPoolTestObject* ptr;
+        std::tie(handle, ptr) = pool.Alloc();
+        handles.push_back(handle);
+        EXPECT_EQ(ptr, pool.ToPtr(handle));
+    }
+    pool.Free(handles[12]);
+    pool.Free(handles[14]);
+    pool.Free(handles[13]);
+    pool.Free(handles[15]);
+    handles.pop_back();
+    handles.pop_back();
+    handles.pop_back();
+    handles.pop_back();
+
+    for (int i = 0; i < 16; ++i)
+    {
+        IndexHandle handle;
+        HandleObjectPoolTestObject* ptr;
+        std::tie(handle, ptr) = pool.Alloc();
+        handles.push_back(handle);
+        EXPECT_EQ(ptr, pool.ToPtr(handle));
+    }
+
+    for (auto handle : handles)
+    {
+        pool.Free(handle);
+    }
+    pool.Finalize();
 }
 
 

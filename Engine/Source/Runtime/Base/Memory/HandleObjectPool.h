@@ -4,22 +4,25 @@
 #include "Runtime/Base/Memory/MemoryDefs.h"
 #include "Runtime/Base/Container/PMRContainers.h"
 #include "Runtime/Base/Memory/ObjectHandle.h"
+#include <tuple>
 
 namespace Omni
 {
     struct ObjectArrayPoolBase
     {
     public:
-        inline bool IsValid(IndexHandle handle);
-        inline void Finalize();
-        inline void Free(IndexHandle handle);
+        BASE_API inline bool IsValid(IndexHandle handle);
+        BASE_API inline void Finalize();
+        BASE_API inline void Free(IndexHandle handle);
         
     protected:
-        inline void _Initialize(PMRAllocator allocator, u32 pageObjCountPow, u32 pageAlign, u32 pageSize, u32 objSize, u32 genOffset);
-        inline std::pair<IndexHandle, u8*> _Alloc();
-        inline u8* _ToPtr(IndexHandle handle);
-
-        inline void Grow();
+        BASE_API inline void _Initialize(PMRAllocator allocator, u32 pageObjCountPow, u32 pageAlign, u32 pageSize, u32 objSize, u32 genOffset);
+        BASE_API inline std::tuple<IndexHandle, u8*> _Alloc();
+        BASE_API inline u8* _ToPtr(IndexHandle handle);
+        
+    private:
+        FORCEINLINE void AddPage();
+        FORCEINLINE std::tuple<u32, u32> DecodeIndex(THandleIndex idx);
 
     protected:
         PMRVector<u8*>      mPageTable;
@@ -36,7 +39,7 @@ namespace Omni
     {
     public:
         void Initialize(PMRAllocator allocator, u32 pageObjCount);
-        std::pair<IndexHandle, TObject*> Alloc();
+        std::tuple<IndexHandle, TObject*> Alloc();
         TObject* ToPtr(IndexHandle handle);
     };
 }
