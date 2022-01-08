@@ -4,6 +4,7 @@
 #include "Runtime/Base/Memory/ObjectCache.h"
 #include "Runtime/Core/Platform/OSUtils_Windows.h"
 #include "Runtime/Core/GfxApi/GfxApiDefs.h"
+#include "Runtime/Base/Memory/HandleObjectPool.h"
 #include <d3d12.h>
 #include <dxgi1_6.h>
 
@@ -11,6 +12,10 @@
 namespace Omni
 {
     //forward decls
+    class DX12Texture;
+    class DX12SwapChain;
+
+
     struct DX12Singletons
     {
     public:
@@ -38,7 +43,7 @@ namespace Omni
         ObjectCache<ID3D12CommandAllocator>             DirectCommandAllocatorCache;
         //we can have a ID3D12Fence cache here
     public://object pools
-
+        ObjectArrayPool<DX12SwapChain>                  DX12SwapChainPool;
     public://state flags
         bool								            Initialized;
     public://managers

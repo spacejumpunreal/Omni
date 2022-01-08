@@ -23,7 +23,7 @@ namespace Omni
             mPageTable.get_allocator().deallocate_bytes(mPageTable[iPage], mPageSize, mPageAlign);
         }
         (&mPageTable)->~PMRVector<u8*>();
-        new (&mPageTable)PMRVector<u8*>();
+        new (&mPageTable)PMRVector<u8*>(GetDummyMemoryResource());
     }
     void ObjectArrayPoolBase::Free(IndexHandle handle)
     {

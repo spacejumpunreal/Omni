@@ -4,7 +4,9 @@
 #if OMNI_WINDOWS
 #include "Runtime/Base/Misc/PrivateData.h"
 #include "Runtime/Base/Misc/FunctorUtils.h"
+#include "Runtime/Base/Memory/ObjectHandle.h"
 #include "Runtime/Core/GfxApi/GfxApiDefs.h"
+
 
 struct ID3D12CommandList;
 struct ID3D12Device;
@@ -27,6 +29,8 @@ namespace Omni
         template<typename TObject>
         void AddForDelete(TObject* obj, GfxApiQueueMask queueMask);
         
+        void AddForHandleFree(void(*func)(void*), IndexHandle handle, GfxApiQueueMask queueMask);
+
         void Flush();
         void OnBatchDelete();
 
@@ -42,6 +46,14 @@ namespace Omni
         static void DoDelete(TObject* obj)
         {
             delete obj;
+        }
+    };
+
+    template<typename TObject>
+    struct DX12FreeHandleCBHelper
+    {
+        static void DoFree(void* handle)
+        {
         }
     };
 

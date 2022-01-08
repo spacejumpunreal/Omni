@@ -32,6 +32,7 @@ namespace Omni
         void operator()() override { Tick(); }
     public:
         DispatchWorkItem*               TickRegistry = nullptr;
+        GfxApiSwapChainDesc             DescSwapChain;
         GfxApiSwapChainRef              SwapChain = {};
         GfxApiTextureRef                Backbuffers[BackbufferCount];
         u32                             ClientAreaSizeX = 0;
@@ -69,13 +70,12 @@ namespace Omni
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         //create swapchain
         wm.GetClientAreaSize(self.ClientAreaSizeX, self.ClientAreaSizeY);
-        GfxApiSwapChainDesc descSwapChain;
-        descSwapChain.BufferCount = BackbufferCount;
-        descSwapChain.Width = self.ClientAreaSizeX;
-        descSwapChain.Height = self.ClientAreaSizeY;
-        descSwapChain.Format = GfxApiFormat::R8G8B8A8_UNORM;
-        descSwapChain.WindowHandle = wm.GetMainWindowHandle();
-        self.SwapChain = gfxApi.CreateSwapChain(descSwapChain);
+        self.DescSwapChain.BufferCount = BackbufferCount;
+        self.DescSwapChain.Width = self.ClientAreaSizeX;
+        self.DescSwapChain.Height = self.ClientAreaSizeY;
+        self.DescSwapChain.Format = GfxApiFormat::R8G8B8A8_UNORM;
+        self.DescSwapChain.WindowHandle = wm.GetMainWindowHandle();
+        self.SwapChain = gfxApi.CreateSwapChain(self.DescSwapChain);
         gfxApi.GetBackbufferTextures(self.SwapChain, self.Backbuffers, BackbufferCount);
 #endif
         tm.RegisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority, DemoRendererImpl::GetData(this), QueueKind::Main);
@@ -99,7 +99,7 @@ namespace Omni
 #if DEMO_MODULE
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         gfxApi.DestroySwapChain(self.SwapChain);
-        self.SwapChain = nullptr;
+        self.SwapChain = (GfxApiSwapChainRef)NullIndexHandle;
         for (u32 iBuffer = 0; iBuffer < BackbufferCount; ++iBuffer)
         {
             self.Backbuffers[iBuffer] = nullptr;
@@ -130,7 +130,7 @@ namespace Omni
             {
                 self.ClientAreaSizeX = cwidth;
                 self.ClientAreaSizeY = cheight;
-                GfxApiSwapChainDesc newDesc = self.SwapChain->GetDesc();
+                GfxApiSwapChainDesc newDesc = self.DescSwapChain;
                 newDesc.Width = cwidth;
                 newDesc.Height = cheight;
                 gfxApi.UpdateSwapChain(self.SwapChain, newDesc);

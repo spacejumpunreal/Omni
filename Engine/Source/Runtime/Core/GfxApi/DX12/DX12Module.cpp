@@ -2,6 +2,7 @@
 #if OMNI_WINDOWS
 #include "Runtime/Base/Misc/AssertUtils.h"
 #include "Runtime/Base/Misc/PImplUtils.h"
+#include "Runtime/Base/Memory/HandleObjectPoolImpl.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/Platform/WindowModule.h"
 #include "Runtime/Core/System/ModuleExport.h"
@@ -130,31 +131,42 @@ namespace Omni
     //SwapChain
     GfxApiSwapChainRef DX12Module::CreateSwapChain(const GfxApiSwapChainDesc& desc)
     {
-        return new DX12SwapChain(desc);
+        GfxApiSwapChainRef handle;
+        DX12SwapChain* obj;
+        std::tie((IndexHandle&)handle, obj) = gDX12GlobalState.DX12SwapChainPool.Alloc();
+        new((void*)obj)DX12SwapChain(desc);
+        return handle;
+
     }
 
     void DX12Module::UpdateSwapChain(GfxApiSwapChainRef swapChain, const GfxApiSwapChainDesc& desc)
     {
         gDX12GlobalState.WaitGPUIdle();
-        DX12SwapChain* dx12SwapChain = static_cast<DX12SwapChain*>(swapChain);
+        DX12SwapChain* dx12SwapChain = gDX12GlobalState.DX12SwapChainPool.ToPtr(swapChain);
         dx12SwapChain->Update(desc);
+    }
+
+    void FreeSwapChainHandle(void* p)
+    {
+        IndexHandle& handle = *reinterpret_cast<IndexHandle*>(&p);
+        gDX12GlobalState.DX12SwapChainPool.ToPtr(handle)->~DX12SwapChain();
+        gDX12GlobalState.DX12SwapChainPool.Free(handle);
     }
 
     void DX12Module::DestroySwapChain(GfxApiSwapChainRef swapChain)
     {
-        DX12SwapChain* dx12SwapChain = static_cast<DX12SwapChain*>(swapChain);
-        gDX12GlobalState.DeleteManager->AddForDelete(dx12SwapChain, AllQueueMask);
+        gDX12GlobalState.DeleteManager->AddForHandleFree(FreeSwapChainHandle, (IndexHandle)swapChain, AllQueueMask);
     }
 
     void DX12Module::GetBackbufferTextures(GfxApiSwapChainRef swapChain, GfxApiTextureRef backbuffers[], u32 count)
     {
-        DX12SwapChain* dx12SwapChain = static_cast<DX12SwapChain*>(swapChain);
+        DX12SwapChain* dx12SwapChain = gDX12GlobalState.DX12SwapChainPool.ToPtr(swapChain);
         dx12SwapChain->GetBackbufferTextures(backbuffers, count);
     }
     
     u32 DX12Module::GetCurrentBackbufferIndex(GfxApiSwapChainRef swapChain)
     {
-        DX12SwapChain* dx12SwapChain = static_cast<DX12SwapChain*>(swapChain);
+        DX12SwapChain* dx12SwapChain = gDX12GlobalState.DX12SwapChainPool.ToPtr(swapChain);
         return dx12SwapChain->GetCurrentBackbufferIndex();
     }
 
@@ -194,7 +206,7 @@ namespace Omni
 
     void DX12Module::Present(GfxApiSwapChainRef swapChain, bool waitVSync, GfxApiGpuEventRef* doneEvent)
     {
-        DX12SwapChain* dx12SwapChain = static_cast<DX12SwapChain*>(swapChain);
+        DX12SwapChain* dx12SwapChain = gDX12GlobalState.DX12SwapChainPool.ToPtr(swapChain);
         dx12SwapChain->Present(waitVSync);
         if (doneEvent != nullptr)
             NotImplemented("doneEvent");

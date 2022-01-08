@@ -1,14 +1,18 @@
 #include "Runtime/Core/CorePCH.h"
 #if OMNI_WINDOWS
 #include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
+#include "Runtime/Base/Memory/HandleObjectPoolImpl.h"
 #include "Runtime/Base/Misc/AssertUtils.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/Platform/WindowsMacros.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Fence.h"
+#include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
 #include "Runtime/Core/GfxApi/DX12/DX12ObjectFactories.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12DeleteManager.h"
+
+
 
 #include <dxgidebug.h>
 
@@ -106,6 +110,7 @@ namespace Omni
         /**
         * object cache
         */
+        DX12SwapChainPool.Initialize(gfxApiAllocator, 4);
 
         /**
         * managers
@@ -130,7 +135,7 @@ namespace Omni
         /**
         * object cache
         */
-
+        DX12SwapChainPool.Finalize();
 
         /**
         * DX12 object cache

@@ -13,6 +13,8 @@ namespace Omni
         THandleIndex    Index;
     };
 
+    constexpr IndexHandle NullIndexHandle = IndexHandle{ (u32)-1, (u32)-1 };
+
     template<typename TObject>
     struct RawPtrHandle
     {

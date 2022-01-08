@@ -19,7 +19,6 @@ namespace Omni
 	public:
 		static const u32 MaxBackbuffers = 3;
 	public:
-        DEFINE_GFX_API_OBJECT_NEW_DELETE();
 		DX12SwapChain(const GfxApiSwapChainDesc& desc);
 		~DX12SwapChain();
 		const GfxApiSwapChainDesc& GetDesc() override;

@@ -71,6 +71,13 @@ namespace Omni
         gDX12GlobalState.DeleteManager->OnBatchDelete();
     }
 
+    void DX12DeleteManager::AddForHandleFree(void(*func)(void*), IndexHandle handle, GfxApiQueueMask queueMask)
+    {
+        void* p = *reinterpret_cast<void**>(&handle);
+        DX12DeleteManager::DX12DeleteCB cb(func, p);
+        AddDeleteCB(cb, queueMask);
+    }
+
     void DX12DeleteManager::Flush()
     {
         auto& self = mData.Ref<DX12DeleteManagerPrivateData>();

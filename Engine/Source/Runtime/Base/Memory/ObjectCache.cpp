@@ -51,9 +51,8 @@ namespace Omni
             mFactory->DestroyObject(obj);
         }
         mAllocCount = 0;
-        auto msrc = GetDummyMemoryResource();
         (&mObjects)->~PMRVector<void*>();
-        new (&mObjects)PMRVector<void*>(msrc);//revert to original state
+        new (&mObjects)PMRVector<void*>(GetDummyMemoryResource());//revert to original state
         if (mFactory)
         {
             mFactory->Destroy();

@@ -2,10 +2,12 @@
 #include "Runtime/Prelude/Omni.h"
 #include "Runtime/Base/Misc/EnumUtils.h"
 #include "Runtime/Base/Misc/SharedObject.h"
+#include "Runtime/Base/Memory/ObjectHandle.h"
 #include "Runtime/Base/Math/Vector4.h"
 #include "Runtime/Core/CoreAPI.h"
 #include "Runtime/Core/Platform/WindowUtils.h"
 #include "Runtime/Core/GfxApi/GfxApiDefs.h"
+
 #include <variant>
 
 
@@ -28,7 +30,7 @@ namespace Omni
      */
     using GfxApiTextureRef = GfxApiTexture*;
     using GfxApiBufferRef = GfxApiBuffer*;
-    using GfxApiSwapChainRef = GfxApiSwapChain*;
+    struct GfxApiSwapChainRef : public IndexHandle {};
     using GfxApiGpuEventRef = GfxApiGpuEvent*;
 
     /**
