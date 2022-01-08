@@ -34,6 +34,7 @@ namespace Omni
 		IDXGISwapChain3*            mDX12SwapChain;
         ID3D12DescriptorHeap*       mTmpDescriptorHeap;
 		DX12Texture*                mBackbuffers[MaxBackbuffers];
+        GfxApiTextureRef            mTextureRefs[MaxBackbuffers];
 	};
 }
 

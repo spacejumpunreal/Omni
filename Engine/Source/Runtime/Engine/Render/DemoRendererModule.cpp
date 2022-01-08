@@ -102,7 +102,7 @@ namespace Omni
         self.SwapChain = (GfxApiSwapChainRef)NullIndexHandle;
         for (u32 iBuffer = 0; iBuffer < BackbufferCount; ++iBuffer)
         {
-            self.Backbuffers[iBuffer] = nullptr;
+            self.Backbuffers[iBuffer] = (GfxApiTextureRef)NullIndexHandle;
         }
         tm.UnregisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority);
 #endif

@@ -6,6 +6,7 @@
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/Platform/WindowsMacros.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Fence.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Texture.h"
 #include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
 #include "Runtime/Core/GfxApi/DX12/DX12ObjectFactories.h"
@@ -111,6 +112,7 @@ namespace Omni
         * object cache
         */
         DX12SwapChainPool.Initialize(gfxApiAllocator, 4);
+        DX12TexturePool.Initialize(gfxApiAllocator, 16);
 
         /**
         * managers
@@ -136,6 +138,7 @@ namespace Omni
         * object cache
         */
         DX12SwapChainPool.Finalize();
+        DX12TexturePool.Finalize();
 
         /**
         * DX12 object cache

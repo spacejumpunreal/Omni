@@ -1,6 +1,7 @@
 #pragma once
 #include "Runtime/Core/CorePCH.h"
 #if OMNI_WINDOWS
+#include "Runtime/Base/Memory/HandleObjectPoolImpl.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Command.h"
 #include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
@@ -29,7 +30,7 @@ namespace Omni
         u32 barrierCount = 0;
         for (u32 iMRT = 0; iMRT < MaxMRTCount; ++iMRT)
         {
-            DX12Texture* tex = static_cast<DX12Texture*>(renderPass->RenderTargets[iMRT].Texture);
+            DX12Texture* tex = gDX12GlobalState.DX12TexturePool.ToPtr(renderPass->RenderTargets[iMRT].Texture);
             D3D12_RENDER_PASS_RENDER_TARGET_DESC& rtDesc = rtDescs[iMRT];
             if (tex == nullptr)
             {
@@ -65,14 +66,14 @@ namespace Omni
             pRTDescs = nullptr;
         }
         //Depth & stencil
-        if (renderPass->Depth.Texture == nullptr)
+        if (renderPass->Depth.Texture == (GfxApiTextureRef)NullIndexHandle)
         {
             pDSDesc = nullptr;
         }
         else
         {
             NotImplemented("Barrier logic");
-            dsDesc.cpuDescriptor = ToCPUDescriptorHandle(static_cast<DX12Texture*>(renderPass->Depth.Texture)->GetCPUDescriptor());
+            dsDesc.cpuDescriptor = ToCPUDescriptorHandle(gDX12GlobalState.DX12TexturePool.ToPtr(renderPass->Depth.Texture)->GetCPUDescriptor());
             dsDesc.DepthBeginningAccess.Type =
                 Any(renderPass->Depth.Action & GfxApiLoadStoreActions::Load) ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE :
                 Any(renderPass->Depth.Action & GfxApiLoadStoreActions::Clear) ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR : 

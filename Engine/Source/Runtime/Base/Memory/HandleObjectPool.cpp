@@ -69,7 +69,7 @@ namespace Omni
         u8* objPtr = page + mObjectSize * inPageIdx;
         u8* genPtr = objPtr + mGenOffset;
         THandleGen objGen = *(THandleGen*)genPtr;
-        CheckDebug(objGen == handle.Gen, "invalid handle");
+        CheckDebug(objGen == handle.Gen, "invalid handle generation");
         return objPtr;
     }
     FORCEINLINE void ObjectArrayPoolBase::AddPage()

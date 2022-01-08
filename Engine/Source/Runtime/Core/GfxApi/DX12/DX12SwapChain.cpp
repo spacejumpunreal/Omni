@@ -1,5 +1,6 @@
 #include "Runtime/Core/CorePCH.h"
 #if OMNI_WINDOWS
+#include "Runtime/Base/Memory/HandleObjectPoolImpl.h"
 #include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
@@ -110,14 +111,14 @@ namespace Omni
 	{
         for (u32 i = 0; i < count; ++i)
         {
-            backbuffers[i] = mBackbuffers[i];
+            backbuffers[i] = mTextureRefs[i];
         }
 	}
     void DX12SwapChain::CleanupBackbufferTextures()
     {
         for (u32 iBuffer = 0; iBuffer < mDesc.BufferCount; ++iBuffer)
         {
-            delete mBackbuffers[iBuffer];
+            gDX12GlobalState.DX12SwapChainPool.Free(mTextureRefs[iBuffer]);
             mBackbuffers[iBuffer] = nullptr;
         }
     }
@@ -143,7 +144,8 @@ namespace Omni
             CheckDX12(mDX12SwapChain->GetBuffer(iBuffer, IID_PPV_ARGS(&res)));
             res->SetName(BackBufferNames[iBuffer]);
             gDX12GlobalState.Singletons.D3DDevice->CreateRenderTargetView(res, nullptr, rtvHandle);
-            mBackbuffers[iBuffer] = new DX12Texture(texDesc, res, D3D12_RESOURCE_STATE_COMMON, rtvHandle.ptr, true);
+            std::tie((IndexHandle&)mTextureRefs[iBuffer], mBackbuffers[iBuffer]) = gDX12GlobalState.DX12TexturePool.Alloc();
+            new(mBackbuffers[iBuffer])DX12Texture(texDesc, res, D3D12_RESOURCE_STATE_COMMON, rtvHandle.ptr, true);
             rtvHandle.Offset(stride);
         }
     }

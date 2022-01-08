@@ -17,7 +17,6 @@ namespace Omni
 	class DX12Texture final : public GfxApiTexture
 	{
 	public:
-        DEFINE_GFX_API_OBJECT_NEW_DELETE();
 		DX12Texture(const GfxApiTextureDesc& desc);
 		DX12Texture(const GfxApiTextureDesc& desc, ID3D12Resource* res, D3D12_RESOURCE_STATES initState,
                     DX12Descriptor descriptor, bool isOwner); //create from existing texture

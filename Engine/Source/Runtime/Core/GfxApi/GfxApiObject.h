@@ -28,10 +28,10 @@ namespace Omni
     /**
      * typedefs
      */
-    using GfxApiTextureRef = GfxApiTexture*;
-    using GfxApiBufferRef = GfxApiBuffer*;
+    struct GfxApiTextureRef : public IndexHandle {};
+    struct GfxApiBufferRef : public IndexHandle {};
     struct GfxApiSwapChainRef : public IndexHandle {};
-    using GfxApiGpuEventRef = GfxApiGpuEvent*;
+    struct GfxApiGpuEventRef : public IndexHandle {};
 
     /**
      * enums
