@@ -6,7 +6,6 @@
 #include "Runtime/Base/Misc/PrivateData.h"
 #include "Runtime/Base/Memory/HandleObjectPoolImpl.h"
 #include <deque>
-#include <memory_resource>
 
 #if 0
 

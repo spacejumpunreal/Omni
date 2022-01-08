@@ -26,5 +26,17 @@ namespace Omni
 #include "Runtime/Base/Memory/MemoryKind.inl"
 #undef MEMORY_KIND
 	};
+
+    FORCEINLINE StdPmr::memory_resource* GetDummyMemoryResource()
+    {
+#if OMNI_WINDOWS
+        return StdPmr::new_delete_resource();
+#else
+        return nullptr;
+#endif
+    }
 }
+
+
+
 

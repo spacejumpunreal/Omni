@@ -1,6 +1,8 @@
 #include "Runtime/Base/BasePCH.h"
 #include "Runtime/Base/Memory/ObjectCache.h"
+#include "Runtime/Base/Memory/MemoryDefs.h"
 #include "Runtime/Base/Misc/AssertUtils.h"
+
 
 namespace Omni
 {
@@ -8,14 +10,16 @@ namespace Omni
         : mFactory(nullptr)
         , mGrowCount(0)
         , mAllocCount(0)
-    {}
+    {
+    }
     void ObjectCacheBase::Initialize(PMRAllocator allocator, IObjectCacheFactory* factory, u32 growCount)
     {
         CheckAlways(mObjects.size() == 0 && mAllocCount == 0);
         (&mObjects)->~PMRVector<void*>();
+        new (&mObjects)PMRVector<void*>(allocator.resource());
         mFactory = factory;
         mGrowCount = growCount;
-        new (&mObjects)PMRVector<void*>(allocator.resource());
+        
     }
     ObjectCacheBase::~ObjectCacheBase()
     {
@@ -47,8 +51,9 @@ namespace Omni
             mFactory->DestroyObject(obj);
         }
         mAllocCount = 0;
+        auto msrc = GetDummyMemoryResource();
         (&mObjects)->~PMRVector<void*>();
-        new (&mObjects)PMRVector<void*>();//revert to original state
+        new (&mObjects)PMRVector<void*>(msrc);//revert to original state
         if (mFactory)
         {
             mFactory->Destroy();
