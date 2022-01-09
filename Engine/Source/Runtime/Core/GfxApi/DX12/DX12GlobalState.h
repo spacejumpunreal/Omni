@@ -43,8 +43,8 @@ namespace Omni
         ObjectCache<ID3D12CommandAllocator>             DirectCommandAllocatorCache;
         //we can have a ID3D12Fence cache here
     public://object pools
-        ObjectArrayPool<DX12SwapChain>                  DX12SwapChainPool;
-        ObjectArrayPool<DX12Texture>                    DX12TexturePool;
+        IndexObjectPool<DX12SwapChain>                  DX12SwapChainPool;
+        IndexObjectPool<DX12Texture>                    DX12TexturePool;
     public://state flags
         bool								            Initialized;
     public://managers

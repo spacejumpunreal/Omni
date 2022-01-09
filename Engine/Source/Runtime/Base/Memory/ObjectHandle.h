@@ -10,8 +10,8 @@ namespace Omni
     struct IndexHandle
     {
     public:
-        THandleGen      Gen;
         THandleIndex    Index;
+        THandleGen      Gen;
     public:
         friend FORCEINLINE bool operator==(IndexHandle lhs, IndexHandle rhs) 
         {
@@ -26,9 +26,35 @@ namespace Omni
 
     constexpr IndexHandle NullIndexHandle = IndexHandle{ (u32)-1, (u32)-1 };
 
-    template<typename TObject>
     struct RawPtrHandle
     {
-        TObject*        Ptr;
+    public:
+        union
+        {
+            struct
+            {
+                u64  Addr: 48;
+                u16  Gen: 16;
+            } AddrGen;
+            u8* Ptr;
+        };
+        
+    public:
+        friend FORCEINLINE bool operator==(RawPtrHandle lhs, RawPtrHandle rhs)
+        {
+            return lhs.Ptr == rhs.Ptr;
+        }
+
+        friend FORCEINLINE bool operator!=(RawPtrHandle lhs, RawPtrHandle rhs)
+        {
+            return lhs.Ptr != rhs.Ptr;
+        }
+    };
+
+    constexpr RawPtrHandle NullPtrHandle = RawPtrHandle{ 
+        .AddrGen = {
+            .Addr = (1ull << 48) - 1,
+            .Gen = 0xffff,
+        }
     };
 }

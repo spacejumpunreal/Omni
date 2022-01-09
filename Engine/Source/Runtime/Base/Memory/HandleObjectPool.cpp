@@ -5,7 +5,10 @@
 
 namespace Omni
 {
-    bool ObjectArrayPoolBase::IsValid(IndexHandle handle)
+    /**
+    * IndexHandle
+    */
+    bool IndexHandlePoolBase::IsValid(IndexHandle handle)
     {
         u32 pageIdx = handle.Index >> mPageObjCountPow;
         u32 inPageIdx = handle.Index & ((1u << mPageObjCountPow) - 1u);
@@ -16,7 +19,7 @@ namespace Omni
         THandleGen objGen = *(THandleGen*)genPtr;
         return objGen == handle.Gen;
     }
-    void ObjectArrayPoolBase::Finalize()
+    void IndexHandlePoolBase::Finalize()
     {
         for (u32 iPage = 0; iPage < mPageTable.size(); ++iPage)
         {
@@ -25,7 +28,7 @@ namespace Omni
         (&mPageTable)->~PMRVector<u8*>();
         new (&mPageTable)PMRVector<u8*>(GetDummyMemoryResource());
     }
-    void ObjectArrayPoolBase::Free(IndexHandle handle)
+    void IndexHandlePoolBase::Free(IndexHandle handle)
     {
         u32 pageIdx = handle.Index >> mPageObjCountPow;
         u32 inPageIdx = handle.Index & ((1u << mPageObjCountPow) - 1u);
@@ -34,7 +37,7 @@ namespace Omni
         u8* genPtr = page + mObjectSize * inPageIdx + mGenOffset;
         ++*(THandleGen*)genPtr;
     }
-    void ObjectArrayPoolBase::_Initialize(PMRAllocator allocator, u32 pageObjCountPow, u32 pageAlign, u32 pageSize, u32 objSize, u32 genOffset)
+    void IndexHandlePoolBase::_Initialize(PMRAllocator allocator, u32 pageObjCountPow, u32 pageAlign, u32 pageSize, u32 objSize, u32 genOffset)
     {
         (&mPageTable)->~PMRVector<u8*>();
         new (&mPageTable)PMRVector<u8*>(allocator);
@@ -45,7 +48,7 @@ namespace Omni
         mGenOffset = genOffset;
         mFreeIndex = THandleIndex(-1);
     }
-    std::tuple<IndexHandle, u8*> ObjectArrayPoolBase::_Alloc()
+    std::tuple<IndexHandle, u8*> IndexHandlePoolBase::_Alloc()
     {
         if (mFreeIndex == THandleIndex(-1))
             AddPage();
@@ -60,7 +63,7 @@ namespace Omni
         mFreeIndex = *(THandleIndex*)objPtr;
         return std::tie(newHandle, objPtr);
     }
-    u8* ObjectArrayPoolBase::_ToPtr(IndexHandle handle)
+    u8* IndexHandlePoolBase::_ToPtr(IndexHandle handle)
     {
         u32 pageIdx = handle.Index >> mPageObjCountPow;
         u32 inPageIdx = handle.Index & ((1u << mPageObjCountPow) - 1u);
@@ -72,7 +75,7 @@ namespace Omni
         CheckDebug(objGen == handle.Gen, "invalid handle generation");
         return objPtr;
     }
-    FORCEINLINE void ObjectArrayPoolBase::AddPage()
+    FORCEINLINE void IndexHandlePoolBase::AddPage()
     {
         u8* newPage = (u8*)mPageTable.get_allocator().allocate_bytes(mPageSize, mPageAlign);
         u32 pageObjectCount = 1u << mPageObjCountPow;
@@ -86,10 +89,77 @@ namespace Omni
         mPageTable.push_back(newPage);
         mFreeIndex = last;
     }
-    FORCEINLINE std::tuple<u32, u32> ObjectArrayPoolBase::DecodeIndex(THandleIndex idx)
+    FORCEINLINE std::tuple<u32, u32> IndexHandlePoolBase::DecodeIndex(THandleIndex idx)
     {
         u32 pageIdx = idx >> mPageObjCountPow;
         u32 inPageIdx = idx & ((1u << mPageObjCountPow) - 1u);
         return std::tie(pageIdx, inPageIdx);
+    }
+
+
+    /**
+    * RawPtrHandle
+    */
+    bool RawPtrHandlePoolBase::IsValid(RawPtrHandle handle)
+    {
+        return handle.AddrGen.Gen == *(u16*)(handle.AddrGen.Addr + mGenOffset);
+    }
+    void RawPtrHandlePoolBase::Finalize()
+    {
+        for (u32 iPage = 0; iPage < mPageTable.size(); ++iPage)
+        {
+            mPageTable.get_allocator().deallocate_bytes(mPageTable[iPage], mPageSize, mPageAlign);
+        }
+        (&mPageTable)->~PMRVector<u8*>();
+        new (&mPageTable)PMRVector<u8*>(GetDummyMemoryResource());
+    }
+    void RawPtrHandlePoolBase::Free(RawPtrHandle handle)
+    {
+        *(u8**)(handle.Ptr) = mFreePtr;
+        CheckDebug(*(u16*)(handle.AddrGen.Addr + mGenOffset) == handle.AddrGen.Gen, "invalid handle");
+        ++*(u16*)(handle.AddrGen.Addr + mGenOffset);
+        mFreePtr = handle.Ptr;
+
+    }
+    void RawPtrHandlePoolBase::_Initialize(PMRAllocator allocator, u32 pageObjCountPow, u32 pageAlign, u32 pageSize, u32 objSize, u32 genOffset)
+    {
+        (&mPageTable)->~PMRVector<u8*>();
+        new (&mPageTable)PMRVector<u8*>(allocator);
+        mPageAlign = pageAlign;
+        mPageSize = pageSize;
+        mObjectSize = objSize;
+        mPageObjCountPow = pageObjCountPow;
+        mGenOffset = genOffset;
+        mFreePtr = NullPtrHandle.Ptr;
+    }
+    RawPtrHandle RawPtrHandlePoolBase::_Alloc()
+    {
+        if (mFreePtr == NullPtrHandle.Ptr)
+            AddPage();
+        RawPtrHandle ret;
+        u8* newPtr = mFreePtr;
+        ret.AddrGen.Addr = (u64)newPtr;
+        mFreePtr = *(u8**)mFreePtr;
+        ret.AddrGen.Gen = ++*(u16*)(newPtr + mGenOffset);
+        return ret;
+    }
+    u8* RawPtrHandlePoolBase::_ToPtr(RawPtrHandle handle)
+    {
+        CheckDebug(handle.AddrGen.Gen == *(u16*)(handle.AddrGen.Addr + mGenOffset), "invalid handle");
+        return (u8*)handle.AddrGen.Addr;
+    }
+    FORCEINLINE void RawPtrHandlePoolBase::AddPage()
+    {
+        u8* newPage = (u8*)mPageTable.get_allocator().allocate_bytes(mPageSize, mPageAlign);
+        u32 pageObjectCount = 1u << mPageObjCountPow;
+        u8* last = mFreePtr;
+        for (u32 iObject = 0; iObject < pageObjectCount; ++iObject)
+        {
+            u8* p = newPage + iObject * mObjectSize;
+            *(u8**)(p) = last;
+            last = p;
+        }
+        mPageTable.push_back(newPage);
+        mFreePtr = last;
     }
 }
