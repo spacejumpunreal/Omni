@@ -30,15 +30,15 @@ namespace Omni
         u32 barrierCount = 0;
         for (u32 iMRT = 0; iMRT < MaxMRTCount; ++iMRT)
         {
-            DX12Texture* tex = gDX12GlobalState.DX12TexturePool.ToPtr(renderPass->RenderTargets[iMRT].Texture);
             D3D12_RENDER_PASS_RENDER_TARGET_DESC& rtDesc = rtDescs[iMRT];
-            if (tex == nullptr)
+            if (renderPass->RenderTargets[iMRT].Texture == NullIndexHandle)
             {
                 rtDesc.BeginningAccess.Type = D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS;
                 rtDesc.cpuDescriptor = NullCPUDescriptorHandle;
                 rtDesc.EndingAccess.Type = D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS;
                 continue;
             }
+            DX12Texture* tex = gDX12GlobalState.DX12TexturePool.ToPtr(renderPass->RenderTargets[iMRT].Texture);
             
             rtDesc.cpuDescriptor = ToCPUDescriptorHandle(tex->GetCPUDescriptor());
             rtDesc.BeginningAccess.Type =

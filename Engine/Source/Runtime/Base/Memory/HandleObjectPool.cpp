@@ -77,7 +77,7 @@ namespace Omni
         u8* newPage = (u8*)mPageTable.get_allocator().allocate_bytes(mPageSize, mPageAlign);
         u32 pageObjectCount = 1u << mPageObjCountPow;
         THandleIndex last = mFreeIndex;
-        THandleIndex base = (THandleIndex)(mPageTable.size() * pageObjectCount);
+        THandleIndex base = u32(mPageTable.size()) << mPageObjCountPow;
         for (u32 iObject = 0; iObject < pageObjectCount; ++iObject)
         {
             *(THandleIndex*)(newPage + iObject * mObjectSize) = last;

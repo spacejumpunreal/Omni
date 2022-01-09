@@ -42,7 +42,7 @@ namespace Omni
 
     struct GfxApiRTConfig
     {
-        GfxApiTextureRef            Texture = {};
+        GfxApiTextureRef            Texture = (GfxApiTextureRef)NullIndexHandle;
         std::variant<u32, u8, Vector4, float>  ClearValue;
         GfxApiLoadStoreActions      Action = GfxApiLoadStoreActions::Clear | GfxApiLoadStoreActions::Store;
 

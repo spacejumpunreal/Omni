@@ -118,7 +118,8 @@ namespace Omni
     {
         for (u32 iBuffer = 0; iBuffer < mDesc.BufferCount; ++iBuffer)
         {
-            gDX12GlobalState.DX12SwapChainPool.Free(mTextureRefs[iBuffer]);
+            mBackbuffers[iBuffer]->~DX12Texture();
+            gDX12GlobalState.DX12TexturePool.Free(mTextureRefs[iBuffer]);
             mBackbuffers[iBuffer] = nullptr;
         }
     }

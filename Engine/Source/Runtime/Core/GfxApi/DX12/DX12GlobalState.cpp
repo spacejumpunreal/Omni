@@ -111,8 +111,8 @@ namespace Omni
         /**
         * object cache
         */
-        DX12SwapChainPool.Initialize(gfxApiAllocator, 4);
-        DX12TexturePool.Initialize(gfxApiAllocator, 16);
+        DX12SwapChainPool.Initialize(gfxApiAllocator, 2);
+        DX12TexturePool.Initialize(gfxApiAllocator, 4);
 
         /**
         * managers
