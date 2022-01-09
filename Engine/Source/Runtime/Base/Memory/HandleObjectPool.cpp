@@ -102,7 +102,7 @@ namespace Omni
     */
     bool RawPtrHandlePoolBase::IsValid(RawPtrHandle handle)
     {
-        return handle.AddrGen.Gen == *(u16*)(handle.AddrGen.Addr + mGenOffset);
+        return handle.Gen == *(u16*)(handle.Addr + mGenOffset);
     }
     void RawPtrHandlePoolBase::Finalize()
     {
@@ -115,10 +115,10 @@ namespace Omni
     }
     void RawPtrHandlePoolBase::Free(RawPtrHandle handle)
     {
-        *(u8**)(handle.Ptr) = mFreePtr;
-        CheckDebug(*(u16*)(handle.AddrGen.Addr + mGenOffset) == handle.AddrGen.Gen, "invalid handle");
-        ++*(u16*)(handle.AddrGen.Addr + mGenOffset);
-        mFreePtr = handle.Ptr;
+        CheckDebug(*(u16*)(handle.Addr + mGenOffset) == handle.Gen, "invalid handle");
+        *(u8**)(handle.Addr) = mFreePtr;
+        ++*(u16*)(handle.Addr + mGenOffset);
+        mFreePtr = (u8*)handle.Addr;
 
     }
     void RawPtrHandlePoolBase::_Initialize(PMRAllocator allocator, u32 pageObjCountPow, u32 pageAlign, u32 pageSize, u32 objSize, u32 genOffset)
@@ -130,23 +130,23 @@ namespace Omni
         mObjectSize = objSize;
         mPageObjCountPow = pageObjCountPow;
         mGenOffset = genOffset;
-        mFreePtr = NullPtrHandle.Ptr;
+        mFreePtr = (u8*)NullPtrHandle.Addr;
     }
     RawPtrHandle RawPtrHandlePoolBase::_Alloc()
     {
-        if (mFreePtr == NullPtrHandle.Ptr)
+        if (mFreePtr == (u8*)NullPtrHandle.Addr)
             AddPage();
         RawPtrHandle ret;
         u8* newPtr = mFreePtr;
-        ret.AddrGen.Addr = (u64)newPtr;
+        ret.Addr = (u64)newPtr;
         mFreePtr = *(u8**)mFreePtr;
-        ret.AddrGen.Gen = ++*(u16*)(newPtr + mGenOffset);
+        ret.Gen = ++*(u16*)(newPtr + mGenOffset);
         return ret;
     }
     u8* RawPtrHandlePoolBase::_ToPtr(RawPtrHandle handle)
     {
-        CheckDebug(handle.AddrGen.Gen == *(u16*)(handle.AddrGen.Addr + mGenOffset), "invalid handle");
-        return (u8*)handle.AddrGen.Addr;
+        CheckDebug(handle.Gen == *(u16*)(handle.Addr + mGenOffset), "invalid handle");
+        return (u8*)handle.Addr;
     }
     FORCEINLINE void RawPtrHandlePoolBase::AddPage()
     {

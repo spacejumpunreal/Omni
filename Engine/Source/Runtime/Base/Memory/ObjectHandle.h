@@ -29,32 +29,22 @@ namespace Omni
     struct RawPtrHandle
     {
     public:
-        union
-        {
-            struct
-            {
-                u64  Addr: 48;
-                u16  Gen: 16;
-            } AddrGen;
-            u8* Ptr;
-        };
-        
+        u64  Addr: 48;
+        u16  Gen: 16;
     public:
         friend FORCEINLINE bool operator==(RawPtrHandle lhs, RawPtrHandle rhs)
         {
-            return lhs.Ptr == rhs.Ptr;
+            return *reinterpret_cast<u64*>(&lhs) == *reinterpret_cast<u64*>(&rhs);
         }
 
         friend FORCEINLINE bool operator!=(RawPtrHandle lhs, RawPtrHandle rhs)
         {
-            return lhs.Ptr != rhs.Ptr;
+            return *reinterpret_cast<u64*>(&lhs) != *reinterpret_cast<u64*>(&rhs);
         }
     };
 
     constexpr RawPtrHandle NullPtrHandle = RawPtrHandle{ 
-        .AddrGen = {
-            .Addr = (1ull << 48) - 1,
-            .Gen = 0xffff,
-        }
+        .Addr = (1ull << 48) - 1,
+        .Gen = 0xffff,
     };
 }

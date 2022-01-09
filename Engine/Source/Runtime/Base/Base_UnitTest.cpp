@@ -88,11 +88,11 @@ public:
 
 
 
-TEST(Base, HandleObjectPool)
+TEST(Base, IndexHandleObjectPool)
 {
     using namespace Omni;
 
-    ObjectArrayPool<HandleObjectPoolTestObject> pool;
+    IndexObjectPool<HandleObjectPoolTestObject> pool;
     pool.Initialize(std::pmr::get_default_resource(), 4);
     std::pmr::vector<IndexHandle> handles;
     
@@ -116,6 +116,48 @@ TEST(Base, HandleObjectPool)
     for (int i = 0; i < 16; ++i)
     {
         IndexHandle handle;
+        HandleObjectPoolTestObject* ptr;
+        std::tie(handle, ptr) = pool.Alloc();
+        handles.push_back(handle);
+        EXPECT_EQ(ptr, pool.ToPtr(handle));
+    }
+
+    for (auto handle : handles)
+    {
+        pool.Free(handle);
+    }
+    pool.Finalize();
+}
+
+TEST(Base, RawPtrHandleObjectPool)
+{
+    using namespace Omni;
+
+    RawPtrObjectPool<HandleObjectPoolTestObject> pool;
+    pool.Initialize(std::pmr::get_default_resource(), 4);
+    std::pmr::vector<RawPtrHandle> handles;
+
+    for (int i = 0; i < 16; ++i)
+    {
+        RawPtrHandle handle;
+        HandleObjectPoolTestObject* ptr;
+        std::tie(handle, ptr) = pool.Alloc();
+        new (ptr)HandleObjectPoolTestObject(1, 2.0f, "3");
+        handles.push_back(handle);
+        EXPECT_EQ(ptr, pool.ToPtr(handle));
+    }
+    pool.Free(handles[12]);
+    pool.Free(handles[14]);
+    pool.Free(handles[13]);
+    pool.Free(handles[15]);
+    handles.pop_back();
+    handles.pop_back();
+    handles.pop_back();
+    handles.pop_back();
+
+    for (int i = 0; i < 16; ++i)
+    {
+        RawPtrHandle handle;
         HandleObjectPoolTestObject* ptr;
         std::tie(handle, ptr) = pool.Alloc();
         handles.push_back(handle);

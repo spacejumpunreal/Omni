@@ -63,4 +63,13 @@ namespace Omni
         std::tuple<IndexHandle, TObject*> Alloc();
         TObject* ToPtr(IndexHandle handle);
     };
+
+    template<typename TObject>
+    struct RawPtrObjectPool : public RawPtrHandlePoolBase
+    {
+    public:
+        void Initialize(PMRAllocator allocator, u32 pageObjCount);
+        std::tuple<RawPtrHandle, TObject*> Alloc();
+        TObject* ToPtr(RawPtrHandle handle);
+    };
 }
