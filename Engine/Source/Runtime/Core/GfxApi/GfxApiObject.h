@@ -23,10 +23,22 @@ namespace Omni
     /**
      * typedefs
      */
-    struct GfxApiTextureRef : public IndexHandle {};
-    struct GfxApiBufferRef : public IndexHandle {};
-    struct GfxApiSwapChainRef : public IndexHandle {};
-    struct GfxApiGpuEventRef : public IndexHandle {};
+    struct GfxApiTextureRef : public IndexHandle
+    {
+        using UnderlyingHandle = RawPtrHandle;
+    };
+    struct GfxApiBufferRef : public IndexHandle 
+    {
+        using UnderlyingHandle = RawPtrHandle;
+    };
+    struct GfxApiSwapChainRef : public RawPtrHandle 
+    { 
+        using UnderlyingHandle = RawPtrHandle;
+    };
+    struct GfxApiGpuEventRef : public IndexHandle
+    {
+        using UnderlyingHandle = RawPtrHandle;
+    };
 
     /**
      * enums

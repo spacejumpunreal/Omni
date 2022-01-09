@@ -99,7 +99,7 @@ namespace Omni
 #if DEMO_MODULE
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         gfxApi.DestroySwapChain(self.SwapChain);
-        self.SwapChain = (GfxApiSwapChainRef)NullIndexHandle;
+        self.SwapChain = (GfxApiSwapChainRef)GfxApiSwapChainRef::Null();
         for (u32 iBuffer = 0; iBuffer < BackbufferCount; ++iBuffer)
         {
             self.Backbuffers[iBuffer] = (GfxApiTextureRef)NullIndexHandle;

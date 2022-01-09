@@ -133,7 +133,7 @@ namespace Omni
     {
         GfxApiSwapChainRef handle;
         DX12SwapChain* obj;
-        std::tie((IndexHandle&)handle, obj) = gDX12GlobalState.DX12SwapChainPool.Alloc();
+        std::tie((GfxApiSwapChainRef::UnderlyingHandle&)handle, obj) = gDX12GlobalState.DX12SwapChainPool.Alloc();
         new((void*)obj)DX12SwapChain(desc);
         return handle;
 
@@ -148,14 +148,17 @@ namespace Omni
 
     void FreeSwapChainHandle(void* p)
     {
-        IndexHandle& handle = *reinterpret_cast<IndexHandle*>(&p);
+        GfxApiSwapChainRef::UnderlyingHandle& handle = *reinterpret_cast<GfxApiSwapChainRef::UnderlyingHandle*>(&p);
         gDX12GlobalState.DX12SwapChainPool.ToPtr(handle)->~DX12SwapChain();
         gDX12GlobalState.DX12SwapChainPool.Free(handle);
     }
 
     void DX12Module::DestroySwapChain(GfxApiSwapChainRef swapChain)
     {
-        gDX12GlobalState.DeleteManager->AddForHandleFree(FreeSwapChainHandle, (IndexHandle)swapChain, AllQueueMask);
+        gDX12GlobalState.DeleteManager->AddForHandleFree(
+            FreeSwapChainHandle, 
+            (GfxApiSwapChainRef::UnderlyingHandle&)swapChain, 
+            AllQueueMask);
     }
 
     void DX12Module::GetBackbufferTextures(GfxApiSwapChainRef swapChain, GfxApiTextureRef backbuffers[], u32 count)

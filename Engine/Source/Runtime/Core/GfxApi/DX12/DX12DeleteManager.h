@@ -29,7 +29,8 @@ namespace Omni
         template<typename TObject>
         void AddForDelete(TObject* obj, GfxApiQueueMask queueMask);
         
-        void AddForHandleFree(void(*func)(void*), IndexHandle handle, GfxApiQueueMask queueMask);
+        template<typename HandleType>
+        void AddForHandleFree(void(*func)(void*), HandleType handle, GfxApiQueueMask queueMask);
 
         void Flush();
         void OnBatchDelete();
@@ -64,6 +65,14 @@ namespace Omni
         DX12DeleteManager::DX12DeleteCB cb(
             (void(*)(void*))DX12DeleteCBHelper<TObject>::DoDelete, 
             (void*)obj);
+        AddDeleteCB(cb, queueMask);
+    }
+
+    template<typename HandleType>
+    void DX12DeleteManager::AddForHandleFree(void(*func)(void*), HandleType handle, GfxApiQueueMask queueMask)
+    {
+        void* p = *reinterpret_cast<void**>(&handle);
+        DX12DeleteManager::DX12DeleteCB cb(func, p);
         AddDeleteCB(cb, queueMask);
     }
 }

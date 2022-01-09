@@ -29,30 +29,30 @@ namespace Omni
     };
 
 
-	struct DX12GlobalState
-	{
-	public:
-		DX12GlobalState();
-		void Initialize();
-		void Finalize();
-		void WaitGPUIdle();
-	public://DX12 global objects
+    struct DX12GlobalState
+    {
+    public:
+        DX12GlobalState();
+        void Initialize();
+        void Finalize();
+        void WaitGPUIdle();
+    public://DX12 global objects
         DX12Singletons                                  Singletons;
     public://DX12 object pools
         ObjectCache<ID3D12GraphicsCommandList4>         DirectCommandListCache;
         ObjectCache<ID3D12CommandAllocator>             DirectCommandAllocatorCache;
         //we can have a ID3D12Fence cache here
     public://object pools
-        IndexObjectPool<DX12SwapChain>                  DX12SwapChainPool;
+        RawPtrObjectPool<DX12SwapChain>                 DX12SwapChainPool;
         IndexObjectPool<DX12Texture>                    DX12TexturePool;
     public://state flags
         bool								            Initialized;
     public://managers
         class DX12TimelineManager*                      TimelineManager;
         class DX12DeleteManager*                        DeleteManager;
-	};
-	
-	extern DX12GlobalState gDX12GlobalState;
+    };
+    
+    extern DX12GlobalState gDX12GlobalState;
 }
 
 #endif//OMNI_WINDOWS
