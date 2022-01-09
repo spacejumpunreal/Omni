@@ -14,14 +14,14 @@ namespace Omni
     //forward decl
     class DX12Texture;
 
-	class DX12SwapChain final : public GfxApiSwapChain
+	class DX12SwapChain
 	{
 	public:
 		static const u32 MaxBackbuffers = 3;
 	public:
 		DX12SwapChain(const GfxApiSwapChainDesc& desc);
 		~DX12SwapChain();
-		const GfxApiSwapChainDesc& GetDesc() override;
+		const GfxApiSwapChainDesc& GetDesc();
 		void Present(bool waitVSync);
 		void Update(const GfxApiSwapChainDesc& desc);
 		u32 GetCurrentBackbufferIndex();

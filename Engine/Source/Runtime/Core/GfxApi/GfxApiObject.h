@@ -16,11 +16,6 @@ namespace Omni
     /**
      * forward decls
      */
-    //GfxApiObejcts
-    class GfxApiBuffer;
-    class GfxApiTexture;
-    class GfxApiSwapChain;
-    class GfxApiGpuEvent;
     //AsyncActions
     class GfxApiRenderPass;
     class GfxApiComputePass;
@@ -67,11 +62,6 @@ namespace Omni
         GfxApiBufferDesc() : GfxApiObjectDesc(GfxApiObjectType::Buffer) {}
     };
 
-    class GfxApiBuffer
-    {
-        virtual const GfxApiBufferDesc& GetDesc() = 0;
-    };
-
 
     //GfxApiTexture
     struct GfxApiTextureDesc : public GfxApiObjectDesc
@@ -84,12 +74,6 @@ namespace Omni
 
     public:
         GfxApiTextureDesc() : GfxApiObjectDesc(GfxApiObjectType::Texture) {}
-    };
-
-    class GfxApiTexture
-    {
-    public:
-        virtual const GfxApiTextureDesc& GetDesc() = 0;
     };
 
 
@@ -110,18 +94,5 @@ namespace Omni
             , Height(0)
             , Format(GfxApiFormat::R8G8B8A8_UNORM)
         {}
-    };
-
-    class GfxApiSwapChain
-    {
-    public:
-        virtual const GfxApiSwapChainDesc& GetDesc() = 0;
-    };
-    
-
-    //GfxApiGpuEvent
-    class GfxApiGpuEvent //aka ID3D12Fence on DX12, MTLEvent on Metal
-    {
-    public:
     };
 }

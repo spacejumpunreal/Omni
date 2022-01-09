@@ -14,14 +14,14 @@ struct D3D12_RESOURCE_BARRIER;
 
 namespace Omni
 {
-	class DX12Texture final : public GfxApiTexture
+	class DX12Texture
 	{
 	public:
 		DX12Texture(const GfxApiTextureDesc& desc);
 		DX12Texture(const GfxApiTextureDesc& desc, ID3D12Resource* res, D3D12_RESOURCE_STATES initState,
                     DX12Descriptor descriptor, bool isOwner); //create from existing texture
 		~DX12Texture();
-		const GfxApiTextureDesc& GetDesc() override;
+		const GfxApiTextureDesc& GetDesc();
         ID3D12Resource* GetDX12Texture() { return mTexture; }
         DX12Descriptor GetCPUDescriptor();
         bool EmitBarrier(D3D12_RESOURCE_STATES newState, D3D12_RESOURCE_BARRIER* barrier);
