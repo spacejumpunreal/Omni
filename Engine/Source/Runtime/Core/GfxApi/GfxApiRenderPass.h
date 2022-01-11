@@ -19,6 +19,7 @@ namespace Omni
     /**
      * typedefs
      */
+    using TClearValue = std::variant<u32, u8, Vector4, float>;
 
     /**
      * enums
@@ -30,8 +31,25 @@ namespace Omni
       * definitions
       */
 
+    struct DirectDrawParams
+    {
+        u32     IndexCount;
+        u32     InstanceCount;
+        u32     FirstIndex;
+        u32     BaseVertex;
+        u32     BaseInstance;
+    };
+
+    struct IndirectDrawParams
+    {
+        GfxApiBufferRef     IndirectArgBuffer;
+
+    };
+
     struct GfxApiDrawcall
     {
+        GfxApiBufferRef             IndexBuffer = (GfxApiBufferRef)NullIndexHandle;
+        DirectDrawParams            DrawParams;
     };
 
     struct GfxApiRenderPassStage : SListNode
@@ -43,9 +61,8 @@ namespace Omni
     struct GfxApiRTConfig
     {
         GfxApiTextureRef            Texture = (GfxApiTextureRef)NullIndexHandle;
-        std::variant<u32, u8, Vector4, float>  ClearValue;
+        TClearValue                 ClearValue;
         GfxApiLoadStoreActions      Action = GfxApiLoadStoreActions::Clear | GfxApiLoadStoreActions::Store;
-
     };
 
     class GfxApiRenderPass

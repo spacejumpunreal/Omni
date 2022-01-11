@@ -106,6 +106,15 @@ namespace Omni
         return {};
     }
 
+    void DX12Module::UpdateBuffer(GfxApiBufferRef buffer, u32 dstOffset, u32 size, u8* srcData)
+    {
+        (void)buffer;
+        (void)dstOffset;
+        (void)size;
+        (void)srcData;
+        NotImplemented();
+    }
+
     void DX12Module::DestroyBuffer(GfxApiBufferRef buffer)
     {
         (void)buffer;

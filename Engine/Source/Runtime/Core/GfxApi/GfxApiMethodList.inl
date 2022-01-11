@@ -4,6 +4,7 @@
 
 //Buffer
 GfxApiMethod(GfxApiBufferRef CreateBuffer(const GfxApiBufferDesc& desc))
+GfxApiMethod(void UpdateBuffer(GfxApiBufferRef buffer, u32 dstOffset, u32 size, u8* srcData))
 GfxApiMethod(void DestroyBuffer(GfxApiBufferRef buffer))
 //Texture
 GfxApiMethod(GfxApiTextureRef CreateTexture(const GfxApiTextureDesc& desc))
@@ -25,6 +26,7 @@ GfxApiMethod(void DestroyEvent(GfxApiGpuEventRef gpuEvent))
 */
 GfxApiMethod(void DrawRenderPass(GfxApiRenderPass* renderPass, GfxApiGpuEventRef* doneEvent))
 GfxApiMethod(void DispatchComputePass(GfxApiComputePass* computePass, GfxApiGpuEventRef* doneEvent))
+//GfxApiMethod(void LaunchBatchBlit(GfxApiBlitPass* blitPass))
 GfxApiMethod(void Present(GfxApiSwapChainRef swapChain, bool waitVSync, GfxApiGpuEventRef* doneEvent))
 GfxApiMethod(void ScheduleGpuEvent(GfxApiQueueType queueType, GfxApiGpuEventRef* doneEvent))
 

@@ -1,10 +1,27 @@
 # todo
-- GfxApi::DX12 startup
-	- ObjectArrayAllocator
-	- Handle
-		- RawPtr
-		- IndexGeneration
-		- PtrGeneration?
+- DrawTriangle
+	- GfxApiBuffer
+		- GfxApiModule interfaces
+		- drawcall fields
+		- DX12Module
+			- initial: create/destroy ok
+				- DX12BufferAllocator
+				- DX12DescriptorAllocator
+			- Copy queue
+				- update using copy queue
+				- async event
+			
+	- GfxApiShader
+	- drawcall
+		- IndexBuffer
+		- Shader
+	- DX12Module
+		
+		- DX12Shader
+		- DX12PSOManager
+		
+		- DrawPass: DrawIndexed
+	
 - DiffuseShading
 	- drawcall
 		- Buffer
