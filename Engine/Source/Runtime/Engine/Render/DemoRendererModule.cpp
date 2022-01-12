@@ -35,6 +35,7 @@ namespace Omni
         GfxApiSwapChainDesc             DescSwapChain;
         GfxApiSwapChainRef              SwapChain = {};
         GfxApiTextureRef                Backbuffers[BackbufferCount];
+        GfxApiBufferRef                 TestBuffer;
         u32                             ClientAreaSizeX = 0;
         u32                             ClientAreaSizeY = 0;
         u32                             FrameIndex = 0;
@@ -66,7 +67,7 @@ namespace Omni
         GfxApiModule& gfxApi = GfxApiModule::Get();
         gfxApi.Retain();
 
-#if DEMO_MODULE
+
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         //create swapchain
         wm.GetClientAreaSize(self.ClientAreaSizeX, self.ClientAreaSizeY);
@@ -77,7 +78,13 @@ namespace Omni
         self.DescSwapChain.WindowHandle = wm.GetMainWindowHandle();
         self.SwapChain = gfxApi.CreateSwapChain(self.DescSwapChain);
         gfxApi.GetBackbufferTextures(self.SwapChain, self.Backbuffers, BackbufferCount);
-#endif
+
+        {
+            GfxApiBufferDesc bufferDesc;
+            bufferDesc.Size = 16 * 1024;
+            self.TestBuffer = gfxApi.CreateBuffer(bufferDesc);
+        }
+
         tm.RegisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority, DemoRendererImpl::GetData(this), QueueKind::Main);
         tm.SetFrameRate_OnMainThread(EngineFrameType::Render, 30);
 
@@ -96,7 +103,7 @@ namespace Omni
         MemoryModule& mm = MemoryModule::Get();
         
 
-#if DEMO_MODULE
+
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
         gfxApi.DestroySwapChain(self.SwapChain);
         self.SwapChain = (GfxApiSwapChainRef)GfxApiSwapChainRef::Null();
@@ -105,7 +112,7 @@ namespace Omni
             self.Backbuffers[iBuffer] = (GfxApiTextureRef)NullIndexHandle;
         }
         tm.UnregisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority);
-#endif
+
         Module::Finalize();
         gfxApi.Release();
         tm.Release();
@@ -116,7 +123,6 @@ namespace Omni
 
     void DemoRendererModulePrivateImpl::Tick()
     {
-#if DEMO_MODULE
         GfxApiModule& gfxApi = GfxApiModule::Get();
         
         DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
@@ -147,7 +153,6 @@ namespace Omni
         gfxApi.DrawRenderPass(renderPass, nullptr);
         gfxApi.Present(self.SwapChain, true, nullptr);
         gfxApi.ScheduleGpuEvent(GfxApiQueueType::GraphicsQueue, nullptr);
-#endif
     }
 
     static Module* DemoRendererModuleCtor(const EngineInitArgMap&)
@@ -163,4 +168,3 @@ namespace Omni
     EXPORT_INTERNAL_MODULE(DemoRenderer, ModuleExportInfo(DemoRendererModuleCtor, true));
 }
 
-#undef DEMO_MODULE

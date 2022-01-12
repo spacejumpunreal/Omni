@@ -1,12 +1,13 @@
 # todo
 - DrawTriangle
 	- GfxApiBuffer
-		- GfxApiModule interfaces
-		- drawcall fields
-		- DX12Module
-			- initial: create/destroy ok
-				- DX12BufferAllocator
-				- DX12DescriptorAllocator
+		- create
+			- GfxApiModule interfaces		
+			- DX12Module
+				- initial: create/destroy ok
+					- DX12BufferAllocator
+		- use
+			- drawcall fields
 			- Copy queue
 				- update using copy queue
 				- async event

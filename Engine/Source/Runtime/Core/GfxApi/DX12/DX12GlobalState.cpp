@@ -12,8 +12,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12ObjectFactories.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12DeleteManager.h"
-
-
+#include <d3d12.h>
 
 #include <dxgidebug.h>
 
@@ -23,6 +22,10 @@ EXTERN_C const GUID DECLSPEC_SELECTANY DXGI_DEBUG_ALL = { 0xe48ae283, 0xda80, 0x
 
 namespace Omni
 {
+    //decls
+    void CheckSupportedFeatures(ID3D12Device* device);
+
+
     static constexpr bool EnableDebugLayer = OMNI_DEBUG;
 
     //global variable
@@ -120,6 +123,9 @@ namespace Omni
         TimelineManager = OMNI_NEW(MemoryKind::GfxApi) DX12TimelineManager((ID3D12Device*)Singletons.D3DDevice);
         DeleteManager = OMNI_NEW(MemoryKind::GfxApi) DX12DeleteManager();
 
+        CheckSupportedFeatures(Singletons.D3DDevice);
+
+
         Initialized = true;
     }
 
@@ -178,6 +184,13 @@ namespace Omni
             gDX12GlobalState.TimelineManager->WaitBatchFinishOnGPU(GfxApiQueueType::GraphicsQueue, batchId);
             break;
         }
+    }
+
+    void CheckSupportedFeatures(ID3D12Device* device)
+    {
+        D3D12_FEATURE_DATA_D3D12_OPTIONS  featureOptions {};
+        CheckSucceeded(device->CheckFeatureSupport(D3D12_FEATURE::D3D12_FEATURE_D3D12_OPTIONS, &featureOptions, sizeof(featureOptions)));
+        //https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_heap_tier
     }
 }
 
