@@ -8,6 +8,7 @@
 #include "Runtime/Core/GfxApi/DX12/d3dx12.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineUtils.h"
+#include "Runtime/Core/GfxApi/DX12/d3dx12.h"
 
 
 namespace Omni
@@ -16,6 +17,8 @@ namespace Omni
         : mDesc(desc)
         , mDX12Buffer(nullptr)
     {
+
+        
     }
 
     DX12Buffer::~DX12Buffer()
