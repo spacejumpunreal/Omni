@@ -14,6 +14,7 @@ namespace Omni
     //forward decls
     class DX12Texture;
     class DX12SwapChain;
+    class DX12Buffer;
 
 
     struct DX12Singletons
@@ -45,11 +46,13 @@ namespace Omni
     public://object pools
         RawPtrObjectPool<DX12SwapChain>                 DX12SwapChainPool;
         IndexObjectPool<DX12Texture>                    DX12TexturePool;
+        RawPtrObjectPool<DX12Buffer>                    DX12BufferPool;
     public://state flags
         bool								            Initialized;
     public://managers
         class DX12TimelineManager*                      TimelineManager;
         class DX12DeleteManager*                        DeleteManager;
+        class DX12BufferManager*                        BufferManager;
     };
     
     extern DX12GlobalState gDX12GlobalState;

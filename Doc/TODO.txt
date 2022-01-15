@@ -2,10 +2,12 @@
 - DrawTriangle
 	- GfxApiBuffer
 		- create
-			- GfxApiModule interfaces		
 			- DX12Module
 				- initial: create/destroy ok
-					- DX12BufferAllocator
+					- DX12BufferAllocator, skeleton
+					- GPUMemAllocator
+						- skeleton
+						- FirstFit
 		- use
 			- drawcall fields
 			- Copy queue

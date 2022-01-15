@@ -32,9 +32,10 @@ namespace Omni
 
     enum class GfxApiAccessFlags : u32
     {
-        CPUAccess = 1 << 0,
-        GPURead = 1 << 1,
-        GPUWrite = 1 << 2,
+        CPURead = 1 << 0,
+        CPUWrite = 1 << 1,
+        GPURead = 1 << 2,
+        GPUWrite = 1 << 3,
     };
     DEFINE_BITMASK_ENUM_OPS(GfxApiAccessFlags);
 
