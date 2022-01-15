@@ -22,77 +22,71 @@
 #include <thread>
 #include <unordered_set>
 
-
 namespace Omni
 {
-	struct KeyStateLogger;
-	KeyStateLogger* pleft;
+struct KeyStateLogger;
+KeyStateLogger* pleft;
 
-	struct KeyStateLogger : public KeyStateListener
-	{
-		void OnKeyEvent(KeyCode key, bool pressed) override
-		{
-            (void)pressed;
-			count++;
-			if (count > 10)
-			{
-				InputModule::Get().UnRegisterlistener(key, this);
-				delete this;
-				pleft = nullptr;
-				System::GetSystem().TriggerFinalization(true);
-			}
-		}
-		int count = 0;
-	};
+struct KeyStateLogger : public KeyStateListener
+{
+    void OnKeyEvent(KeyCode key, bool pressed) override
+    {
+        (void)pressed;
+        count++;
+        if (count > 10)
+        {
+            InputModule::Get().UnRegisterlistener(key, this);
+            delete this;
+            pleft = nullptr;
+            System::GetSystem().TriggerFinalization(true);
+        }
+    }
+    int count = 0;
+};
 
-	
-
-	void PlayGroundReady()
-	{
-		pleft = new KeyStateLogger();
-		InputModule::Get().RegisterListener(KeyMap::MouseLeft, pleft);
-	}
-	void PlayGroundWillQuit()
-	{
-		if (pleft != nullptr)
-		{
-			InputModule::Get().UnRegisterlistener(KeyMap::MouseLeft, pleft);
-			delete pleft;
-			pleft = nullptr;
-		}
-			
-	}
-
-	void PlayGroundCodeEmpty()
-	{
-		System::GetSystem().TriggerFinalization(true);
-	}
+void PlayGroundReady()
+{
+    pleft = new KeyStateLogger();
+    InputModule::Get().RegisterListener(KeyMap::MouseLeft, pleft);
+}
+void PlayGroundWillQuit()
+{
+    if (pleft != nullptr)
+    {
+        InputModule::Get().UnRegisterlistener(KeyMap::MouseLeft, pleft);
+        delete pleft;
+        pleft = nullptr;
+    }
 }
 
-int main(int, const char** )
+void PlayGroundCodeEmpty()
 {
-	Omni::CreateEngineSystem();
-	Omni::System& system = Omni::System::GetSystem();
+    System::GetSystem().TriggerFinalization(true);
+}
+} // namespace Omni
+
+int main(int, const char**)
+{
+    Omni::CreateEngineSystem();
+    Omni::System& system = Omni::System::GetSystem();
 #if true
-	const char* engineArgv[] =
-	{
-		"LoadModule=Window",
-		"LoadModule=DX12",
-		"LoadModule=DemoRenderer",
-		"--window-size=800x600",
-	};
-	system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv, Omni::PlayGroundReady, Omni::PlayGroundWillQuit);
+    const char* engineArgv[] = {
+        "LoadModule=Window",
+        "LoadModule=DX12",
+        "LoadModule=DemoRenderer",
+        "--window-size=800x600",
+    };
+    system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv, Omni::PlayGroundReady, Omni::PlayGroundWillQuit);
 #else
-	const char* engineArgv[] =
-	{
-		"LoadModule=Window",
-		//"LoadModule=GfxApi",
-		//"LoadModule=DemoRenderer",
-		"--window-size=1920x1080",
-	};
-	system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv, Omni::PlayGroundCodeEmpty, nullptr);
+    const char* engineArgv[] = {
+        "LoadModule=Window",
+        //"LoadModule=GfxApi",
+        //"LoadModule=DemoRenderer",
+        "--window-size=1920x1080",
+    };
+    system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv, Omni::PlayGroundCodeEmpty, nullptr);
 #endif
-	system.DestroySystem();
- 
-	return 0;
+    system.DestroySystem();
+
+    return 0;
 }

@@ -19,269 +19,260 @@
 
 #define DEBUG_DX_OBJECT_LEAK_ON_QUIT 1
 
-
-EXTERN_C const GUID DECLSPEC_SELECTANY DXGI_DEBUG_ALL =  { 0xe48ae283, 0xda80, 0x490b, 0x87, 0xe6, 0x43, 0xe9, 0xa9, 0xcf, 0xda, 0x8  };
-
+EXTERN_C const GUID DECLSPEC_SELECTANY DXGI_DEBUG_ALL = {0xe48ae283, 0xda80, 0x490b, 0x87, 0xe6, 0x43,
+                                                         0xe9,       0xa9,   0xcf,   0xda, 0x8};
 
 namespace Omni
 {
-    //forward decls
-    // 
-    //declarations
-    class DX12Module final : public GfxApiModule
-    {
-    public:
-        DX12Module(const EngineInitArgMap& args);
-        void Destroy() override;
-        void Initialize(const EngineInitArgMap&) override;
-        void StopThreads() override;
-        void Finalize() override;
+// forward decls
+//
+// declarations
+class DX12Module final : public GfxApiModule
+{
+public:
+    DX12Module(const EngineInitArgMap& args);
+    void Destroy() override;
+    void Initialize(const EngineInitArgMap&) override;
+    void StopThreads() override;
+    void Finalize() override;
 
 #define GfxApiMethod(Definition) Definition override;
 #include "Runtime/Core/GfxApi/GfxApiMethodList.inl"
 #undef GfxApiMethod
-    private:
+private:
 #if DEBUG_DX_OBJECT_LEAK_ON_QUIT
-        void ReportAllLivingObjects();
+    void ReportAllLivingObjects();
 #endif
-    };
+};
 
+/*
+ * DX12Module implementations
+ */
 
-    /*
-    * DX12Module implementations
-    */
-
-    DX12Module::DX12Module(const EngineInitArgMap& args)
-    {
-        (void)args;
-    }
-
-    void DX12Module::Initialize(const EngineInitArgMap& args)
-    {
-        MemoryModule& mm = MemoryModule::Get();
-        mm.Retain();
-
-        CheckDebug(!gDX12GlobalState.Initialized);
-        gDX12GlobalState.Initialize();
-
-        Module::Initialize(args);
-        CheckAlways(gGfxApiModule == nullptr);
-        gGfxApiModule = this;
-    }
-
-    void DX12Module::StopThreads()
-    {}
-
-    void DX12Module::Finalize()
-    {
-        Module::Finalizing();
-        if (GetUserCount() > 0)
-            return;
-
-        CheckAlways(gGfxApiModule != nullptr);
-        gGfxApiModule = nullptr;
-
-        gDX12GlobalState.Finalize();
-
-        MemoryModule& mm = MemoryModule::Get();
-        Module::Finalize();
-        mm.Release();
-
-#if DEBUG_DX_OBJECT_LEAK_ON_QUIT
-        ReportAllLivingObjects();
-#endif
-    }
-
-
-    /*
-    * GfxApiMethod implementations
-    */
-
-
-    //Buffer
-    GfxApiBufferRef DX12Module::CreateBuffer(const GfxApiBufferDesc& desc)
-    {
-        (void)desc;
-        NotImplemented();
-        return {};
-    }
-
-    void DX12Module::UpdateBuffer(GfxApiBufferRef buffer, u32 dstOffset, u32 size, u8* srcData)
-    {
-        (void)buffer;
-        (void)dstOffset;
-        (void)size;
-        (void)srcData;
-        NotImplemented();
-    }
-
-    void DX12Module::DestroyBuffer(GfxApiBufferRef buffer)
-    {
-        (void)buffer;
-        NotImplemented();
-    }
-
-
-    //Texture
-    GfxApiTextureRef DX12Module::CreateTexture(const GfxApiTextureDesc& desc)
-    {
-        (void)desc;
-        NotImplemented();
-        return {};
-    }
-
-    void DX12Module::DestroyTexture(GfxApiTextureRef texture)
-    {
-        (void)texture;
-        NotImplemented();
-    }
-
-
-    //SwapChain
-    GfxApiSwapChainRef DX12Module::CreateSwapChain(const GfxApiSwapChainDesc& desc)
-    {
-        GfxApiSwapChainRef handle;
-        DX12SwapChain* obj;
-        std::tie((GfxApiSwapChainRef::UnderlyingHandle&)handle, obj) = gDX12GlobalState.DX12SwapChainPool.Alloc();
-        new((void*)obj)DX12SwapChain(desc);
-        return handle;
-
-    }
-
-    void DX12Module::UpdateSwapChain(GfxApiSwapChainRef swapChain, const GfxApiSwapChainDesc& desc)
-    {
-        gDX12GlobalState.WaitGPUIdle();
-        DX12SwapChain* dx12SwapChain = gDX12GlobalState.DX12SwapChainPool.ToPtr(swapChain);
-        dx12SwapChain->Update(desc);
-    }
-
-    void FreeSwapChainHandle(void* p)
-    {
-        GfxApiSwapChainRef::UnderlyingHandle& handle = *reinterpret_cast<GfxApiSwapChainRef::UnderlyingHandle*>(&p);
-        gDX12GlobalState.DX12SwapChainPool.ToPtr(handle)->~DX12SwapChain();
-        gDX12GlobalState.DX12SwapChainPool.Free(handle);
-    }
-
-    void DX12Module::DestroySwapChain(GfxApiSwapChainRef swapChain)
-    {
-        gDX12GlobalState.DeleteManager->AddForHandleFree(
-            FreeSwapChainHandle, 
-            (GfxApiSwapChainRef::UnderlyingHandle&)swapChain, 
-            AllQueueMask);
-    }
-
-    void DX12Module::GetBackbufferTextures(GfxApiSwapChainRef swapChain, GfxApiTextureRef backbuffers[], u32 count)
-    {
-        DX12SwapChain* dx12SwapChain = gDX12GlobalState.DX12SwapChainPool.ToPtr(swapChain);
-        dx12SwapChain->GetBackbufferTextures(backbuffers, count);
-    }
-    
-    u32 DX12Module::GetCurrentBackbufferIndex(GfxApiSwapChainRef swapChain)
-    {
-        DX12SwapChain* dx12SwapChain = gDX12GlobalState.DX12SwapChainPool.ToPtr(swapChain);
-        return dx12SwapChain->GetCurrentBackbufferIndex();
-    }
-
-
-    //GpuEvent
-    bool DX12Module::IsEventTriggered(GfxApiGpuEventRef gpuEvent)
-    {
-        (void)gpuEvent;
-        NotImplemented();
-        return false;
-    }
-
-    void DX12Module::WaitEvent(GfxApiGpuEventRef gpuEvent)
-    {
-        (void)gpuEvent;
-        NotImplemented();
-    }
-
-    void DX12Module::DestroyEvent(GfxApiGpuEventRef gpuEvent)
-    {
-        (void)gpuEvent;
-        NotImplemented();
-    }
-
-    //AsyncActions
-    void DX12Module::DrawRenderPass(GfxApiRenderPass* renderPass, GfxApiGpuEventRef* doneEvent)
-    {
-        DX12DrawRenderPass(renderPass, doneEvent);
-    }
-
-    void DX12Module::DispatchComputePass(GfxApiComputePass* computePass, GfxApiGpuEventRef* doneEvent)
-    {
-        (void)computePass;
-        (void)doneEvent;
-        NotImplemented();
-    }
-
-    void DX12Module::Present(GfxApiSwapChainRef swapChain, bool waitVSync, GfxApiGpuEventRef* doneEvent)
-    {
-        DX12SwapChain* dx12SwapChain = gDX12GlobalState.DX12SwapChainPool.ToPtr(swapChain);
-        dx12SwapChain->Present(waitVSync);
-        if (doneEvent != nullptr)
-            NotImplemented("doneEvent");
-    }
-
-    void DX12Module::ScheduleGpuEvent(GfxApiQueueType queueType, GfxApiGpuEventRef* doneEvent)
-    {
-        (void)doneEvent;
-        ID3D12CommandQueue* queue = nullptr;
-        switch (queueType)
-        {
-        case GfxApiQueueType::GraphicsQueue:
-            queue = gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue];
-            break;
-        default:
-            NotImplemented("ScheduleGpuEvent only implemented for GraphicsQueue");
-            break;
-        }
-        u64 batchId;
-        gDX12GlobalState.TimelineManager->CloseBatchAndSignalOnGPU(queueType, queue, batchId, true);
-        if (doneEvent != nullptr)
-        {
-            NotImplemented("doneEvent != nullptr for DX12Module::ScheduleGpuEvent");
-        }
-    }
-    //Maintain operations
-    void DX12Module::CloseBatchDelete()
-    {
-        gDX12GlobalState.DeleteManager->Flush();
-    }
-
-    void DX12Module::CheckGpuEvents(GfxApiQueueMask queueMask)
-    {
-        gDX12GlobalState.TimelineManager->PollBatch(queueMask);
-    }
-
-    //Private functions
-
-#if DEBUG_DX_OBJECT_LEAK_ON_QUIT
-    void DX12Module::ReportAllLivingObjects()
-    {
-        IDXGIDebug* dxgiDebug;
-        CheckSucceeded(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug)));
-        CheckSucceeded(dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL));
-        //OmniDebugBreak();
-        dxgiDebug->Release();
-    }
-#endif
-     
-    /*
-    * DX12Module ctors
-    */
-    static Module* DX12ModuleCtor(const EngineInitArgMap& args)
-    {
-        return InitMemFactory<DX12Module>::New(args);
-    }
-
-    void DX12Module::Destroy()
-    {
-        InitMemFactory<DX12Module>::Delete((DX12Module*)this);
-    }
-
-    EXPORT_INTERNAL_MODULE(DX12Module, ModuleExportInfo(DX12ModuleCtor, false, "DX12"));
+DX12Module::DX12Module(const EngineInitArgMap& args)
+{
+    (void)args;
 }
 
-#endif//OMNI_WINDOWS
+void DX12Module::Initialize(const EngineInitArgMap& args)
+{
+    MemoryModule& mm = MemoryModule::Get();
+    mm.Retain();
+
+    CheckDebug(!gDX12GlobalState.Initialized);
+    gDX12GlobalState.Initialize();
+
+    Module::Initialize(args);
+    CheckAlways(gGfxApiModule == nullptr);
+    gGfxApiModule = this;
+}
+
+void DX12Module::StopThreads()
+{
+}
+
+void DX12Module::Finalize()
+{
+    Module::Finalizing();
+    if (GetUserCount() > 0)
+        return;
+
+    CheckAlways(gGfxApiModule != nullptr);
+    gGfxApiModule = nullptr;
+
+    gDX12GlobalState.Finalize();
+
+    MemoryModule& mm = MemoryModule::Get();
+    Module::Finalize();
+    mm.Release();
+
+#if DEBUG_DX_OBJECT_LEAK_ON_QUIT
+    ReportAllLivingObjects();
+#endif
+}
+
+/*
+ * GfxApiMethod implementations
+ */
+
+// Buffer
+GfxApiBufferRef DX12Module::CreateBuffer(const GfxApiBufferDesc& desc)
+{
+    (void)desc;
+    NotImplemented();
+    return {};
+}
+
+void DX12Module::UpdateBuffer(GfxApiBufferRef buffer, u32 dstOffset, u32 size, u8* srcData)
+{
+    (void)buffer;
+    (void)dstOffset;
+    (void)size;
+    (void)srcData;
+    NotImplemented();
+}
+
+void DX12Module::DestroyBuffer(GfxApiBufferRef buffer)
+{
+    (void)buffer;
+    NotImplemented();
+}
+
+// Texture
+GfxApiTextureRef DX12Module::CreateTexture(const GfxApiTextureDesc& desc)
+{
+    (void)desc;
+    NotImplemented();
+    return {};
+}
+
+void DX12Module::DestroyTexture(GfxApiTextureRef texture)
+{
+    (void)texture;
+    NotImplemented();
+}
+
+// SwapChain
+GfxApiSwapChainRef DX12Module::CreateSwapChain(const GfxApiSwapChainDesc& desc)
+{
+    GfxApiSwapChainRef handle;
+    DX12SwapChain*     obj;
+    std::tie((GfxApiSwapChainRef::UnderlyingHandle&)handle, obj) = gDX12GlobalState.DX12SwapChainPool.Alloc();
+    new ((void*)obj) DX12SwapChain(desc);
+    return handle;
+}
+
+void DX12Module::UpdateSwapChain(GfxApiSwapChainRef swapChain, const GfxApiSwapChainDesc& desc)
+{
+    gDX12GlobalState.WaitGPUIdle();
+    DX12SwapChain* dx12SwapChain = gDX12GlobalState.DX12SwapChainPool.ToPtr(swapChain);
+    dx12SwapChain->Update(desc);
+}
+
+void FreeSwapChainHandle(void* p)
+{
+    GfxApiSwapChainRef::UnderlyingHandle& handle = *reinterpret_cast<GfxApiSwapChainRef::UnderlyingHandle*>(&p);
+    gDX12GlobalState.DX12SwapChainPool.ToPtr(handle)->~DX12SwapChain();
+    gDX12GlobalState.DX12SwapChainPool.Free(handle);
+}
+
+void DX12Module::DestroySwapChain(GfxApiSwapChainRef swapChain)
+{
+    gDX12GlobalState.DeleteManager->AddForHandleFree(FreeSwapChainHandle,
+                                                     (GfxApiSwapChainRef::UnderlyingHandle&)swapChain, AllQueueMask);
+}
+
+void DX12Module::GetBackbufferTextures(GfxApiSwapChainRef swapChain, GfxApiTextureRef backbuffers[], u32 count)
+{
+    DX12SwapChain* dx12SwapChain = gDX12GlobalState.DX12SwapChainPool.ToPtr(swapChain);
+    dx12SwapChain->GetBackbufferTextures(backbuffers, count);
+}
+
+u32 DX12Module::GetCurrentBackbufferIndex(GfxApiSwapChainRef swapChain)
+{
+    DX12SwapChain* dx12SwapChain = gDX12GlobalState.DX12SwapChainPool.ToPtr(swapChain);
+    return dx12SwapChain->GetCurrentBackbufferIndex();
+}
+
+// GpuEvent
+bool DX12Module::IsEventTriggered(GfxApiGpuEventRef gpuEvent)
+{
+    (void)gpuEvent;
+    NotImplemented();
+    return false;
+}
+
+void DX12Module::WaitEvent(GfxApiGpuEventRef gpuEvent)
+{
+    (void)gpuEvent;
+    NotImplemented();
+}
+
+void DX12Module::DestroyEvent(GfxApiGpuEventRef gpuEvent)
+{
+    (void)gpuEvent;
+    NotImplemented();
+}
+
+// AsyncActions
+void DX12Module::DrawRenderPass(GfxApiRenderPass* renderPass, GfxApiGpuEventRef* doneEvent)
+{
+    DX12DrawRenderPass(renderPass, doneEvent);
+}
+
+void DX12Module::DispatchComputePass(GfxApiComputePass* computePass, GfxApiGpuEventRef* doneEvent)
+{
+    (void)computePass;
+    (void)doneEvent;
+    NotImplemented();
+}
+
+void DX12Module::Present(GfxApiSwapChainRef swapChain, bool waitVSync, GfxApiGpuEventRef* doneEvent)
+{
+    DX12SwapChain* dx12SwapChain = gDX12GlobalState.DX12SwapChainPool.ToPtr(swapChain);
+    dx12SwapChain->Present(waitVSync);
+    if (doneEvent != nullptr)
+        NotImplemented("doneEvent");
+}
+
+void DX12Module::ScheduleGpuEvent(GfxApiQueueType queueType, GfxApiGpuEventRef* doneEvent)
+{
+    (void)doneEvent;
+    ID3D12CommandQueue* queue = nullptr;
+    switch (queueType)
+    {
+    case GfxApiQueueType::GraphicsQueue:
+        queue = gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue];
+        break;
+    default:
+        NotImplemented("ScheduleGpuEvent only implemented for GraphicsQueue");
+        break;
+    }
+    u64 batchId;
+    gDX12GlobalState.TimelineManager->CloseBatchAndSignalOnGPU(queueType, queue, batchId, true);
+    if (doneEvent != nullptr)
+    {
+        NotImplemented("doneEvent != nullptr for DX12Module::ScheduleGpuEvent");
+    }
+}
+// Maintain operations
+void DX12Module::CloseBatchDelete()
+{
+    gDX12GlobalState.DeleteManager->Flush();
+}
+
+void DX12Module::CheckGpuEvents(GfxApiQueueMask queueMask)
+{
+    gDX12GlobalState.TimelineManager->PollBatch(queueMask);
+}
+
+// Private functions
+
+#if DEBUG_DX_OBJECT_LEAK_ON_QUIT
+void DX12Module::ReportAllLivingObjects()
+{
+    IDXGIDebug* dxgiDebug;
+    CheckSucceeded(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug)));
+    CheckSucceeded(dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL));
+    // OmniDebugBreak();
+    dxgiDebug->Release();
+}
+#endif
+
+/*
+ * DX12Module ctors
+ */
+static Module* DX12ModuleCtor(const EngineInitArgMap& args)
+{
+    return InitMemFactory<DX12Module>::New(args);
+}
+
+void DX12Module::Destroy()
+{
+    InitMemFactory<DX12Module>::Delete((DX12Module*)this);
+}
+
+EXPORT_INTERNAL_MODULE(DX12Module, ModuleExportInfo(DX12ModuleCtor, false, "DX12"));
+} // namespace Omni
+
+#endif // OMNI_WINDOWS

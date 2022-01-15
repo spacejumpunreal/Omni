@@ -5,14 +5,12 @@
 #include "Runtime/Core/GfxApi/GfxApiNewDelete.h"
 #include "Runtime/Core/GfxApi/GfxApiObject.h"
 
-
 namespace Omni
 {
-    class DX12BufferManager
-    {
-        //void ID3D12
-    };
-}
+class DX12BufferManager
+{
+    // void ID3D12
+};
+} // namespace Omni
 
-
-#endif//OMNI_WINDOWS
+#endif // OMNI_WINDOWS

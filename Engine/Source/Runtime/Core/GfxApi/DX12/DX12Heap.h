@@ -5,21 +5,18 @@
 #include "Runtime/Core/GfxApi/GfxApiNewDelete.h"
 #include "Runtime/Core/GfxApi/GfxApiObject.h"
 
-
 struct ID3D12Heap;
 
 namespace Omni
 {
 
+struct HeapAllocation
+{
+    ID3D12Heap* Heap;
+    u64         Offset;
+};
 
-    struct HeapAllocation
-    {
-        ID3D12Heap*         Heap;
-        u64                 Offset;
-    };
+ID3D12Heap* CreateBufferHeap(u64 size, GfxApiAccessFlags heapUsage);
+} // namespace Omni
 
-    ID3D12Heap* CreateBufferHeap(u64 size, GfxApiAccessFlags heapUsage);
-}
-
-
-#endif//OMNI_WINDOWS
+#endif // OMNI_WINDOWS
