@@ -15,6 +15,7 @@ namespace Omni
 	{
 		return (void*)AlignUpSize((u64)ptr, (u64)align);
 	}
+
 	template<typename T>
 	bool IsAligned(void* ptr, T align)
 	{
