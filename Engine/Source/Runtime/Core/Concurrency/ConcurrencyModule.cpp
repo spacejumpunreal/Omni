@@ -24,7 +24,7 @@ namespace Omni
     using ThreadDataMap = PMRUnorderedMap<ThreadId, ThreadData*, std::hash<ThreadId>, std::equal_to<ThreadId>>;
     void ConcurrentWorkerThreadFunc(ThreadData* self);
 
-    struct ConcurrencyModulePrivateImpl
+    struct ConcurrencyModulePrivateData
     {
     public:
         LockQueue                   mQueues[(u32)QueueKind::Count];
@@ -32,11 +32,11 @@ namespace Omni
         u32                         mWorkerCount;
         ThreadId                    mNextThreadId;
     public:
-        ConcurrencyModulePrivateImpl();
+        ConcurrencyModulePrivateData();
     };
 
     //definitions
-    using ConcurrencyModuleImpl = PImplCombine<ConcurrencyModule, ConcurrencyModulePrivateImpl>;
+    using ConcurrencyModuleImpl = PImplCombine<ConcurrencyModule, ConcurrencyModulePrivateData>;
 
     //global variables
     ConcurrencyModuleImpl* gConcurrencyModule;
@@ -226,7 +226,7 @@ namespace Omni
         } while (remain);
     }
 
-    ConcurrencyModulePrivateImpl::ConcurrencyModulePrivateImpl()
+    ConcurrencyModulePrivateData::ConcurrencyModulePrivateData()
         : mThreadData(MemoryModule::Get().GetPMRAllocator(MemoryKind::SystemInit))
         , mWorkerCount(0)
         , mNextThreadId(DynamicThreadBaseId)

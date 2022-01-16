@@ -9,18 +9,18 @@ struct ID3D12Resource;
 
 namespace Omni
 {
-    class DX12Buffer
-    {
-    public:
-        DX12Buffer(const GfxApiBufferDesc& desc);
-        ~DX12Buffer();
-        const GfxApiBufferDesc GetDesc();
-    private:
-        GfxApiBufferDesc            mDesc;
-        ID3D12Resource*             mDX12Buffer;
-        //descriptor related things later
-    };
-}
+class DX12Buffer
+{
+public:
+    DX12Buffer(const GfxApiBufferDesc& desc);
+    ~DX12Buffer();
+    const GfxApiBufferDesc GetDesc();
 
+private:
+    GfxApiBufferDesc mDesc;
+    ID3D12Resource*  mDX12Buffer;
 
-#endif//OMNI_WINDOWS
+};
+} // namespace Omni
+
+#endif // OMNI_WINDOWS

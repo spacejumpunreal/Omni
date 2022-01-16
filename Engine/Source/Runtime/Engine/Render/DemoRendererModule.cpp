@@ -84,7 +84,7 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     {
         GfxApiBufferDesc bufferDesc;
         bufferDesc.Size = 16 * 1024;
-        self.TestBuffer = gfxApi.CreateBuffer(bufferDesc);
+        //self.TestBuffer = gfxApi.CreateBuffer(bufferDesc);
     }
 
     tm.RegisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority, DemoRendererImpl::GetData(this),
