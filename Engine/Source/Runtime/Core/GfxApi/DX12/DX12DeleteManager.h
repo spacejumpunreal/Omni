@@ -23,8 +23,8 @@ namespace Omni
     public:
         using DX12DeleteCB = Action1<void, void*>;;
     public:
-        DX12DeleteManager();
-        ~DX12DeleteManager();
+        static DX12DeleteManager* Create();
+        void               Destroy();
 
         template<typename TObject>
         void AddForDelete(TObject* obj, GfxApiQueueMask queueMask);
@@ -37,8 +37,6 @@ namespace Omni
 
     private:
         void AddDeleteCB(DX12DeleteCB cb, GfxApiQueueMask queueMask);
-    private:
-        PrivateData<1024, 16> mData;
     };
     
     template<typename TObject>

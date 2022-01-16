@@ -122,7 +122,7 @@ namespace Omni
         * managers
         */
         TimelineManager = DX12TimelineManager::Create((ID3D12Device*)Singletons.D3DDevice);
-        DeleteManager = OMNI_NEW(MemoryKind::GfxApi) DX12DeleteManager();
+        DeleteManager = DX12DeleteManager::Create();
 
         CheckSupportedFeatures(Singletons.D3DDevice);
 
@@ -138,7 +138,7 @@ namespace Omni
         /**
         * managers
         */
-        OMNI_DELETE(DeleteManager, MemoryKind::GfxApi);
+        DeleteManager->Destroy();
         TimelineManager->Destroy();
 
         /**
