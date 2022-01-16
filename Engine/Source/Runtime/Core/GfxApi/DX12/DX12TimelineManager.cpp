@@ -1,24 +1,19 @@
 #include "Runtime/Core/CorePCH.h"
+
+#if OMNI_WINDOWS
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
 #include "Runtime/Base/Container/LinkedList.h"
 #include "Runtime/Base/Container/PMRContainers.h"
-#include "Runtime/Core/Allocator/MemoryModule.h"
+#include "Runtime/Base/Misc/PImplUtils.h"
 #include "Runtime/Base/Math/SepcialFunctions.h"
-
+#include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Fence.h"
 #include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineUtils.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
 #include "Runtime/Core/GfxApi/GfxApiDefs.h"
 #include "Runtime/Core/GfxApi/GfxApiNewDelete.h"
-
 #include <d3d12.h>
-
-
-#if OMNI_WINDOWS
-
-
-
 
 namespace Omni
 {
@@ -72,6 +67,8 @@ public:
     QueueData QueueData[(u8)GfxApiQueueType::Count];
 };
 
+using DX12TimelineManagerImpl = PImplCombine<DX12TimelineManager, DX12TimelineManagerPrivateData>;
+
 /**
  * definitions
  */
@@ -109,18 +106,20 @@ void DX12MultiQueueCallback::Satisfy(DX12MultiQueueCallback* obj)
 // DX12TimelineManagerPrivateData
 
 // DX12TimelineManager
-DX12TimelineManager::DX12TimelineManager(ID3D12Device* dev) : mData(PrivateDataType<DX12TimelineManagerPrivateData>{})
+DX12TimelineManager* DX12TimelineManager::Create(ID3D12Device* dev)
 {
-    auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
+    DX12TimelineManagerImpl& self = *OMNI_NEW(MemoryKind::GfxApi) DX12TimelineManagerImpl();
     for (u32 iQueue = 0; iQueue < (u8)GfxApiQueueType::Count; ++iQueue)
     {
         self.QueueData[iQueue].Head = self.QueueData[iQueue].Tail = new LifeTimeBatch(BatchIdInitValue + 1);
         self.QueueData[iQueue].Fence = CreateFence(BatchIdResetValue, dev);
     }
+    return &self;
 }
-DX12TimelineManager::~DX12TimelineManager()
+
+void DX12TimelineManager::Destroy()
 {
-    auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
+    auto& self = *DX12TimelineManagerImpl::GetCombinePtr(this);
     for (u32 iQueue = 0; iQueue < (u8)GfxApiQueueType::Count; ++iQueue)
     {
         CheckAlways(self.QueueData[iQueue].Head == self.QueueData[iQueue].Tail,
@@ -132,12 +131,14 @@ DX12TimelineManager::~DX12TimelineManager()
         ReleaseFence(self.QueueData[iQueue].Fence);
         delete self.QueueData[iQueue].Head;
     }
-    mData.DestroyAs<DX12TimelineManagerPrivateData>();
+    DX12TimelineManagerImpl* thisPtr = &self;
+    OMNI_DELETE(thisPtr, MemoryKind::GfxApi);
 }
+
 bool DX12TimelineManager::CloseBatchAndSignalOnGPU(GfxApiQueueType queueType, ID3D12CommandQueue* queue, u64& batchId,
                                                    bool force)
 {
-    auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
+    auto& self = *DX12TimelineManagerImpl::GetCombinePtr(this);
     auto& queueData = self.QueueData[(u8)queueType];
     batchId = queueData.Tail->BatchId;
     if ((queueData.Tail->Callbacks.size() == 0) && !force)
@@ -150,7 +151,7 @@ bool DX12TimelineManager::CloseBatchAndSignalOnGPU(GfxApiQueueType queueType, ID
 }
 void DX12TimelineManager::WaitBatchFinishOnGPU(GfxApiQueueType queueType, u64 batchId)
 {
-    auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
+    auto& self = *DX12TimelineManagerImpl::GetCombinePtr(this);
     auto& queueData = self.QueueData[(u8)queueType];
     ID3D12Fence* fence = queueData.Fence;
     // add waiting and checking
@@ -176,13 +177,13 @@ void DX12TimelineManager::WaitBatchFinishOnGPU(GfxApiQueueType queueType, u64 ba
 }
 bool DX12TimelineManager::IsBatchFinishedOnGPU(GfxApiQueueType queueType, u64 batchId)
 {
-    auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
+    auto& self = *DX12TimelineManagerImpl::GetCombinePtr(this);
     auto& queueData = self.QueueData[(u8)queueType];
     return queueData.Head->BatchId > batchId;
 }
 void DX12TimelineManager::PollBatch(GfxApiQueueMask mask)
 {
-    auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
+    auto& self = *DX12TimelineManagerImpl::GetCombinePtr(this);
     while (mask != 0)
     {
         u32 iQueue = Mathf::FindMostSignificant1Bit(mask);
@@ -195,7 +196,7 @@ void DX12TimelineManager::PollBatch(GfxApiQueueMask mask)
 }
 u64 DX12TimelineManager::AddBatchCallback(GfxApiQueueType queueType, DX12BatchCB action)
 {
-    auto& self = mData.Ref<DX12TimelineManagerPrivateData>();
+    auto& self = *DX12TimelineManagerImpl::GetCombinePtr(this);
     auto& queueData = self.QueueData[(u8)queueType];
     auto& cbs = queueData.Tail->Callbacks;
     cbs.push_back(action);
