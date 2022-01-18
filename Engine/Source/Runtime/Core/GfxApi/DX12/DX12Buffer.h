@@ -4,6 +4,7 @@
 #include "Runtime/Core/GfxApi/GfxApiConstants.h"
 #include "Runtime/Core/GfxApi/GfxApiNewDelete.h"
 #include "Runtime/Core/GfxApi/GfxApiObject.h"
+#include "Runtime/Base/Memory/ExternalAllocation.h"
 
 struct ID3D12Resource;
 
@@ -17,9 +18,9 @@ public:
     const GfxApiBufferDesc GetDesc();
 
 private:
-    GfxApiBufferDesc mDesc;
-    ID3D12Resource*  mDX12Buffer;
-
+    GfxApiBufferDesc         mDesc;
+    ID3D12Resource*          mDX12Buffer;
+    ExternalAllocationHandle mAllocHandle;
 };
 } // namespace Omni
 

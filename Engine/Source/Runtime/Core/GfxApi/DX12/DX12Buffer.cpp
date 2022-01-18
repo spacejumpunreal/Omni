@@ -5,9 +5,7 @@
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
-#include "Runtime/Core/GfxApi/DX12/d3dx12.h"
-#include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
-#include "Runtime/Core/GfxApi/DX12/DX12TimelineUtils.h"
+#include "Runtime/Core/GfxApi/DX12/DX12BufferManager.h"
 #include "Runtime/Core/GfxApi/DX12/d3dx12.h"
 
 
@@ -15,14 +13,14 @@ namespace Omni
 {
     DX12Buffer::DX12Buffer(const GfxApiBufferDesc& desc)
         : mDesc(desc)
-        , mDX12Buffer(nullptr)
     {
-
-        
+        gDX12GlobalState.BufferManager->AllocBuffer(desc, mDX12Buffer, mAllocHandle);
     }
 
     DX12Buffer::~DX12Buffer()
     {
+        //TODO: add deferred delete
+        NotImplemented();
     }
 
     const GfxApiBufferDesc DX12Buffer::GetDesc()

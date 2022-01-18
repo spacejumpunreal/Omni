@@ -10,6 +10,16 @@ namespace Omni
 {
 struct Mathf
 {
+    template<typename T>
+    FORCEINLINE static T Max(T a, T b)
+    {
+        return a > b ? a : b;
+    }
+    template <typename T>
+    FORCEINLINE static T Min(T a, T b)
+    {
+        return a > b ? b : a;
+    }
     FORCEINLINE static float Sqrtf(float f)
     {
         return std::sqrtf(f);

@@ -2,20 +2,11 @@
 #include "Runtime/Base/BaseAPI.h"
 #include "Runtime/Prelude/Omni.h"
 #include "Runtime/Base/Container/PMRContainers.h"
+#include "Runtime/Base/Memory/ExternalAllocation.h"
 #include <type_traits>
 
 namespace Omni
 {
-
-using ExternalAllocationHandle = void*;
-using ExtenralAllocationBlockId = void*;
-struct ExternalAllocation
-{
-    u64                       Start;
-    u64                       Size;
-    ExternalAllocationHandle  Handle;
-    ExtenralAllocationBlockId BlockId;
-};
 
 struct IExternalMemProvider
 {
