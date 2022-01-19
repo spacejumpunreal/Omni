@@ -11,16 +11,19 @@ namespace Omni
 // https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_resource_desc
 void ToD3D12HeapType(D3D12_HEAP_TYPE& heapType, GfxApiAccessFlags accessFlag)
 {
-    if (Any(accessFlag & GfxApiAccessFlags::CPURead) && None(accessFlag & GfxApiAccessFlags::CPUWrite))
-        heapType = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_READBACK;
-    else if (None(accessFlag & GfxApiAccessFlags::GPUWrite) && Any(accessFlag & GfxApiAccessFlags::CPUWrite))
-        heapType = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD;
-    else if (None(accessFlag & (GfxApiAccessFlags::CPURead | GfxApiAccessFlags::CPUWrite)))
-        heapType = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT;
-    else
+    switch (accessFlag)
     {
-        CheckAlways(false, "unknown GPU resource access pattern");
-        heapType = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_DEFAULT;
+    case GfxApiAccessFlags::Readback:
+        heapType = D3D12_HEAP_TYPE_READBACK;
+        break;
+    case GfxApiAccessFlags::Upload:
+        heapType = D3D12_HEAP_TYPE_UPLOAD;
+        break;
+    default:
+        NotImplemented("unknown GPU resource access pattern");
+    case GfxApiAccessFlags::GPUPrivate:
+        heapType = D3D12_HEAP_TYPE_DEFAULT;
+    
     }
 }
 

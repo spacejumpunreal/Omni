@@ -133,7 +133,7 @@ namespace Omni
         GfxApiTextureDesc texDesc;
         texDesc.Width = mDesc.Width;
         texDesc.Height = mDesc.Height;
-        texDesc.AccessFlags = GfxApiAccessFlags::GPUWrite;
+        texDesc.AccessFlags = GfxApiAccessFlags::GPUPrivate;
         texDesc.Format = mDesc.Format;
 
         D3D12_DESCRIPTOR_HEAP_TYPE heapType = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;

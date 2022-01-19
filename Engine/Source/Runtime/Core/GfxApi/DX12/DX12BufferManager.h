@@ -18,7 +18,7 @@ public:
     void                      Destroy();
 
     void AllocBuffer(const GfxApiBufferDesc& desc, ID3D12Resource*& dx12Buffer, ExternalAllocationHandle& allocHandle);
-    void FreeBuffer(ID3D12Resource* dx12Buffer, ExternalAllocationHandle allocHandle);
+    void FreeBuffer(GfxApiAccessFlags accessFlag, ID3D12Resource* dx12Buffer, ExternalAllocationHandle allocHandle);
 };
 
 } // namespace Omni

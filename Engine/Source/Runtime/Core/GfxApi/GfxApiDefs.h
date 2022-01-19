@@ -12,7 +12,7 @@ constexpr u32 MaxMRTCount = 8;
 /**
  * Enums
  */
-enum class GfxApiObjectType : u32
+enum class GfxApiObjectType : u8
 {
     Buffer,
     Texture,
@@ -23,19 +23,19 @@ enum class GfxApiObjectType : u32
     Swapchain,
 };
 
-enum class GfxApiFormat : u32
+enum class GfxApiFormat : u8
 {
     R8G8B8A8_UNORM,
     R16G16B16A16_FLOAT,
     R11G11B10_FLOAT,
 };
 
-enum class GfxApiAccessFlags : u32
+enum class GfxApiAccessFlags : u8
 {
-    CPURead = 1 << 0,
-    CPUWrite = 1 << 1,
-    GPURead = 1 << 2,
-    GPUWrite = 1 << 3,
+    GPUPrivate,
+    Upload,
+    Readback,
+    Count,
 };
 DEFINE_BITMASK_ENUM_OPS(GfxApiAccessFlags);
 

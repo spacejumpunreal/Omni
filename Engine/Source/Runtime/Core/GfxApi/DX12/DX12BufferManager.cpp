@@ -38,7 +38,7 @@ using DX12BufferFirstFitAllocator = BestFitAllocator<DX12BufferMemProvider>;
 struct DX12BufferMangerPrivateData
 {
 public:
-    DX12BufferFirstFitAllocator mAllocator[(u32)D3D12_HEAP_TYPE_READBACK + 1];
+    DX12BufferFirstFitAllocator mAllocator[(u8)GfxApiAccessFlags::Count];
 };
 
 using DX12BufferManagerImpl = PImplCombine<DX12BufferManager, DX12BufferMangerPrivateData>;
@@ -85,12 +85,10 @@ u64 DX12BufferMemProvider::SuggestNewBlockSize(u64 reqSize)
 DX12BufferManager* DX12BufferManager::Create()
 {
     DX12BufferManagerImpl* self = OMNI_NEW(MemoryKind::GfxApi) DX12BufferManagerImpl();
-    self->mAllocator[D3D12_HEAP_TYPE_DEFAULT].mProvider.Initialize(
-        GfxApiAccessFlags::GPURead | GfxApiAccessFlags::GPUWrite, 32 * 1024 * 1024);
-    self->mAllocator[D3D12_HEAP_TYPE_UPLOAD].mProvider.Initialize(
-        GfxApiAccessFlags::GPURead | GfxApiAccessFlags::CPUWrite, 64 * 1024 * 1024);
-    self->mAllocator[D3D12_HEAP_TYPE_READBACK].mProvider.Initialize(
-        GfxApiAccessFlags::CPURead | GfxApiAccessFlags::GPUWrite, 1024 * 1024);
+    self->mAllocator[(u8)GfxApiAccessFlags::GPUPrivate].mProvider.Initialize(GfxApiAccessFlags::GPUPrivate,
+                                                                             32 * 1024 * 1024);
+    self->mAllocator[(u8)GfxApiAccessFlags::Upload].mProvider.Initialize(GfxApiAccessFlags::Upload, 64 * 1024 * 1024);
+    self->mAllocator[(u8)GfxApiAccessFlags::Readback].mProvider.Initialize(GfxApiAccessFlags::Readback, 1024 * 1024);
     return self;
 }
 
@@ -110,15 +108,21 @@ void DX12BufferManager::AllocBuffer(const GfxApiBufferDesc& desc, ID3D12Resource
                                     ExternalAllocationHandle& allocHandle)
 {
     DX12BufferManagerImpl* self = DX12BufferManagerImpl::GetCombinePtr(this);
-    D3D12_HEAP_TYPE        ht;
-    ToD3D12HeapType(ht, desc.AccessFlags);
-    ExternalAllocation ealloc = self->mAllocator[ht].Alloc(desc.Size, desc.Align);
-    D3D12_RESOURCE_DESC rDesc;
-    rDesc = CD3DX12_RESOURCE_DESC::Buffer(ealloc.Size, )?????
+    ExternalAllocation     ealloc = self->mAllocator[(u8)desc.AccessFlags].Alloc(desc.Size, desc.Align);
+    CD3DX12_RESOURCE_DESC  rDesc;
+    rDesc = CD3DX12_RESOURCE_DESC::Buffer(desc.Size, D3D12_RESOURCE_FLAG_NONE, 0);
     gDX12GlobalState.Singletons.D3DDevice->CreatePlacedResource((ID3D12Heap*)ealloc.BlockId, ealloc.Start, &rDesc,
                                                                 D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON,
                                                                 nullptr, IID_PPV_ARGS(&dx12Buffer));
     allocHandle = ealloc.Handle;
+}
+
+void DX12BufferManager::FreeBuffer(GfxApiAccessFlags accessFlag, ID3D12Resource* dx12Buffer,
+                                   ExternalAllocationHandle allocHandle)
+{
+    DX12BufferManagerImpl* self = DX12BufferManagerImpl::GetCombinePtr(this);
+    CheckDX12(dx12Buffer->Release());
+    self->mAllocator[(u8)accessFlag].Free(allocHandle);
 }
 
 } // namespace Omni
