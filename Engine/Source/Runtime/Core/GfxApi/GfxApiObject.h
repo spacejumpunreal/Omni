@@ -16,6 +16,7 @@ namespace Omni
  * forward decls
  */
 // AsyncActions
+class GfxApiBlitPass;
 class GfxApiRenderPass;
 class GfxApiComputePass;
 

@@ -4,12 +4,7 @@
 #include "Runtime/Core/GfxApi/GfxApiObject.h"
 #include "Runtime/Core/GfxApi/GfxApiNewDelete.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Basics.h"
-#include "Runtime/Core/GfxApi/DX12/d3dx12.h"
-
-//forward decl
-struct ID3D12Resource;
-struct ID3D12CommandList;
-struct D3D12_RESOURCE_BARRIER;
+#include "Runtime/Core/GfxApi/DX12/DX12ForwardDecl.h"
 
 
 namespace Omni

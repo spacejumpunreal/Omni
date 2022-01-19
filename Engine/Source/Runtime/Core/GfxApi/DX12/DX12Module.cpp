@@ -110,15 +110,6 @@ GfxApiBufferRef DX12Module::CreateBuffer(const GfxApiBufferDesc& desc)
     return handle;
 }
 
-void DX12Module::UpdateBuffer(GfxApiBufferRef buffer, u32 dstOffset, u32 size, u8* srcData)
-{
-    (void)buffer;
-    (void)dstOffset;
-    (void)size;
-    (void)srcData;
-    NotImplemented();
-}
-
 void DX12Module::DestroyBuffer(GfxApiBufferRef handle)
 {
     gDX12GlobalState.DX12BufferPool.ToPtr(handle)->~DX12Buffer();
@@ -212,6 +203,11 @@ void DX12Module::DispatchComputePass(GfxApiComputePass* computePass, GfxApiGpuEv
     (void)computePass;
     (void)doneEvent;
     NotImplemented();
+}
+
+void DX12Module::CopyBlitPass(GfxApiBlitPass* blitPass)
+{
+    DX12CopyBlitPass(blitPass);
 }
 
 void DX12Module::Present(GfxApiSwapChainRef swapChain, bool waitVSync, GfxApiGpuEventRef* doneEvent)
