@@ -198,6 +198,11 @@ public:
             return BlockSize;
         return reqSize;
     }
+
+    PMRAllocator GetCPUAllocator() override
+    {
+        return {};
+    }
 };
 
 

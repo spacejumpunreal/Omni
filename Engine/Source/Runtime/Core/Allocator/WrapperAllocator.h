@@ -1,3 +1,4 @@
+
 #pragma once
 #include "Runtime/Prelude/Omni.h"
 #include "Runtime/Core/CoreAPI.h"
@@ -10,14 +11,12 @@ namespace Omni
 	class WrapperAllocator : public IAllocator
 	{
 	public:
-		WrapperAllocator(StdPmr::memory_resource& memResource, const char* name);
-		~WrapperAllocator();
+		static WrapperAllocator* Create(StdPmr::memory_resource& memResource, const char* name);
+		void Destroy() override;
 		PMRResource* GetResource() override;
 		MemoryStats GetStats() override;
 		const char* GetName() override;
 		void Shrink() override;
-	private:
-		PrivateData<56>	mData;
 	};
 }
 

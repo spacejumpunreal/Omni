@@ -10,7 +10,7 @@ namespace Omni
 	{
 	public:
 		static SNAllocator* Create();
-		void Destroy();
+		void Destroy() override;
 		PMRResource* GetResource() override;
 		MemoryStats GetStats() override;
 		const char* GetName() override;
