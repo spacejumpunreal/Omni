@@ -145,7 +145,7 @@ namespace Omni
             CheckDX12(mDX12SwapChain->GetBuffer(iBuffer, IID_PPV_ARGS(&res)));
             res->SetName(BackBufferNames[iBuffer]);
             gDX12GlobalState.Singletons.D3DDevice->CreateRenderTargetView(res, nullptr, rtvHandle);
-            std::tie((IndexHandle&)mTextureRefs[iBuffer], mBackbuffers[iBuffer]) = gDX12GlobalState.DX12TexturePool.Alloc();
+            std::tie((GfxApiTextureRef::UnderlyingHandle&)mTextureRefs[iBuffer], mBackbuffers[iBuffer]) = gDX12GlobalState.DX12TexturePool.Alloc();
             new(mBackbuffers[iBuffer])DX12Texture(texDesc, res, D3D12_RESOURCE_STATE_COMMON, rtvHandle.ptr, true);
             rtvHandle.Offset(stride);
         }

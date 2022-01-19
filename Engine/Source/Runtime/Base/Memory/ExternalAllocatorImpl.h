@@ -8,7 +8,10 @@ namespace Omni
 constexpr i32 NullMemNodePtr = -1;
 
 template <IsIExternalMemProvider Provider>
-BestFitAllocator<Provider>::BestFitAllocator() : mFreeNodeList(NullMemNodePtr)
+BestFitAllocator<Provider>::BestFitAllocator()
+    : mFreeMap(mProvider.GetCPUAllocator())
+    , mNodes(mProvider.GetCPUAllocator())
+    , mFreeNodeList(NullMemNodePtr)
 {
 }
 
@@ -39,7 +42,7 @@ ExternalAllocation BestFitAllocator<Provider>::Alloc(u64 size, u64 align)
     { // create new node if no avail
         u64 blockSize = mProvider.SuggestNewBlockSize(size);
         availNodePtr = AllocNode();
-        MemNode&   newNode = mNodes[availNodePtr];
+        MemNode& newNode = mNodes[availNodePtr];
         newNode.Prev = newNode.Next = NullMemNodePtr;
         newNode.Start = 0;
         newNode.Size = blockSize;
@@ -52,7 +55,7 @@ ExternalAllocation BestFitAllocator<Provider>::Alloc(u64 size, u64 align)
         u64      usedEnd = usedStart + size;
         u64      lRemainSize = usedStart - availNode0.Start;
         u64      rRemainSize = availNode0.Start + availNode0.Size - usedEnd;
-        if (lRemainSize > 0) 
+        if (lRemainSize > 0)
         {
             MemNodePtr lRemainPtr = AllocNode();
             MemNode&   availNode1 = mNodes[availNodePtr];
@@ -95,7 +98,7 @@ ExternalAllocation BestFitAllocator<Provider>::Alloc(u64 size, u64 align)
         availNode3.Size = usedEnd - usedStart;
         availNode3.InUse = 1;
 
-        return ExternalAllocation {
+        return ExternalAllocation{
             .Start = usedStart,
             .Size = availNode3.Size,
             .Handle = (void*)(u64)availNodePtr,
@@ -108,11 +111,11 @@ template <IsIExternalMemProvider Provider>
 void BestFitAllocator<Provider>::Free(ExternalAllocationHandle handle)
 {
     MemNodePtr theNodePtr = (MemNodePtr)(u64)handle;
-    MemNode& theNode = mNodes[theNodePtr];
+    MemNode&   theNode = mNodes[theNodePtr];
     CheckDebug(theNode.InUse == 1);
     theNode.InUse = 0;
     if (theNode.Prev != NullMemNodePtr)
-    {//handle merge
+    { // handle merge
         MemNode& lNode = mNodes[theNode.Prev];
         if (lNode.InUse == 0 && lNode.Start + lNode.Size == theNode.Start && lNode.BlockId == theNode.BlockId)
         {
@@ -127,7 +130,7 @@ void BestFitAllocator<Provider>::Free(ExternalAllocationHandle handle)
         }
     }
     if (theNode.Next != NullMemNodePtr)
-    {//handle merge
+    { // handle merge
         MemNode& rNode = mNodes[theNode.Next];
         if (rNode.InUse == 0 && rNode.Start == theNode.Start + theNode.Size && rNode.BlockId == theNode.BlockId)
         {

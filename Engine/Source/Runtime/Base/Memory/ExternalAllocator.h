@@ -2,6 +2,7 @@
 #include "Runtime/Base/BaseAPI.h"
 #include "Runtime/Prelude/Omni.h"
 #include "Runtime/Base/Container/PMRContainers.h"
+#include "Runtime/Base/Memory/MemoryDefs.h"
 #include "Runtime/Base/Memory/ExternalAllocation.h"
 #include <type_traits>
 
@@ -13,6 +14,7 @@ struct IExternalMemProvider
     virtual void Map(u64 size, u64 align, ExtenralAllocationBlockId& outBlockId) = 0;
     virtual void Unmap(ExtenralAllocationBlockId blockId) = 0;
     virtual u64  SuggestNewBlockSize(u64 reqSize) = 0;
+    virtual PMRAllocator GetCPUAllocator() = 0;
 };
 
 template <typename T>

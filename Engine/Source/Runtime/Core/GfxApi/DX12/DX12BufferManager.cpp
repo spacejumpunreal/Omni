@@ -22,6 +22,7 @@ public:
     void Map(u64 size, u64 align, ExtenralAllocationBlockId& outBlockId) override;
     void Unmap(ExtenralAllocationBlockId blockId) override;
     u64  SuggestNewBlockSize(u64 reqSize) override;
+    PMRAllocator GetCPUAllocator() override;
 
 public:
     D3D12_HEAP_DESC HeapDesc = {};
@@ -38,10 +39,20 @@ using DX12BufferFirstFitAllocator = BestFitAllocator<DX12BufferMemProvider>;
 struct DX12BufferMangerPrivateData
 {
 public:
+    DX12BufferMangerPrivateData();
+
+public:
     DX12BufferFirstFitAllocator mAllocator[(u8)GfxApiAccessFlags::Count];
 };
 
 using DX12BufferManagerImpl = PImplCombine<DX12BufferManager, DX12BufferMangerPrivateData>;
+
+/**
+ * DX12BufferMangerPrivateData
+ */
+DX12BufferMangerPrivateData::DX12BufferMangerPrivateData()
+{
+}
 
 /**
  * DX12BufferMemProvider
@@ -79,6 +90,11 @@ u64 DX12BufferMemProvider::SuggestNewBlockSize(u64 reqSize)
     return Mathf::Max(reqSize, MinBlockSize);
 }
 
+PMRAllocator DX12BufferMemProvider::GetCPUAllocator()
+{
+    return MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi);
+}
+
 /**
  * DX12BufferManager
  */
@@ -95,29 +111,49 @@ DX12BufferManager* DX12BufferManager::Create()
 void DX12BufferManager::Destroy()
 {
     DX12BufferManagerImpl* self = DX12BufferManagerImpl::GetCombinePtr(this);
-    self->mAllocator[D3D12_HEAP_TYPE_DEFAULT].Cleanup();
-    self->mAllocator[D3D12_HEAP_TYPE_DEFAULT].mProvider.Finalize();
-    self->mAllocator[D3D12_HEAP_TYPE_UPLOAD].Cleanup();
-    self->mAllocator[D3D12_HEAP_TYPE_UPLOAD].mProvider.Finalize();
-    self->mAllocator[D3D12_HEAP_TYPE_READBACK].Cleanup();
-    self->mAllocator[D3D12_HEAP_TYPE_READBACK].mProvider.Finalize();
+    for (u8 iType = 0; iType < (u8)GfxApiAccessFlags::Count; ++iType)
+    {
+        self->mAllocator[iType].Cleanup();
+        self->mAllocator[iType].mProvider.Finalize();
+    }
     OMNI_DELETE(self, MemoryKind::GfxApi);
 }
 
-void DX12BufferManager::AllocBuffer(const GfxApiBufferDesc& desc, ID3D12Resource*& dx12Buffer,
+static D3D12_RESOURCE_STATES GetInitStateForAccessFlag(GfxApiAccessFlags flag)
+{
+    switch (flag)
+    {
+    case GfxApiAccessFlags::Readback:
+        return D3D12_RESOURCE_STATE_COPY_DEST;
+    case GfxApiAccessFlags::Upload:
+        return D3D12_RESOURCE_STATE_GENERIC_READ;
+    default:
+        return D3D12_RESOURCE_STATE_COMMON;
+    }
+}
+
+void DX12BufferManager::AllocBuffer(const GfxApiBufferDesc&   desc,
+                                    ID3D12Resource*&          dx12Buffer,
                                     ExternalAllocationHandle& allocHandle)
 {
     DX12BufferManagerImpl* self = DX12BufferManagerImpl::GetCombinePtr(this);
     ExternalAllocation     ealloc = self->mAllocator[(u8)desc.AccessFlags].Alloc(desc.Size, desc.Align);
     CD3DX12_RESOURCE_DESC  rDesc;
     rDesc = CD3DX12_RESOURCE_DESC::Buffer(desc.Size, D3D12_RESOURCE_FLAG_NONE, 0);
-    gDX12GlobalState.Singletons.D3DDevice->CreatePlacedResource((ID3D12Heap*)ealloc.BlockId, ealloc.Start, &rDesc,
-                                                                D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COMMON,
-                                                                nullptr, IID_PPV_ARGS(&dx12Buffer));
+    // about initstate: https://docs.microsoft.com/en-us/windows/win32/direct3d12/using-resource-barriers-to-synchronize-resource-states-in-direct3d-12
+
+
+    gDX12GlobalState.Singletons.D3DDevice->CreatePlacedResource((ID3D12Heap*)ealloc.BlockId,
+                                                                ealloc.Start,
+                                                                &rDesc,
+                                                                GetInitStateForAccessFlag(desc.AccessFlags),
+                                                                nullptr,
+                                                                IID_PPV_ARGS(&dx12Buffer));
     allocHandle = ealloc.Handle;
 }
 
-void DX12BufferManager::FreeBuffer(GfxApiAccessFlags accessFlag, ID3D12Resource* dx12Buffer,
+void DX12BufferManager::FreeBuffer(GfxApiAccessFlags        accessFlag,
+                                   ID3D12Resource*          dx12Buffer,
                                    ExternalAllocationHandle allocHandle)
 {
     DX12BufferManagerImpl* self = DX12BufferManagerImpl::GetCombinePtr(this);

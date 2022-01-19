@@ -9,78 +9,74 @@
 
 #include <variant>
 
-
 namespace Omni
 {
-    /**
-     * forward decls
-     */
+/**
+ * forward decls
+ */
 
-    /**
-     * typedefs
-     */
-    using TClearValue = std::variant<u32, u8, Vector4, float>;
+/**
+ * typedefs
+ */
+using TClearValue = std::variant<u32, u8, Vector4, float>;
 
-    /**
-     * enums
-     */
+/**
+ * enums
+ */
 
+/**
+ * definitions
+ */
 
+struct DirectDrawParams
+{
+    u32 IndexCount;
+    u32 InstanceCount;
+    u32 FirstIndex;
+    u32 BaseVertex;
+    u32 BaseInstance;
+};
 
-    /**
-      * definitions
-      */
+struct IndirectDrawParams
+{
+    GfxApiBufferRef IndirectArgBuffer;
+};
 
-    struct DirectDrawParams
-    {
-        u32     IndexCount;
-        u32     InstanceCount;
-        u32     FirstIndex;
-        u32     BaseVertex;
-        u32     BaseInstance;
-    };
+struct GfxApiDrawcall
+{
+    GfxApiBufferRef  IndexBuffer = (GfxApiBufferRef)NullPtrHandle;
+    DirectDrawParams DrawParams;
+};
 
-    struct IndirectDrawParams
-    {
-        GfxApiBufferRef     IndirectArgBuffer;
+struct GfxApiRenderPassStage : SListNode
+{
+    DEFINE_GFX_API_TEMP_NEW_DELETE()
+    PMRDeque<GfxApiDrawcall> Drawcalls;
+};
 
-    };
+struct GfxApiRTConfig
+{
+    GfxApiTextureRef       Texture = (GfxApiTextureRef)NullPtrHandle;
+    TClearValue            ClearValue;
+    GfxApiLoadStoreActions Action = GfxApiLoadStoreActions::Clear | GfxApiLoadStoreActions::Store;
+};
 
-    struct GfxApiDrawcall
-    {
-        GfxApiBufferRef             IndexBuffer = (GfxApiBufferRef)NullIndexHandle;
-        DirectDrawParams            DrawParams;
-    };
+class GfxApiRenderPass
+{
+public:
+    DEFINE_GFX_API_TEMP_NEW_DELETE()
+    CORE_API GfxApiRenderPass(u32 stageCount);
+    CORE_API ~GfxApiRenderPass();
+    CORE_API void AddStage(u32 stageIndex, GfxApiRenderPassStage* passStage);
 
-    struct GfxApiRenderPassStage : SListNode
-    {
-        DEFINE_GFX_API_TEMP_NEW_DELETE()
-        PMRDeque<GfxApiDrawcall> Drawcalls;
-    };
+public:
+    GfxApiRTConfig RenderTargets[MaxMRTCount];
+    GfxApiRTConfig Depth;
+    GfxApiRTConfig Stencil;
 
-    struct GfxApiRTConfig
-    {
-        GfxApiTextureRef            Texture = (GfxApiTextureRef)NullIndexHandle;
-        TClearValue                 ClearValue;
-        GfxApiLoadStoreActions      Action = GfxApiLoadStoreActions::Clear | GfxApiLoadStoreActions::Store;
-    };
+private:
+    GfxApiRenderPassStage** mStages;
+    u32                     mStageCount;
+};
 
-    class GfxApiRenderPass
-    {
-    public:
-        DEFINE_GFX_API_TEMP_NEW_DELETE()
-        CORE_API GfxApiRenderPass(u32 stageCount);
-        CORE_API ~GfxApiRenderPass();
-        CORE_API void AddStage(u32 stageIndex, GfxApiRenderPassStage* passStage);
-
-    public:
-        GfxApiRTConfig                      RenderTargets[MaxMRTCount];
-        GfxApiRTConfig                      Depth;
-        GfxApiRTConfig                      Stencil;
-    private:
-        GfxApiRenderPassStage**             mStages;
-        u32                                 mStageCount;
-    };
-
-    
-}
+} // namespace Omni

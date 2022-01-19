@@ -7,11 +7,13 @@
 #include "Runtime/Core/Platform/WindowsMacros.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Fence.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Texture.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Buffer.h"
 #include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
 #include "Runtime/Core/GfxApi/DX12/DX12ObjectFactories.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12DeleteManager.h"
+#include "Runtime/Core/GfxApi/DX12/DX12BufferManager.h"
 #include <d3d12.h>
 
 #include <dxgidebug.h>
@@ -116,6 +118,7 @@ namespace Omni
         * object cache
         */
         DX12SwapChainPool.Initialize(gfxApiAllocator, 2);
+        DX12BufferPool.Initialize(gfxApiAllocator, 128);
         DX12TexturePool.Initialize(gfxApiAllocator, 4);
 
         /**
@@ -123,6 +126,7 @@ namespace Omni
         */
         TimelineManager = DX12TimelineManager::Create((ID3D12Device*)Singletons.D3DDevice);
         DeleteManager = DX12DeleteManager::Create();
+        BufferManager = DX12BufferManager::Create();
 
         CheckSupportedFeatures(Singletons.D3DDevice);
 
@@ -138,6 +142,7 @@ namespace Omni
         /**
         * managers
         */
+        BufferManager->Destroy();
         DeleteManager->Destroy();
         TimelineManager->Destroy();
 
@@ -145,6 +150,7 @@ namespace Omni
         * object cache
         */
         DX12SwapChainPool.Finalize();
+        DX12BufferPool.Finalize();
         DX12TexturePool.Finalize();
 
         /**

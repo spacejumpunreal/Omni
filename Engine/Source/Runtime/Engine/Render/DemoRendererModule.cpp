@@ -84,7 +84,8 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     {
         GfxApiBufferDesc bufferDesc;
         bufferDesc.Size = 16 * 1024;
-        //self.TestBuffer = gfxApi.CreateBuffer(bufferDesc);
+        bufferDesc.AccessFlags = GfxApiAccessFlags::Upload;
+        self.TestBuffer = gfxApi.CreateBuffer(bufferDesc);
     }
 
     tm.RegisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority, DemoRendererImpl::GetData(this),
@@ -107,10 +108,11 @@ void DemoRendererModule::Finalize()
 
     DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
     gfxApi.DestroySwapChain(self.SwapChain);
+    gfxApi.DestroyBuffer(self.TestBuffer);
     self.SwapChain = (GfxApiSwapChainRef)GfxApiSwapChainRef::Null();
     for (u32 iBuffer = 0; iBuffer < BackbufferCount; ++iBuffer)
     {
-        self.Backbuffers[iBuffer] = (GfxApiTextureRef)NullIndexHandle;
+        self.Backbuffers[iBuffer] = (GfxApiTextureRef)GfxApiTextureRef::Null();
     }
     tm.UnregisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority);
 

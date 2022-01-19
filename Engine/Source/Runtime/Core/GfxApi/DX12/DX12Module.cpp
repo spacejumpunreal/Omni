@@ -3,6 +3,7 @@
 #include "Runtime/Base/Misc/AssertUtils.h"
 #include "Runtime/Base/Misc/PImplUtils.h"
 #include "Runtime/Base/Memory/HandleObjectPoolImpl.h"
+#include "Runtime/Base/Memory/ExternalAllocation.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/Platform/WindowModule.h"
 #include "Runtime/Core/System/ModuleExport.h"
@@ -10,9 +11,13 @@
 #include "Runtime/Core/GfxApi/GfxApiModule.h"
 #include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
 #include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Texture.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Buffer.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
-#include "Runtime/Core/GfxApi/DX12/DX12Command.h"
 #include "Runtime/Core/GfxApi/DX12/DX12DeleteManager.h"
+#include "Runtime/Core/GfxApi/DX12/DX12BufferManager.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Command.h"
+
 
 #include <d3d12.h>
 #include <dxgidebug.h>
@@ -98,9 +103,11 @@ void DX12Module::Finalize()
 // Buffer
 GfxApiBufferRef DX12Module::CreateBuffer(const GfxApiBufferDesc& desc)
 {
-    (void)desc;
-    NotImplemented();
-    return {};
+    GfxApiBufferRef    handle;
+    DX12Buffer*        obj;
+    std::tie((GfxApiBufferRef::UnderlyingHandle&)handle, obj) = gDX12GlobalState.DX12BufferPool.Alloc();
+    new ((void*)obj) DX12Buffer(desc);
+    return handle;
 }
 
 void DX12Module::UpdateBuffer(GfxApiBufferRef buffer, u32 dstOffset, u32 size, u8* srcData)
@@ -112,10 +119,10 @@ void DX12Module::UpdateBuffer(GfxApiBufferRef buffer, u32 dstOffset, u32 size, u
     NotImplemented();
 }
 
-void DX12Module::DestroyBuffer(GfxApiBufferRef buffer)
+void DX12Module::DestroyBuffer(GfxApiBufferRef handle)
 {
-    (void)buffer;
-    NotImplemented();
+    gDX12GlobalState.DX12BufferPool.ToPtr(handle)->~DX12Buffer();
+    gDX12GlobalState.DX12BufferPool.Free(handle);
 }
 
 // Texture

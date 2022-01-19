@@ -22,11 +22,11 @@ class GfxApiComputePass;
 /**
  * typedefs
  */
-struct GfxApiTextureRef : public IndexHandle
+struct GfxApiTextureRef : public RawPtrHandle
 {
     using UnderlyingHandle = RawPtrHandle;
 };
-struct GfxApiBufferRef : public IndexHandle
+struct GfxApiBufferRef : public RawPtrHandle
 {
     using UnderlyingHandle = RawPtrHandle;
 };
@@ -34,7 +34,7 @@ struct GfxApiSwapChainRef : public RawPtrHandle
 {
     using UnderlyingHandle = RawPtrHandle;
 };
-struct GfxApiGpuEventRef : public IndexHandle
+struct GfxApiGpuEventRef : public RawPtrHandle
 {
     using UnderlyingHandle = RawPtrHandle;
 };
@@ -64,8 +64,8 @@ public:
 struct GfxApiBufferDesc : public GfxApiObjectDesc
 {
 public:
-    u32               Size;
-    u32               Align;
+    u32               Size = 0;
+    u32               Align = 0;
     GfxApiAccessFlags AccessFlags;
 
 public:

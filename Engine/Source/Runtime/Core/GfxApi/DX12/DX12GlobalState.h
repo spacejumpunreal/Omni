@@ -45,7 +45,7 @@ public: // DX12 object pools
     // we can have a ID3D12Fence cache here
 public: // object pools
     RawPtrObjectPool<DX12SwapChain> DX12SwapChainPool;
-    IndexObjectPool<DX12Texture>   DX12TexturePool;
+    RawPtrObjectPool<DX12Texture>   DX12TexturePool;
     RawPtrObjectPool<DX12Buffer>    DX12BufferPool;
 
 public: // state flags

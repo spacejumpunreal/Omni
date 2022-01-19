@@ -31,7 +31,7 @@ namespace Omni
         for (u32 iMRT = 0; iMRT < MaxMRTCount; ++iMRT)
         {
             D3D12_RENDER_PASS_RENDER_TARGET_DESC& rtDesc = rtDescs[iMRT];
-            if (renderPass->RenderTargets[iMRT].Texture == NullIndexHandle)
+            if (renderPass->RenderTargets[iMRT].Texture == GfxApiTextureRef::Null())
             {
                 rtDesc.BeginningAccess.Type = D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS;
                 rtDesc.cpuDescriptor = NullCPUDescriptorHandle;
@@ -66,7 +66,7 @@ namespace Omni
             pRTDescs = nullptr;
         }
         //Depth & stencil
-        if (renderPass->Depth.Texture == (GfxApiTextureRef)NullIndexHandle)
+        if (renderPass->Depth.Texture == GfxApiTextureRef::Null())
         {
             pDSDesc = nullptr;
         }

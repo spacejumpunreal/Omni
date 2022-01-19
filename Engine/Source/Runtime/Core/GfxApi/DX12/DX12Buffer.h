@@ -21,7 +21,6 @@ private:
     GfxApiBufferDesc         mDesc;
     ID3D12Resource*          mDX12Buffer;
     ExternalAllocationHandle mAllocHandle;
-    u8                       mAllocType;
 };
 } // namespace Omni
 
