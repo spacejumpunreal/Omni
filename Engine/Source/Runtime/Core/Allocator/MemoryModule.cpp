@@ -77,7 +77,7 @@ namespace Omni
         LockfreeNodeCache::ThreadInitialize(); //cacheline allocator will use this, so init early for main thread
         size_t usedAllocators = 0;
         
-        IAllocator* primary = InitMemFactory<SNAllocator>::New();
+        IAllocator* primary = SNAllocator::Create();
         self->mAllocators[usedAllocators++] = primary;
         self->mKind2PMRResources[(u32)MemoryKind::SystemInit] = primary->GetResource();
         

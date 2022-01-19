@@ -6,17 +6,15 @@
 
 namespace Omni
 {
-	class SNAllocator final : public IAllocator
+	class SNAllocator : public IAllocator
 	{
 	public:
-		SNAllocator();
-		~SNAllocator();
+		static SNAllocator* Create();
+		void Destroy();
 		PMRResource* GetResource() override;
 		MemoryStats GetStats() override;
 		const char* GetName() override;
 		void Shrink() override;
-	private:
-		PrivateData<208> mData;
 	};
 }
 

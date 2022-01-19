@@ -2,7 +2,9 @@
 #include "Runtime/Core/Allocator/SNAllocator.h"
 #include "Runtime/Base/Memory/MemoryWatch.h"
 #include "Runtime/Base/Misc/ArrayUtils.h"
+#include "Runtime/Base/Misc/PImplUtils.h"
 #include "Runtime/Core/Allocator/SNMallocWrapper.h"
+#include "Runtime/Core/System/ModuleImplHelpers.h"
 
 #define OMNI_SNALLOCATOR_TRACK_EVERY_ALLOC 1
 
@@ -14,7 +16,7 @@ static constexpr bool CheckSizeOnDealloc = true;
 static constexpr u32  FillPatternAllocated = 0x12345678;
 static constexpr u32  FillPatternFreed = 0xDEADBEEF;
 
-struct SNAllocatorPrivate final : public StdPmr::memory_resource
+struct SNAllocatorPrivate : public StdPmr::memory_resource
 {
 public:
     void* do_allocate(std::size_t bytes, std::size_t alignment) override
@@ -88,26 +90,30 @@ public:
 #endif
 };
 
-SNAllocator::SNAllocator() : mData(PrivateDataType<SNAllocatorPrivate>{})
+using SNAllocatorImpl = PImplCombine<SNAllocator, SNAllocatorPrivate>;
+
+SNAllocator* SNAllocator::Create()
 {
+    return InitMemFactory<SNAllocatorImpl>::New();
 }
 
-SNAllocator::~SNAllocator()
+void SNAllocator::Destroy()
 {
-    mData.DestroyAs<SNAllocatorPrivate>();
+    SNAllocatorImpl* self = SNAllocatorImpl::GetCombinePtr(this);
+    InitMemFactory<SNAllocatorImpl>::Delete(self);
 }
 
 PMRResource* SNAllocator::GetResource()
 {
-    return mData.Ptr<SNAllocatorPrivate>();
+    return SNAllocatorImpl::GetCombinePtr(this);
 }
 
 MemoryStats SNAllocator::GetStats()
 {
     MemoryStats         ret;
-    SNAllocatorPrivate& self = mData.Ref<SNAllocatorPrivate>();
+    SNAllocatorImpl* self = SNAllocatorImpl::GetCombinePtr(this);
     ret.Name = GetName();
-    self.mWatch.Dump(ret);
+    self->mWatch.Dump(ret);
     return ret;
 }
 
