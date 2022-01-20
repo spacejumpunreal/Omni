@@ -40,8 +40,8 @@ public: // DX12 global objects
     DX12Singletons Singletons;
 
 public: // DX12 object pools
-    ObjectCache<ID3D12GraphicsCommandList4> DirectCommandListCache;
-    ObjectCache<ID3D12CommandAllocator>     DirectCommandAllocatorCache;
+    ObjectCache<ID3D12GraphicsCommandList4> CommandListCache[4];
+    ObjectCache<ID3D12CommandAllocator>     CommandAllocatorCache[4];
     // we can have a ID3D12Fence cache here
 public: // object pools
     RawPtrObjectPool<DX12SwapChain> DX12SwapChainPool;

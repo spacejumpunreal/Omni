@@ -111,14 +111,18 @@ void DX12GlobalState::Initialize()
      * DX12 object cache
      */
     PMRAllocator gfxApiAllocator = MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi);
-    DirectCommandListCache.Initialize(
-        gfxApiAllocator,
-        new ID3D12GraphicsCommandList4CacheFactory(Singletons.D3DDevice, D3D12_COMMAND_LIST_TYPE_DIRECT),
-        4);
-    DirectCommandAllocatorCache.Initialize(
-        gfxApiAllocator,
-        new ID3D12CommandAllocatorCacheFactory(Singletons.D3DDevice, D3D12_COMMAND_LIST_TYPE_DIRECT),
-        4);
+    for (u32 iCmdType = (u32)D3D12_COMMAND_LIST_TYPE_DIRECT; iCmdType < (u32)D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE;
+         ++iCmdType)
+    {
+        D3D12_COMMAND_LIST_TYPE cmdType = (D3D12_COMMAND_LIST_TYPE)iCmdType;
+        CommandListCache[iCmdType].Initialize(gfxApiAllocator,
+                                              new ID3D12GraphicsCommandList4CacheFactory(Singletons.D3DDevice, cmdType),
+                                              4);
+        CommandAllocatorCache[iCmdType].Initialize(
+            gfxApiAllocator,
+            new ID3D12CommandAllocatorCacheFactory(Singletons.D3DDevice, cmdType),
+            4);
+    }
 
     /**
      * object cache
@@ -161,9 +165,12 @@ void DX12GlobalState::Finalize()
     /**
      * DX12 object cache
      */
-    DirectCommandListCache.Cleanup();
-    DirectCommandAllocatorCache.Cleanup();
-
+    for (u32 iCmdType = (u32)D3D12_COMMAND_LIST_TYPE_DIRECT; iCmdType < (u32)D3D12_COMMAND_LIST_TYPE_VIDEO_DECODE;
+         ++iCmdType)
+    {
+        CommandListCache[iCmdType].Cleanup();
+        CommandAllocatorCache[iCmdType].Cleanup();
+    }
     /**
      * object cache
      */

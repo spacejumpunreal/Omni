@@ -40,9 +40,9 @@ class GfxApiBlitPass
 {
 public:
     DEFINE_GFX_API_TEMP_NEW_DELETE()
-    CORE_API GfxApiBlitPass(u32 nCopyCmds = 0);
-private:
-    PMRVector<GfxApiCopyBuffer> CopyCmds;
+    CORE_API GfxApiBlitPass(u32 nCopyBufferCmds = 0);
+public:
+    PMRVector<GfxApiCopyBuffer> CopyBufferCmds;
 
 };
 

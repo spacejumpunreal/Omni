@@ -1,19 +1,12 @@
 # todo
 - DrawTriangle
 	- GfxApiBuffer
-		- create
-			- DX12Module
-				- initial: create/destroy ok
-					- DX12BufferAllocator, skeleton
-					- GPUMemAllocator
-						- skeleton
-						- FirstFit
 		- use
-			- drawcall fields
 			- Copy queue
 				- update using copy queue
+					- GfxApiBlitPass
 				- async event
-			
+			- drawcall fields
 	- GfxApiShader
 	- drawcall
 		- IndexBuffer

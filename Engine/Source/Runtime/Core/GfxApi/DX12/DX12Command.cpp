@@ -9,6 +9,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12CommandUtils.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Descriptor.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Texture.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Buffer.h"
 #include "Runtime/Core/GfxApi/DX12/d3dx12.h"
 
 namespace Omni
@@ -140,14 +141,40 @@ void DX12DrawRenderPass(GfxApiRenderPass* renderPass, GfxApiGpuEventRef* doneEve
     CloseCommandListForPass(renderPass, cmdList);
     ID3D12CommandList* cmd = cmdList;
     gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue]->ExecuteCommandLists(1, &cmd);
-    gDX12GlobalState.DirectCommandListCache.Free(cmdList);
+    gDX12GlobalState.CommandListCache[(u32)D3D12_COMMAND_LIST_TYPE_DIRECT].Free(cmdList);
 
     delete renderPass;
 }
 
 void DX12CopyBlitPass(GfxApiBlitPass* blitPass)
 {
-    //TODO: call CmdList apis according to blitPass
+    ID3D12CommandAllocator* allocatorCopy =
+        gDX12GlobalState.CommandAllocatorCache[(u32)D3D12_COMMAND_LIST_TYPE_COPY].Alloc();
+    ID3D12GraphicsCommandList4* cmdListCopy =
+        gDX12GlobalState.CommandListCache[(u32)D3D12_COMMAND_LIST_TYPE_COPY].Alloc();
+    cmdListCopy->Reset(allocatorCopy, nullptr);
+
+    ID3D12CommandAllocator* allocatorPrelude =
+        gDX12GlobalState.CommandAllocatorCache[(u32)D3D12_COMMAND_LIST_TYPE_COPY].Alloc();
+    ID3D12GraphicsCommandList4* cmdListPrelude =
+        gDX12GlobalState.CommandListCache[(u32)D3D12_COMMAND_LIST_TYPE_COPY].Alloc();
+    cmdListPrelude->Reset(allocatorPrelude, nullptr);
+    PMRVector<D3D12_RESOURCE_BARRIER> barriers(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApiTmp));
+    barriers.reserve(blitPass->CopyBufferCmds.size());
+    for (GfxApiCopyBuffer& copyBufferCmd : blitPass->CopyBufferCmds)
+    {
+        DX12Buffer* dstBuffer = gDX12GlobalState.DX12BufferPool.ToPtr(copyBufferCmd.Dst);
+        barriers.emplace_back();
+        dstBuffer->EmitBarrier(D3D12_RESOURCE_STATE_COPY_DEST, &barriers.back());
+        DX12Buffer* srcBuffer = gDX12GlobalState.DX12BufferPool.ToPtr(copyBufferCmd.Dst);
+        cmdListCopy->CopyBufferRegion(dstBuffer->GetResource(),
+                                  copyBufferCmd.DstOffset,
+                                  srcBuffer->GetResource(),
+                                  copyBufferCmd.SrcOffset,
+                                  copyBufferCmd.Bytes);
+    }
+    cmdListPrelude->ResourceBarrier((u32)barriers.size(), barriers.data());
+
     delete blitPass;
 }
 

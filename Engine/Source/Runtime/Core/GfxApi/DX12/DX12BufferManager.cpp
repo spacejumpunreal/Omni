@@ -157,7 +157,7 @@ void DX12BufferManager::FreeBuffer(GfxApiAccessFlags        accessFlag,
                                    ExternalAllocationHandle allocHandle)
 {
     DX12BufferManagerImpl* self = DX12BufferManagerImpl::GetCombinePtr(this);
-    CheckDX12(dx12Buffer->Release());
+    dx12Buffer->Release();
     self->mAllocator[(u8)accessFlag].Free(allocHandle);
 }
 

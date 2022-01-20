@@ -26,10 +26,10 @@ namespace Omni
 	template<typename T>
 	using PMRDeque = StdPmr::deque<T>;
 
-	template<typename K, typename V, typename Hasher, typename KeyEqual>
+	template <typename K, typename V, typename Hasher = std::hash<K>, typename KeyEqual = std::equal_to<K>>
 	using PMRUnorderedMap = StdPmr::unordered_map<K, V, Hasher, KeyEqual>;
 
-    template<typename K, typename Hasher, typename KeyEqual>
+    template<typename K, typename Hasher = std::hash<K>, typename KeyEqual = std::equal_to<K>>
     using PMRUnorderedSet = StdPmr::unordered_set<K, Hasher, KeyEqual>;
 
 	template<typename K, typename V, typename KeyCmp = std::less<K>>

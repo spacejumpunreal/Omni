@@ -91,7 +91,7 @@ namespace Omni
             CheckDX12(cmdList->Close());
             ID3D12CommandList* cmd = cmdList;
             gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue]->ExecuteCommandLists(1, &cmd);
-            gDX12GlobalState.DirectCommandListCache.Free(cmdList);
+            gDX12GlobalState.CommandListCache[(u32)D3D12_COMMAND_LIST_TYPE_DIRECT].Free(cmdList);
         }
 		CheckDX12(mDX12SwapChain->Present(waitVSync ? 1 : 0, 0));
 	}

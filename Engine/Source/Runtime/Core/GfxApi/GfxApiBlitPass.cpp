@@ -8,7 +8,7 @@ namespace Omni
 
 
 GfxApiBlitPass::GfxApiBlitPass(u32 reserveCopyCmds) 
-    : CopyCmds(reserveCopyCmds, MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApiTmp))
+    : CopyBufferCmds(reserveCopyCmds, MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApiTmp))
 {
 }
 

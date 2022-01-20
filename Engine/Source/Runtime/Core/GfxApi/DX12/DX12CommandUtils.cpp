@@ -10,8 +10,10 @@ namespace Omni
 {
 ID3D12GraphicsCommandList4* SetupDirectCommandList()
 {
-    ID3D12CommandAllocator*     allocator = gDX12GlobalState.DirectCommandAllocatorCache.Alloc();
-    ID3D12GraphicsCommandList4* cmdList = gDX12GlobalState.DirectCommandListCache.Alloc();
+    ID3D12CommandAllocator* allocator =
+        gDX12GlobalState.CommandAllocatorCache[(u32)D3D12_COMMAND_LIST_TYPE_DIRECT].Alloc();
+    ID3D12GraphicsCommandList4* cmdList =
+        gDX12GlobalState.CommandListCache[(u32)D3D12_COMMAND_LIST_TYPE_DIRECT].Alloc();
     cmdList->Reset(allocator, nullptr);
 
     gDX12GlobalState.TimelineManager->AddBatchCallback(
@@ -23,11 +25,11 @@ ID3D12GraphicsCommandList4* SetupDirectCommandList()
 ID3D12GraphicsCommandList4* SetupCopyCommandList()
 {
     return nullptr;
-    #if 0
+#if 0
     ID3D12CommandAllocator*     allocator = gDX12GlobalState.DirectCommandAllocatorCache.Alloc();
     ID3D12GraphicsCommandList4* cmdList = gDX12GlobalState.DirectCommandListCache.Alloc();
     cmdList->Reset(allocator, nullptr);
-    #endif
+#endif
 }
 
 } // namespace Omni

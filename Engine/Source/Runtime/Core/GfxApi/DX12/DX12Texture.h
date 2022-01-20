@@ -5,29 +5,27 @@
 #include "Runtime/Core/GfxApi/GfxApiNewDelete.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Basics.h"
 #include "Runtime/Core/GfxApi/DX12/DX12ForwardDecl.h"
-
+#include "Runtime/Core/GfxApi/DX12/DX12Resource.h"
 
 namespace Omni
 {
-	class DX12Texture
-	{
-	public:
-		DX12Texture(const GfxApiTextureDesc& desc);
-		DX12Texture(const GfxApiTextureDesc& desc, ID3D12Resource* res, D3D12_RESOURCE_STATES initState,
-                    DX12Descriptor descriptor, bool isOwner); //create from existing texture
-		~DX12Texture();
-		const GfxApiTextureDesc& GetDesc();
-        ID3D12Resource* GetDX12Texture() { return mTexture; }
-        DX12Descriptor GetCPUDescriptor();
-        bool EmitBarrier(D3D12_RESOURCE_STATES newState, D3D12_RESOURCE_BARRIER* barrier);
+class DX12Texture : public DX12Resource
+{
+public:
+    DX12Texture(const GfxApiTextureDesc& desc);
+    DX12Texture(const GfxApiTextureDesc& desc,
+                ID3D12Resource*          res,
+                D3D12_RESOURCE_STATES    initState,
+                DX12Descriptor           descriptor,
+                bool                     isOwner); // create from existing texture
+    ~DX12Texture();
+    const GfxApiTextureDesc& GetDesc();
+    DX12Descriptor GetCPUDescriptor();
+private:
+    GfxApiTextureDesc     mDesc;
+    DX12Descriptor        mTmpCPUDescriptor;
+    bool                  mIsOwner;
+};
+} // namespace Omni
 
-	private:
-		GfxApiTextureDesc	        mDesc;
-		ID3D12Resource*		        mTexture;
-        DX12Descriptor              mTmpCPUDescriptor;
-        D3D12_RESOURCE_STATES       mResourceState;
-        bool                        mIsOwner;
-	};
-}
-
-#endif//OMNI_WINDOWS
+#endif // OMNI_WINDOWS

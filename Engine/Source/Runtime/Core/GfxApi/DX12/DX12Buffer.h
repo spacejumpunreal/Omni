@@ -6,10 +6,11 @@
 #include "Runtime/Core/GfxApi/GfxApiObject.h"
 #include "Runtime/Base/Memory/ExternalAllocation.h"
 #include "Runtime/Core/GfxApi/DX12/DX12ForwardDecl.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Resource.h"
 
 namespace Omni
 {
-class DX12Buffer
+class DX12Buffer : public DX12Resource
 {
 public:
     DX12Buffer(const GfxApiBufferDesc& desc);
@@ -18,9 +19,7 @@ public:
 
 private:
     GfxApiBufferDesc         mDesc;
-    ID3D12Resource*          mDX12Buffer;
     ExternalAllocationHandle mAllocHandle;
-    D3D12_RESOURCE_STATES    mResourceState;
 };
 } // namespace Omni
 

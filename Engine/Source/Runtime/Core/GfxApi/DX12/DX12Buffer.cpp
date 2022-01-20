@@ -10,21 +10,26 @@
 
 namespace Omni
 {
+
+
 DX12Buffer::DX12Buffer(const GfxApiBufferDesc& desc)
-    : mDesc(desc)
+    : DX12Resource(CalcInitialStateFromAccessFlag(desc.AccessFlags))
+    , mDesc(desc)
 {
-    gDX12GlobalState.BufferManager->AllocBuffer(desc, mDX12Buffer, mAllocHandle);
+    gDX12GlobalState.BufferManager->AllocBuffer(desc, mDX12Resource, mAllocHandle);
 }
 
 DX12Buffer::~DX12Buffer()
 {
-    gDX12GlobalState.BufferManager->FreeBuffer(mDesc.AccessFlags, mDX12Buffer, mAllocHandle);
+    gDX12GlobalState.BufferManager->FreeBuffer(mDesc.AccessFlags, mDX12Resource, mAllocHandle);
+    mDX12Resource = nullptr;
 }
 
 const GfxApiBufferDesc DX12Buffer::GetDesc()
 {
     return mDesc;
 }
+
 
 } // namespace Omni
 
