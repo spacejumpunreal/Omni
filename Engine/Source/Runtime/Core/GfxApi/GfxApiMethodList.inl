@@ -25,11 +25,11 @@ GfxApiMethod(void DestroyEvent(GfxApiGpuEventRef gpuEvent))
 /**
 * AsyncActions, One-way(RenderModule to GfxApiModule)
 */
-GfxApiMethod(void DrawRenderPass(GfxApiRenderPass* renderPass, GfxApiGpuEventRef* doneEvent))
-GfxApiMethod(void DispatchComputePass(GfxApiComputePass* computePass, GfxApiGpuEventRef* doneEvent))
+GfxApiMethod(void DrawRenderPass(GfxApiRenderPass* renderPass))
+GfxApiMethod(void DispatchComputePass(GfxApiComputePass* computePass))
 GfxApiMethod(void CopyBlitPass(GfxApiBlitPass* blitPass))
-GfxApiMethod(void Present(GfxApiSwapChainRef swapChain, bool waitVSync, GfxApiGpuEventRef* doneEvent))
-GfxApiMethod(void ScheduleGpuEvent(GfxApiQueueType queueType, GfxApiGpuEventRef* doneEvent))
+GfxApiMethod(void Present(GfxApiSwapChainRef swapChain, bool waitVSync))
+GfxApiMethod(void ScheduleGpuEvent(GfxApiQueueType queueType, GfxApiGpuEventRef* gpuEvent))
 
 /**
 * Maintain operations

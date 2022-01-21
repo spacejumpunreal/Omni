@@ -171,8 +171,8 @@ void DemoRendererModulePrivateImpl::Tick()
     renderPass->RenderTargets[0].ClearValue = Vector4(1, 0, 0, 0);
     renderPass->RenderTargets[0].Action = GfxApiLoadStoreActions::Clear | GfxApiLoadStoreActions::Store;
 
-    gfxApi.DrawRenderPass(renderPass, nullptr);
-    gfxApi.Present(self.SwapChain, true, nullptr);
+    gfxApi.DrawRenderPass(renderPass);
+    gfxApi.Present(self.SwapChain, true);
     gfxApi.ScheduleGpuEvent(GfxApiQueueType::GraphicsQueue, nullptr);
 }
 

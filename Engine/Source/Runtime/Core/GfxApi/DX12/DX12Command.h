@@ -5,7 +5,7 @@
 #include "Runtime/Core/GfxApi/GfxApiBlitPass.h"
 namespace Omni
 {
-void DX12DrawRenderPass(GfxApiRenderPass* pass, GfxApiGpuEventRef* doneEvent);
+void DX12DrawRenderPass(GfxApiRenderPass* pass);
 void DX12CopyBlitPass(GfxApiBlitPass* pass);
 } // namespace Omni
 

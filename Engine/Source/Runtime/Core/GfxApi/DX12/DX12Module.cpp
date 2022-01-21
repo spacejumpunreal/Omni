@@ -204,15 +204,14 @@ void DX12Module::DestroyEvent(GfxApiGpuEventRef gpuEvent)
 }
 
 // AsyncActions
-void DX12Module::DrawRenderPass(GfxApiRenderPass* renderPass, GfxApiGpuEventRef* doneEvent)
+void DX12Module::DrawRenderPass(GfxApiRenderPass* renderPass)
 {
-    DX12DrawRenderPass(renderPass, doneEvent);
+    DX12DrawRenderPass(renderPass);
 }
 
-void DX12Module::DispatchComputePass(GfxApiComputePass* computePass, GfxApiGpuEventRef* doneEvent)
+void DX12Module::DispatchComputePass(GfxApiComputePass* computePass)
 {
     (void)computePass;
-    (void)doneEvent;
     NotImplemented();
 }
 
@@ -221,17 +220,15 @@ void DX12Module::CopyBlitPass(GfxApiBlitPass* blitPass)
     DX12CopyBlitPass(blitPass);
 }
 
-void DX12Module::Present(GfxApiSwapChainRef swapChain, bool waitVSync, GfxApiGpuEventRef* doneEvent)
+void DX12Module::Present(GfxApiSwapChainRef swapChain, bool waitVSync)
 {
     DX12SwapChain* dx12SwapChain = gDX12GlobalState.DX12SwapChainPool.ToPtr(swapChain);
     dx12SwapChain->Present(waitVSync);
-    if (doneEvent != nullptr)
-        NotImplemented("doneEvent");
 }
 
-void DX12Module::ScheduleGpuEvent(GfxApiQueueType queueType, GfxApiGpuEventRef* doneEvent)
+void DX12Module::ScheduleGpuEvent(GfxApiQueueType queueType, GfxApiGpuEventRef* gpuEvent)
 {
-    (void)doneEvent;
+    (void)gpuEvent;
     ID3D12CommandQueue* queue = nullptr;
     switch (queueType)
     {
@@ -244,7 +241,7 @@ void DX12Module::ScheduleGpuEvent(GfxApiQueueType queueType, GfxApiGpuEventRef* 
     }
     u64 batchId;
     gDX12GlobalState.TimelineManager->CloseBatchAndSignalOnGPU(queueType, queue, batchId, true);
-    if (doneEvent != nullptr)
+    if (gpuEvent != nullptr)
     {
         NotImplemented("doneEvent != nullptr for DX12Module::ScheduleGpuEvent");
     }

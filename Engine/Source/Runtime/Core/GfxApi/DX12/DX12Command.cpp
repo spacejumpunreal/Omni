@@ -133,9 +133,8 @@ static void CloseCommandListForPass(const GfxApiRenderPass* renderPass, ID3D12Gr
     CheckDX12(cmdList->Close());
 }
 
-void DX12DrawRenderPass(GfxApiRenderPass* renderPass, GfxApiGpuEventRef* doneEvent)
+void DX12DrawRenderPass(GfxApiRenderPass* renderPass)
 {
-    (void)doneEvent;
     ID3D12GraphicsCommandList4* cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
     SetupCommandListForPass(renderPass, cmdList, false, false);
     CloseCommandListForPass(renderPass, cmdList);
