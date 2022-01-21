@@ -2,7 +2,6 @@
 #include "Runtime/Prelude/Omni.h"
 #if OMNI_WINDOWS
 #include "Runtime/Core/GfxApi/GfxApiConstants.h"
-#include "Runtime/Core/GfxApi/GfxApiNewDelete.h"
 #include "Runtime/Core/GfxApi/GfxApiObject.h"
 #include "Runtime/Base/Memory/ExternalAllocation.h"
 #include "Runtime/Core/GfxApi/DX12/DX12ForwardDecl.h"

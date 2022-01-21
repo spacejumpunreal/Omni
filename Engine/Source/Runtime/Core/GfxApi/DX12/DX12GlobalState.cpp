@@ -9,6 +9,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12Texture.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Buffer.h"
 #include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Event.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
 #include "Runtime/Core/GfxApi/DX12/DX12ObjectFactories.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
@@ -130,6 +131,7 @@ void DX12GlobalState::Initialize()
     DX12SwapChainPool.Initialize(gfxApiAllocator, 2);
     DX12BufferPool.Initialize(gfxApiAllocator, 128);
     DX12TexturePool.Initialize(gfxApiAllocator, 4);
+    DX12GpuEventPool.Initialize(gfxApiAllocator, 16);
 
     /**
      * managers
@@ -161,6 +163,7 @@ void DX12GlobalState::Finalize()
     DX12SwapChainPool.Finalize();
     DX12BufferPool.Finalize();
     DX12TexturePool.Finalize();
+    DX12GpuEventPool.Finalize();
 
     /**
      * DX12 object cache

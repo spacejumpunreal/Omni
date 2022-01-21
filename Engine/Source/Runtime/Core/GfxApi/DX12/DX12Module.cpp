@@ -13,6 +13,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Texture.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Buffer.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Event.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12DeleteManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12BufferManager.h"
@@ -186,21 +187,21 @@ u32 DX12Module::GetCurrentBackbufferIndex(GfxApiSwapChainRef swapChain)
 // GpuEvent
 bool DX12Module::IsEventTriggered(GfxApiGpuEventRef gpuEvent)
 {
-    (void)gpuEvent;
-    NotImplemented();
-    return false;
+    DX12GpuEvent* gEvent = gDX12GlobalState.DX12GpuEventPool.ToPtr(gpuEvent);
+    return gDX12GlobalState.TimelineManager->IsBatchFinishedOnGPU(gEvent->QueueType, gEvent->BatchId);
 }
 
 void DX12Module::WaitEvent(GfxApiGpuEventRef gpuEvent)
 {
-    (void)gpuEvent;
-    NotImplemented();
+    DX12GpuEvent* gEvent = gDX12GlobalState.DX12GpuEventPool.ToPtr(gpuEvent);
+    gDX12GlobalState.TimelineManager->WaitBatchFinishOnGPU(gEvent->QueueType, gEvent->BatchId);
 }
 
 void DX12Module::DestroyEvent(GfxApiGpuEventRef gpuEvent)
 {
-    (void)gpuEvent;
-    NotImplemented();
+    DX12GpuEvent* gEvent = gDX12GlobalState.DX12GpuEventPool.ToPtr(gpuEvent);
+    gEvent->~DX12GpuEvent();
+    gDX12GlobalState.DX12GpuEventPool.Free(gpuEvent);
 }
 
 // AsyncActions
@@ -226,25 +227,17 @@ void DX12Module::Present(GfxApiSwapChainRef swapChain, bool waitVSync)
     dx12SwapChain->Present(waitVSync);
 }
 
-void DX12Module::ScheduleGpuEvent(GfxApiQueueType queueType, GfxApiGpuEventRef* gpuEvent)
+GfxApiGpuEventRef DX12Module::ScheduleGpuEvent(GfxApiQueueType queueType)
 {
-    (void)gpuEvent;
-    ID3D12CommandQueue* queue = nullptr;
-    switch (queueType)
-    {
-    case GfxApiQueueType::GraphicsQueue:
-        queue = gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue];
-        break;
-    default:
-        NotImplemented("ScheduleGpuEvent only implemented for GraphicsQueue");
-        break;
-    }
+    ID3D12CommandQueue* queue = gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue];
     u64 batchId;
     gDX12GlobalState.TimelineManager->CloseBatchAndSignalOnGPU(queueType, queue, batchId, true);
-    if (gpuEvent != nullptr)
-    {
-        NotImplemented("doneEvent != nullptr for DX12Module::ScheduleGpuEvent");
-    }
+
+    GfxApiGpuEventRef handle;
+    DX12GpuEvent*     gpuEvent;
+    std::tie((GfxApiGpuEventRef::UnderlyingHandle&)handle, gpuEvent) = gDX12GlobalState.DX12GpuEventPool.Alloc();
+    new ((void*)gpuEvent) DX12GpuEvent(batchId, queueType);
+    return handle;
 }
 // Maintain operations
 void DX12Module::CloseBatchDelete()

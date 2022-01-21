@@ -41,6 +41,7 @@ public:
     GfxApiTextureRef    Backbuffers[BackbufferCount];
     GfxApiBufferRef     TestUploadBuffer;
     GfxApiBufferRef     TestGPUBuffer;
+    GfxApiGpuEventRef   GpuEvent;
     u32                 ClientAreaSizeX = 0;
     u32                 ClientAreaSizeY = 0;
     u32                 FrameIndex = 0;
@@ -173,7 +174,7 @@ void DemoRendererModulePrivateImpl::Tick()
 
     gfxApi.DrawRenderPass(renderPass);
     gfxApi.Present(self.SwapChain, true);
-    gfxApi.ScheduleGpuEvent(GfxApiQueueType::GraphicsQueue, nullptr);
+    gfxApi.ScheduleGpuEvent(GfxApiQueueType::GraphicsQueue);
 }
 
 static Module* DemoRendererModuleCtor(const EngineInitArgMap&)

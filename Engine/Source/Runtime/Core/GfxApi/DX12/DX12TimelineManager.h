@@ -11,10 +11,6 @@ struct ID3D12Device;
 
 namespace Omni
 {
-// forward decl
-class DX12GpuEvent
-{
-};
 
 // constants
 constexpr u64 BatchIdResetValue = 0;

@@ -14,6 +14,7 @@ namespace Omni
 class DX12Texture;
 class DX12SwapChain;
 class DX12Buffer;
+class DX12GpuEvent;
 
 struct DX12Singletons
 {
@@ -45,8 +46,9 @@ public: // DX12 object pools
     // we can have a ID3D12Fence cache here
 public: // object pools
     RawPtrObjectPool<DX12SwapChain> DX12SwapChainPool;
-    RawPtrObjectPool<DX12Texture>   DX12TexturePool;
     RawPtrObjectPool<DX12Buffer>    DX12BufferPool;
+    RawPtrObjectPool<DX12Texture>   DX12TexturePool;
+    RawPtrObjectPool<DX12GpuEvent>  DX12GpuEventPool;
 
 public: // state flags
     bool Initialized;
