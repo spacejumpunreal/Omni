@@ -4,10 +4,12 @@
 
 struct ID3D12GraphicsCommandList4;
 
+
 namespace Omni
 {
-ID3D12GraphicsCommandList4* SetupDirectCommandList();
-ID3D12GraphicsCommandList4* SetupCopyCommandList();
+enum class GfxApiQueueType : u8;
+
+ID3D12GraphicsCommandList4* SetupCommandList(GfxApiQueueType queueType);
 
 } // namespace Omni
 

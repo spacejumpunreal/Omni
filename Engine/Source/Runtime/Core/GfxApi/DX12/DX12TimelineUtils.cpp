@@ -13,6 +13,10 @@ namespace Omni
     {
         gDX12GlobalState.CommandAllocatorCache[(u32)D3D12_COMMAND_LIST_TYPE_DIRECT].Free(commandAllocator);
     }
+    void TimelineHelpers::RecycleCopyCommandAllocator(ID3D12CommandAllocator* commandAllocator)
+    {
+        gDX12GlobalState.CommandAllocatorCache[(u32)D3D12_COMMAND_LIST_TYPE_COPY].Free(commandAllocator);
+    }
     void TimelineHelpers::ReleaseD3DObject(IUnknown* obj)
     {
         obj->Release();

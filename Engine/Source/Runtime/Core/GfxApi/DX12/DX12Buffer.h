@@ -16,6 +16,8 @@ public:
     DX12Buffer(const GfxApiBufferDesc& desc);
     ~DX12Buffer();
     const GfxApiBufferDesc GetDesc();
+    void*                  Map(u32 beginOffset, u32 mapSize);
+    void                   Unmap(u32 beginOffset, u32 mapSize);
 
 private:
     GfxApiBufferDesc         mDesc;

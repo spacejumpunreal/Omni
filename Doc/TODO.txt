@@ -3,10 +3,10 @@
 	- GfxApiBuffer
 		- use
 			- Copy queue
-				- update using copy queue
-					- GfxApiBlitPass
-				- async event
-			- drawcall fields
+				- demo: write to upload buffer/copy buffer
+					- DX12Buffer:Map/Unmap
+					- async event
+			- Buffer drawcall fields
 	- GfxApiShader
 	- drawcall
 		- IndexBuffer

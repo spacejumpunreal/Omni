@@ -4,6 +4,8 @@
 
 //Buffer
 GfxApiMethod(GfxApiBufferRef CreateBuffer(const GfxApiBufferDesc& desc))
+GfxApiMethod(void* MapBuffer(GfxApiBufferRef buffer, u32 offset, u32 size))
+GfxApiMethod(void UnmapBuffer(GfxApiBufferRef buffer, u32 offset, u32 size))
 GfxApiMethod(void DestroyBuffer(GfxApiBufferRef buffer))
 //Texture
 GfxApiMethod(GfxApiTextureRef CreateTexture(const GfxApiTextureDesc& desc))

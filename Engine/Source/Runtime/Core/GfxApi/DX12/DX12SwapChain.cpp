@@ -86,7 +86,7 @@ namespace Omni
         D3D12_RESOURCE_BARRIER barrier;
         if (backbuffer->EmitBarrier(D3D12_RESOURCE_STATE_PRESENT, &barrier))
         {
-            ID3D12GraphicsCommandList4* cmdList = SetupDirectCommandList();
+            ID3D12GraphicsCommandList4* cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
             cmdList->ResourceBarrier(1, &barrier);
             CheckDX12(cmdList->Close());
             ID3D12CommandList* cmd = cmdList;

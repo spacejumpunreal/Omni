@@ -1,6 +1,7 @@
 #include "Runtime/Engine/EnginePCH.h"
 #include "Runtime/Engine/Render/DemoRendererModule.h"
 #include "Runtime/Base/Misc/PImplUtils.h"
+#include "Runtime/Base/Memory/MemoryArena.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/Concurrency/JobPrimitives.h"
 #include "Runtime/Core/System/ModuleExport.h"
@@ -38,7 +39,8 @@ public:
     GfxApiSwapChainDesc DescSwapChain;
     GfxApiSwapChainRef  SwapChain = {};
     GfxApiTextureRef    Backbuffers[BackbufferCount];
-    GfxApiBufferRef     TestBuffer;
+    GfxApiBufferRef     TestUploadBuffer;
+    GfxApiBufferRef     TestGPUBuffer;
     u32                 ClientAreaSizeX = 0;
     u32                 ClientAreaSizeY = 0;
     u32                 FrameIndex = 0;
@@ -85,7 +87,14 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
         GfxApiBufferDesc bufferDesc;
         bufferDesc.Size = 16 * 1024;
         bufferDesc.AccessFlags = GfxApiAccessFlags::Upload;
-        self.TestBuffer = gfxApi.CreateBuffer(bufferDesc);
+        self.TestUploadBuffer = gfxApi.CreateBuffer(bufferDesc);
+        u8* range = (u8*)gfxApi.MapBuffer(self.TestUploadBuffer, 0, 1024);
+        memset(range, 0x88, 1024);
+        gfxApi.UnmapBuffer(self.TestUploadBuffer, 0, 1024);
+
+        bufferDesc.Size = 32 * 1024;
+        bufferDesc.AccessFlags = GfxApiAccessFlags::GPUPrivate;
+        self.TestGPUBuffer = gfxApi.CreateBuffer(bufferDesc);
     }
 
     tm.RegisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority, DemoRendererImpl::GetData(this),
@@ -108,7 +117,17 @@ void DemoRendererModule::Finalize()
 
     DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
     gfxApi.DestroySwapChain(self.SwapChain);
-    gfxApi.DestroyBuffer(self.TestBuffer);
+    u8* range = (u8*)gfxApi.MapBuffer(self.TestUploadBuffer, 0, 1024);
+    ScratchStack& stk = MemoryModule::Get().GetThreadScratchStack();
+    stk.Push();
+    u8* tmp = (u8*)stk.Allocate(1024);
+    memcpy(tmp, range, 1024);
+    for (int i = 0; i < 1024; ++i)
+        CheckAlways(tmp[i] == 0x88);
+    stk.Pop();
+
+    gfxApi.DestroyBuffer(self.TestUploadBuffer);
+    gfxApi.DestroyBuffer(self.TestGPUBuffer);
     self.SwapChain = (GfxApiSwapChainRef)GfxApiSwapChainRef::Null();
     for (u32 iBuffer = 0; iBuffer < BackbufferCount; ++iBuffer)
     {

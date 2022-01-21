@@ -110,6 +110,17 @@ GfxApiBufferRef DX12Module::CreateBuffer(const GfxApiBufferDesc& desc)
     return handle;
 }
 
+void* DX12Module::DX12Module::MapBuffer(GfxApiBufferRef handle, u32 offset, u32 size)
+{
+    DX12Buffer* buffer = gDX12GlobalState.DX12BufferPool.ToPtr(handle);
+    return buffer->Map(offset, size);
+}
+void DX12Module::UnmapBuffer(GfxApiBufferRef handle, u32 offset, u32 size)
+{
+    DX12Buffer* buffer = gDX12GlobalState.DX12BufferPool.ToPtr(handle);
+    buffer->Unmap(offset, size);
+}
+
 void DX12Module::DestroyBuffer(GfxApiBufferRef handle)
 {
     gDX12GlobalState.DX12BufferPool.ToPtr(handle)->~DX12Buffer();

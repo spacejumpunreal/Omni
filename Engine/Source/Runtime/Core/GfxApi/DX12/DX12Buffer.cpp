@@ -30,6 +30,25 @@ const GfxApiBufferDesc DX12Buffer::GetDesc()
     return mDesc;
 }
 
+void* DX12Buffer::Map(u32 beginOffset, u32 mapSize)
+{
+    CheckDebug(mDesc.AccessFlags != GfxApiAccessFlags::GPUPrivate);
+    D3D12_RANGE range;
+    range.Begin = beginOffset;
+    range.End = beginOffset + mapSize;
+    void* ptr;
+    CheckDX12(mDX12Resource->Map(0, &range, &ptr));
+    return ptr;
+}
+
+void DX12Buffer::Unmap(u32 beginOffset, u32 mapSize)
+{
+    D3D12_RANGE range;
+    range.Begin = beginOffset;
+    range.End = beginOffset + mapSize;
+    mDX12Resource->Unmap(0, &range);
+}
+
 
 } // namespace Omni
 
