@@ -21,6 +21,7 @@ namespace Omni
     }
     void IndexHandlePoolBase::Finalize()
     {
+        CheckAlways(mUsedCount == 0);
         for (u32 iPage = 0; iPage < mPageTable.size(); ++iPage)
         {
             mPageTable.get_allocator().deallocate_bytes(mPageTable[iPage], mPageSize, mPageAlign);
@@ -35,6 +36,7 @@ namespace Omni
         CheckDebug(pageIdx < mPageTable.size());
         u8* page = mPageTable[pageIdx];
         u8* genPtr = page + mObjectSize * inPageIdx + mGenOffset;
+        --mUsedCount;
         ++*(THandleGen*)genPtr;
     }
     void IndexHandlePoolBase::_Initialize(PMRAllocator allocator, u32 pageObjCountPow, u32 pageAlign, u32 pageSize, u32 objSize, u32 genOffset)
@@ -46,6 +48,7 @@ namespace Omni
         mObjectSize = objSize;
         mPageObjCountPow = pageObjCountPow;
         mGenOffset = genOffset;
+        mUsedCount = 0;
         mFreeIndex = THandleIndex(-1);
     }
     std::tuple<IndexHandle, u8*> IndexHandlePoolBase::_Alloc()
@@ -61,6 +64,7 @@ namespace Omni
         newHandle.Gen = ++(*(THandleGen*)genPtr);
         newHandle.Index = mFreeIndex;
         mFreeIndex = *(THandleIndex*)objPtr;
+        ++mUsedCount;
         return std::tie(newHandle, objPtr);
     }
     u8* IndexHandlePoolBase::_ToPtr(IndexHandle handle)
@@ -106,6 +110,7 @@ namespace Omni
     }
     void RawPtrHandlePoolBase::Finalize()
     {
+        CheckAlways(mUsedCount == 0);
         for (u32 iPage = 0; iPage < mPageTable.size(); ++iPage)
         {
             mPageTable.get_allocator().deallocate_bytes(mPageTable[iPage], mPageSize, mPageAlign);
@@ -119,7 +124,7 @@ namespace Omni
         *(u8**)(handle.Addr) = mFreePtr;
         ++*(u16*)(handle.Addr + mGenOffset);
         mFreePtr = (u8*)handle.Addr;
-
+        --mUsedCount;
     }
     void RawPtrHandlePoolBase::_Initialize(PMRAllocator allocator, u32 pageObjCountPow, u32 pageAlign, u32 pageSize, u32 objSize, u32 genOffset)
     {
@@ -130,6 +135,7 @@ namespace Omni
         mObjectSize = objSize;
         mPageObjCountPow = pageObjCountPow;
         mGenOffset = genOffset;
+        mUsedCount = 0;
         mFreePtr = (u8*)NullPtrHandle.Addr;
     }
     RawPtrHandle RawPtrHandlePoolBase::_Alloc()
@@ -141,6 +147,7 @@ namespace Omni
         ret.Addr = (u64)newPtr;
         mFreePtr = *(u8**)mFreePtr;
         ret.Gen = ++*(u16*)(newPtr + mGenOffset);
+        ++mUsedCount;
         return ret;
     }
     u8* RawPtrHandlePoolBase::_ToPtr(RawPtrHandle handle)

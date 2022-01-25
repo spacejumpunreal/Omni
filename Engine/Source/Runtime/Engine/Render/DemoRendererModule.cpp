@@ -146,7 +146,6 @@ void DemoRendererModule::Finalize()
 void DemoRendererModulePrivateImpl::Tick()
 {
     GfxApiModule&     gfxApi = GfxApiModule::Get();
-
     DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
     gfxApi.CheckGpuEvents(AllQueueMask);
 
@@ -174,7 +173,8 @@ void DemoRendererModulePrivateImpl::Tick()
 
     gfxApi.DrawRenderPass(renderPass);
     gfxApi.Present(self.SwapChain, true);
-    gfxApi.ScheduleGpuEvent(GfxApiQueueType::GraphicsQueue);
+    GfxApiGpuEventRef gpuEvent = gfxApi.ScheduleGpuEvent(GfxApiQueueType::GraphicsQueue);
+    gfxApi.DestroyEvent(gpuEvent);
 }
 
 static Module* DemoRendererModuleCtor(const EngineInitArgMap&)

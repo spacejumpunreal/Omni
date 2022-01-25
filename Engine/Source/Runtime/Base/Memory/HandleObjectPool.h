@@ -30,6 +30,7 @@ namespace Omni
         u32                 mObjectSize;
         u32                 mPageObjCountPow;
         u32                 mGenOffset;
+        u32                 mUsedCount;
         THandleIndex        mFreeIndex;
     };
 
@@ -52,6 +53,7 @@ namespace Omni
         u32                 mObjectSize;
         u32                 mPageObjCountPow;
         u32                 mGenOffset;
+        u32                 mUsedCount;
         u8*                 mFreePtr;
     };
 
