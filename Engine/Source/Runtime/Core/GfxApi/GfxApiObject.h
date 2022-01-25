@@ -61,6 +61,11 @@ public:
     }
 };
 
+
+/**
+ * Resources
+ */
+
 // GfxApiBuffer
 struct GfxApiBufferDesc : public GfxApiObjectDesc
 {
@@ -107,4 +112,68 @@ public:
     {
     }
 };
+
+
+/**
+ * GPU program, PSO related
+ */
+
+// GfxApiShader
+struct GfxApiShaderDesc
+{
+};
+
+// GfxApiPSO
+struct GGfxApiPSODesc
+{
+};
+
+//on GPU program argument/parameter binding
+/*
+
+# ideas of argument/parmeter orgnization
+## DX11 style
+- constants: 1 dict or 1 buffer/dict per stage
+- SRV: (vs/ps) * (buffer/texture)
+
+## MyIdea0
+- allow overlap, prioritized structs
+- struct
+    - constants
+    - buffers
+    - textures
+## MyIdead1
+- no overlap, structs
+- struct
+    - constants
+    - buffers
+    - textures
+
+# consideration
+- accessiblity:
+    - dx12, resource binding is specified once for PSO, so vs and ps do not have different binding slots, although can speicify visibility
+    - metal, set(Vertex/Fragment)(Buffer/Texture)
+    - vulkan: https://vkguide.dev/docs/chapter-4/descriptors/#:~:text=Descriptor%20sets%20bind%20into%20specific,from%20reflection%20on%20the%20shader.
+
+
+# D3D12
+- 
+## entities
+- shader: declare used slot, looks like shader can't differentiate RootConstant from RootConstantBufferView, so it need RootSignature
+    - https://microsoft.github.io/DirectX-Specs/d3d/ResourceBinding.html#resource-binding-in-hlsl
+    - example: https://microsoft.github.io/DirectX-Specs/d3d/ResourceBinding.html#using-constants-directly-in-the-root-arguments
+- RootSignature: declare API parameter slots, descriptor table/root descriptor describe 1. argument size and 2. how arguments map to shader declaration
+    - https://docs.microsoft.com/en-us/windows/win32/direct3d12/root-signatures
+    - litmit and cost, 60dword max:https://docs.microsoft.com/en-us/windows/win32/direct3d12/root-signature-limits
+    - speicify root signature in hlsl: https://docs.microsoft.com/en-us/windows/win32/direct3d12/specifying-root-signatures-in-hlsl
+- runtime binding: 
+    - https://docs.microsoft.com/en-us/windows/win32/direct3d12/using-a-root-signature
+- promise descriptor heap content/root descriptor involiatile, optimization, root signature 1.1
+    - https://docs.microsoft.com/en-us/windows/win32/direct3d12/root-signature-version-1-1
+
+
+*/
+
+
+
 } // namespace Omni
