@@ -153,11 +153,10 @@ struct GGfxApiPSODesc
 - accessiblity:
     - dx12, resource binding is specified once for PSO, so vs and ps do not have different binding slots, although can speicify visibility
     - metal, set(Vertex/Fragment)(Buffer/Texture)
-    - vulkan: https://vkguide.dev/docs/chapter-4/descriptors/#:~:text=Descriptor%20sets%20bind%20into%20specific,from%20reflection%20on%20the%20shader.
+    - vulkan: resource binding is specified once for PSO, can have multiple descriptor sets, minimum 4 sets
 
 
 # D3D12
-- 
 ## entities
 - shader: declare used slot, looks like shader can't differentiate RootConstant from RootConstantBufferView, so it need RootSignature
     - https://microsoft.github.io/DirectX-Specs/d3d/ResourceBinding.html#resource-binding-in-hlsl
@@ -171,6 +170,14 @@ struct GGfxApiPSODesc
 - promise descriptor heap content/root descriptor involiatile, optimization, root signature 1.1
     - https://docs.microsoft.com/en-us/windows/win32/direct3d12/root-signature-version-1-1
 
+# vulkan
+## entitites
+- overview: https://vulkan.lunarg.com/doc/view/1.2.154.1/windows/tutorial/html/08-init_pipeline_layout.html
+- DescriptorSet: similar to descriptor table
+- DescriptorSetLayout: similar to part of a RootSignature
+- PipelineLayout: array of DescriptorSetLayout
+- constant data/uniform access easier methods: Uniform Buffer Dynamic Binding(buffer offset come from CommandBuffer other than DescriptorSet), PushConstants(RootSignature constant)
+- RenderPass/SubPass: the name RenderPass is inapproperiate, it should be called RenderGraph, SubPass should be called RenderPass or RenderGraphNode
 
 */
 
