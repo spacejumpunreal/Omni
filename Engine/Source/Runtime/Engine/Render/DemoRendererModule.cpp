@@ -88,6 +88,7 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
         GfxApiBufferDesc bufferDesc;
         bufferDesc.Size = 16 * 1024;
         bufferDesc.AccessFlags = GfxApiAccessFlags::Upload;
+        bufferDesc.Name = "16kBuffer";
         self.TestUploadBuffer = gfxApi.CreateBuffer(bufferDesc);
         u8* range = (u8*)gfxApi.MapBuffer(self.TestUploadBuffer, 0, 1024);
         memset(range, 0x88, 1024);

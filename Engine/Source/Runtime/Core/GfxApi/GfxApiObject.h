@@ -56,7 +56,7 @@ public:
     const char*      Name;
 
 public:
-    GfxApiObjectDesc(GfxApiObjectType type, const char* name = "") : Type(type), Name(name)
+    GfxApiObjectDesc(GfxApiObjectType type, const char* name = nullptr) : Type(type), Name(name)
     {
     }
 };

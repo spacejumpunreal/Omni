@@ -31,6 +31,7 @@
 #define OMNI_SUPPRESS_WARNING_NEW_RETURN_NULL()
 #define OMNI_SUPPRESS_WARNING_PADDED_DUE_TO_ALIGNMENT() __pragma(warning(disable: 4324))
 #define OMNI_SUPPRESS_WARNING_COND_EXPR_IS_CONSTANT() __pragma(warning(disable: 4127))
+#define OMNI_SUPPRESS_WARNING_DEPRECATED_CODECVT() __pragma(warning(disable : 4996))
 
 #endif
 

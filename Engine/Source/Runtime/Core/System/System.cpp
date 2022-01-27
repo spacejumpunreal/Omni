@@ -3,6 +3,7 @@
 #include "Runtime/Base/Misc/ArrayUtils.h"
 #include "Runtime/Base/Misc/AssertUtils.h"
 #include "Runtime/Base/Misc/PImplUtils.h"
+#include "Runtime/Base/Text/TextEncoding.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/Concurrency/ConcurrencyModule.h"
 #include "Runtime/Core/Concurrency/ThreadUtils.h"
@@ -82,6 +83,7 @@ namespace Omni
 	//functions
 	void System::CreateSystem()
 	{
+        SetupUTF8Locale();
 		CheckAlways(GSystem == nullptr, "double create");
 		GSystem = new SystemImpl();
 	}

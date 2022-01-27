@@ -13,6 +13,7 @@ namespace Omni
         static D3D12_RESOURCE_STATES CalcInitialStateFromAccessFlag(GfxApiAccessFlags accessFlag);
         DX12Resource(D3D12_RESOURCE_STATES resState);
         ~DX12Resource();
+        void            Setname(const char* name);
         ID3D12Resource* GetResource() { return mDX12Resource; }
         bool EmitBarrier(D3D12_RESOURCE_STATES newState, D3D12_RESOURCE_BARRIER* barrier);
 

@@ -13,6 +13,7 @@
 #include <unordered_set>
 #include <vector>
 #include <deque>
+#include <string>
 #endif
 
 namespace Omni
@@ -37,4 +38,7 @@ namespace Omni
 
 	template<typename K, typename V, typename KeyCmp = std::less<K>>
 	using PMRMultiMap = StdPmr::multimap<K, V, KeyCmp>;
+
+    using PMRUTF8String = StdPmr::string;
+    using PMRUTF16String = StdPmr::wstring;
 }
