@@ -1,0 +1,4 @@
+#ifndef OMNI_BASICS_HLSL
+#define OMNI_BASICS_HLSL
+
+#endif//OMNI_BASICS_HLSL

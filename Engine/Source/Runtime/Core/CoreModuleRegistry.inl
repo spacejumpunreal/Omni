@@ -1,5 +1,6 @@
 CoreModuleItem(Memory)
 CoreModuleItem(Concurrency)
+CoreModuleItem(File)
 CoreModuleItem(Input)
 CoreModuleItem(Window)
 CoreModuleItem(DX12Module)

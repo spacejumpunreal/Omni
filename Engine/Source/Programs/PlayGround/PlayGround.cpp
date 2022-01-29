@@ -75,6 +75,7 @@ int main(int, const char**)
         "LoadModule=DX12",
         "LoadModule=DemoRenderer",
         "--window-size=800x600",
+        "--file-project-root=C:/checkout/Omni/TestProject",
     };
     system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv, Omni::PlayGroundReady, Omni::PlayGroundWillQuit);
 #else

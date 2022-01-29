@@ -4,6 +4,7 @@
 #include "Runtime/Base/Memory/MemoryArena.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/Concurrency/JobPrimitives.h"
+#include "Runtime/Core/File/FileModule.h"
 #include "Runtime/Core/System/ModuleExport.h"
 #include "Runtime/Core/System/ModuleImplHelpers.h"
 #include "Runtime/Core/GfxApi/GfxApiModule.h"
@@ -72,6 +73,8 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     tm.Retain();
     GfxApiModule& gfxApi = GfxApiModule::Get();
     gfxApi.Retain();
+    FileModule& fm = FileModule::Get();
+    fm.Retain();
 
     DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
     // create swapchain
@@ -103,6 +106,12 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
                                      QueueKind::Main);
     tm.SetFrameRate_OnMainThread(EngineFrameType::Render, 30);
 
+    PMRUTF16String tpath(mm.GetPMRAllocator(MemoryKind::UserDefault));
+    PMRVector<u8>  tdata(mm.GetPMRAllocator(MemoryKind::UserDefault));
+    fm.GetPath(tpath, PredefinedPath::ProjectRoot, L"Assets/Shader/Basics.hlsl");
+    fm.ReadFileContent(tpath, tdata);
+
+
     Module::Initialize(args);
 }
 
@@ -116,6 +125,7 @@ void DemoRendererModule::Finalize()
     GfxApiModule&     gfxApi = GfxApiModule::Get();
     WindowModule&     wm = WindowModule::Get();
     MemoryModule&     mm = MemoryModule::Get();
+    FileModule&       fm = FileModule::Get();
 
     DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
     gfxApi.DestroySwapChain(self.SwapChain);
@@ -142,6 +152,7 @@ void DemoRendererModule::Finalize()
     tm.Release();
     wm.Release();
     mm.Release();
+    fm.Release();
 }
 
 void DemoRendererModulePrivateImpl::Tick()
