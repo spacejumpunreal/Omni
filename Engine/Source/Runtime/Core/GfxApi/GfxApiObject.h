@@ -23,22 +23,17 @@ class GfxApiComputePass;
 /**
  * typedefs
  */
-struct GfxApiTextureRef : public RawPtrHandle
-{
-    using UnderlyingHandle = RawPtrHandle;
-};
-struct GfxApiBufferRef : public RawPtrHandle
-{
-    using UnderlyingHandle = RawPtrHandle;
-};
-struct GfxApiSwapChainRef : public RawPtrHandle
-{
-    using UnderlyingHandle = RawPtrHandle;
-};
-struct GfxApiGpuEventRef : public RawPtrHandle
-{
-    using UnderlyingHandle = RawPtrHandle;
-};
+#define DECLARE_GFXAPI_REF_TYPE(RefTypeName, BaseType)                                                                 \
+    struct RefTypeName : public BaseType                                                                               \
+    {                                                                                                                  \
+        using UnderlyingHandle = BaseType;                                                                             \
+    }
+
+DECLARE_GFXAPI_REF_TYPE(GfxApiBufferRef, RawPtrHandle);
+DECLARE_GFXAPI_REF_TYPE(GfxApiTextureRef, RawPtrHandle);
+DECLARE_GFXAPI_REF_TYPE(GfxApiSwapChainRef, RawPtrHandle);
+DECLARE_GFXAPI_REF_TYPE(GfxApiGpuEventRef, RawPtrHandle);
+DECLARE_GFXAPI_REF_TYPE(GfxApiShaderRef, RawPtrHandle);
 
 /**
  * enums
@@ -60,7 +55,6 @@ public:
     {
     }
 };
-
 
 /**
  * Resources
@@ -107,28 +101,33 @@ public:
 
 public:
     GfxApiSwapChainDesc()
-        : GfxApiObjectDesc(GfxApiObjectType::Swapchain), BufferCount(3), Width(0), Height(0),
-          Format(GfxApiFormat::R8G8B8A8_UNORM)
+        : GfxApiObjectDesc(GfxApiObjectType::Swapchain)
+        , BufferCount(3)
+        , Width(0)
+        , Height(0)
+        , Format(GfxApiFormat::R8G8B8A8_UNORM)
     {
     }
 };
-
 
 /**
  * GPU program, PSO related
  */
 
 // GfxApiShader
-struct GfxApiShaderDesc
+struct GfxApiShaderDesc : public GfxApiObjectDesc
 {
+public:
+    const char*       Source;
+    GfxApiShaderStage Stage;
+
+public:
+    GfxApiShaderDesc() : GfxApiObjectDesc(GfxApiObjectType::Shader), Source(nullptr), Stage(GfxApiShaderStage::Vertex)
+    {
+    }
 };
 
-// GfxApiPSO
-struct GGfxApiPSODesc
-{
-};
-
-//on GPU program argument/parameter binding
+// on GPU program argument/parameter binding
 /*
 
 # ideas of argument/parmeter orgnization
@@ -151,21 +150,26 @@ struct GGfxApiPSODesc
 
 # consideration
 - accessiblity:
-    - dx12, resource binding is specified once for PSO, so vs and ps do not have different binding slots, although can speicify visibility
+    - dx12, resource binding is specified once for PSO, so vs and ps do not have different binding slots, although can
+speicify visibility
     - metal, set(Vertex/Fragment)(Buffer/Texture)
     - vulkan: resource binding is specified once for PSO, can have multiple descriptor sets, minimum 4 sets
 
 
 # D3D12
 ## entities
-- shader: declare used slot, looks like shader can't differentiate RootConstant from RootConstantBufferView, so it need RootSignature
+- shader: declare used slot, looks like shader can't differentiate RootConstant from RootConstantBufferView, so it need
+RootSignature
     - https://microsoft.github.io/DirectX-Specs/d3d/ResourceBinding.html#resource-binding-in-hlsl
-    - example: https://microsoft.github.io/DirectX-Specs/d3d/ResourceBinding.html#using-constants-directly-in-the-root-arguments
-- RootSignature: declare API parameter slots, descriptor table/root descriptor describe 1. argument size and 2. how arguments map to shader declaration
+    - example:
+https://microsoft.github.io/DirectX-Specs/d3d/ResourceBinding.html#using-constants-directly-in-the-root-arguments
+- RootSignature: declare API parameter slots, descriptor table/root descriptor describe 1. argument size and 2. how
+arguments map to shader declaration
     - https://docs.microsoft.com/en-us/windows/win32/direct3d12/root-signatures
     - litmit and cost, 60dword max:https://docs.microsoft.com/en-us/windows/win32/direct3d12/root-signature-limits
-    - speicify root signature in hlsl: https://docs.microsoft.com/en-us/windows/win32/direct3d12/specifying-root-signatures-in-hlsl
-- runtime binding: 
+    - speicify root signature in hlsl:
+https://docs.microsoft.com/en-us/windows/win32/direct3d12/specifying-root-signatures-in-hlsl
+- runtime binding:
     - https://docs.microsoft.com/en-us/windows/win32/direct3d12/using-a-root-signature
 - promise descriptor heap content/root descriptor involiatile, optimization, root signature 1.1
     - https://docs.microsoft.com/en-us/windows/win32/direct3d12/root-signature-version-1-1
@@ -176,11 +180,11 @@ struct GGfxApiPSODesc
 - DescriptorSet: similar to descriptor table
 - DescriptorSetLayout: similar to part of a RootSignature
 - PipelineLayout: array of DescriptorSetLayout
-- constant data/uniform access easier methods: Uniform Buffer Dynamic Binding(buffer offset come from CommandBuffer other than DescriptorSet), PushConstants(RootSignature constant)
-- RenderPass/SubPass: the name RenderPass is inapproperiate, it should be called RenderGraph, SubPass should be called RenderPass or RenderGraphNode
+- constant data/uniform access easier methods: Uniform Buffer Dynamic Binding(buffer offset come from CommandBuffer
+other than DescriptorSet), PushConstants(RootSignature constant)
+- RenderPass/SubPass: the name RenderPass is inapproperiate, it should be called RenderGraph, SubPass should be called
+RenderPass or RenderGraphNode
 
 */
-
-
 
 } // namespace Omni

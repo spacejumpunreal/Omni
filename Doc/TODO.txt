@@ -1,17 +1,9 @@
 # todo
 - DrawTriangle
-	- GfxApiBuffer
-		- use
-			- Buffer drawcall fields
-	- GfxApiShader
-	- drawcall
-		- IndexBuffer
-		- Shader
 	- DX12Module
-		
 		- DX12Shader
-		- DX12PSOManager
-		
+		- DX12PSO/DX12PSOManager
+		- DX12TmpBufferManager
 		- DrawPass: DrawIndexed
 	
 - DiffuseShading

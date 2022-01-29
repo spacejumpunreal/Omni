@@ -1,6 +1,9 @@
 /**
 * GfxApiObjects
 */
+#ifndef GfxApiMethod
+#define GfxApiMethod(x) x;
+#endif
 
 //Buffer
 GfxApiMethod(GfxApiBufferRef CreateBuffer(const GfxApiBufferDesc& desc))
@@ -10,6 +13,9 @@ GfxApiMethod(void DestroyBuffer(GfxApiBufferRef buffer))
 //Texture
 GfxApiMethod(GfxApiTextureRef CreateTexture(const GfxApiTextureDesc& desc))
 GfxApiMethod(void DestroyTexture(GfxApiTextureRef))
+//Shader
+GfxApiMethod(GfxApiShaderRef CreateShader(const GfxApiShaderDesc& desc))
+GfxApiMethod(void DestroyTexture(GfxApiShaderRef))
 //SwapChain
 GfxApiMethod(GfxApiSwapChainRef CreateSwapChain(const GfxApiSwapChainDesc& desc))
 GfxApiMethod(void UpdateSwapChain(GfxApiSwapChainRef swapChain, const GfxApiSwapChainDesc& desc)) //NOTE: this will WaitGPUIdle

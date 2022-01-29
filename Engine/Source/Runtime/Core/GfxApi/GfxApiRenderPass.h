@@ -28,24 +28,48 @@ using TClearValue = std::variant<u32, u8, Vector4, float>;
  * definitions
  */
 
-struct DirectDrawParams
+struct GfxApiBufferView
+{
+    GfxApiBufferRef Buffer;
+    u32             Offset;
+};
+
+struct GfxApiShaderArgGroup
+{
+    GfxApiBufferView ConstantBuffer;
+    GfxApiBufferRef* BufferRefs;
+    u32              BufferCount;
+};
+
+struct GfxApiDirectDrawParams
 {
     u32 IndexCount;
     u32 InstanceCount;
-    u32 FirstIndex;
+    u32 FirstIndex; // offset(not byte) of first index element(16bit or 32bit)
     u32 BaseVertex;
     u32 BaseInstance;
 };
 
-struct IndirectDrawParams
+struct GfxApiIndirectDrawParams
 {
     GfxApiBufferRef IndirectArgBuffer;
+    u32             ArgOffset; // in bytes
 };
 
 struct GfxApiDrawcall
 {
-    GfxApiBufferRef  IndexBuffer = (GfxApiBufferRef)NullPtrHandle;
-    DirectDrawParams DrawParams;
+    // Drawcall Api
+    GfxApiBufferRef IndexBuffer = (GfxApiBufferRef)NullPtrHandle;
+    union
+    {
+        GfxApiDirectDrawParams DirectDrawArgs;
+        GfxApiDirectDrawParams IndirectDrawArgs;
+    } DrawArgs;
+    // Binding
+    GfxApiShaderArgGroup* ArgGroups[(u8)GfxApiShaderArgGroupSlot::Count];
+
+    // flags
+    bool IsIndirect = false;
 };
 
 struct GfxApiRenderPassStage : SListNode

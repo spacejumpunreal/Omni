@@ -19,14 +19,13 @@
 #include "Runtime/Core/GfxApi/DX12/DX12BufferManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Command.h"
 
-
 #include <d3d12.h>
 #include <dxgidebug.h>
 
 #define DEBUG_DX_OBJECT_LEAK_ON_QUIT 1
 
-EXTERN_C const GUID DECLSPEC_SELECTANY DXGI_DEBUG_ALL = {0xe48ae283, 0xda80, 0x490b, 0x87, 0xe6, 0x43,
-                                                         0xe9,       0xa9,   0xcf,   0xda, 0x8};
+EXTERN_C const GUID DECLSPEC_SELECTANY DXGI_DEBUG_ALL = {
+    0xe48ae283, 0xda80, 0x490b, 0x87, 0xe6, 0x43, 0xe9, 0xa9, 0xcf, 0xda, 0x8};
 
 namespace Omni
 {
@@ -104,8 +103,8 @@ void DX12Module::Finalize()
 // Buffer
 GfxApiBufferRef DX12Module::CreateBuffer(const GfxApiBufferDesc& desc)
 {
-    GfxApiBufferRef    handle;
-    DX12Buffer*        obj;
+    GfxApiBufferRef handle;
+    DX12Buffer*     obj;
     std::tie((GfxApiBufferRef::UnderlyingHandle&)handle, obj) = gDX12GlobalState.DX12BufferPool.Alloc();
     new ((void*)obj) DX12Buffer(desc);
     return handle;
@@ -142,6 +141,19 @@ void DX12Module::DestroyTexture(GfxApiTextureRef texture)
     NotImplemented();
 }
 
+// Shader
+GfxApiShaderRef DX12Module::CreateShader(const GfxApiShaderDesc& desc)
+{
+    (void)desc;
+    NotImplemented();
+    return {};
+}
+
+void DX12Module::DestroyTexture(GfxApiShaderRef shader)
+{
+    (void)shader;
+}
+
 // SwapChain
 GfxApiSwapChainRef DX12Module::CreateSwapChain(const GfxApiSwapChainDesc& desc)
 {
@@ -169,7 +181,8 @@ void FreeSwapChainHandle(void* p)
 void DX12Module::DestroySwapChain(GfxApiSwapChainRef swapChain)
 {
     gDX12GlobalState.DeleteManager->AddForHandleFree(FreeSwapChainHandle,
-                                                     (GfxApiSwapChainRef::UnderlyingHandle&)swapChain, AllQueueMask);
+                                                     (GfxApiSwapChainRef::UnderlyingHandle&)swapChain,
+                                                     AllQueueMask);
 }
 
 void DX12Module::GetBackbufferTextures(GfxApiSwapChainRef swapChain, GfxApiTextureRef backbuffers[], u32 count)
@@ -230,7 +243,7 @@ void DX12Module::Present(GfxApiSwapChainRef swapChain, bool waitVSync)
 GfxApiGpuEventRef DX12Module::ScheduleGpuEvent(GfxApiQueueType queueType)
 {
     ID3D12CommandQueue* queue = gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue];
-    u64 batchId;
+    u64                 batchId;
     gDX12GlobalState.TimelineManager->CloseBatchAndSignalOnGPU(queueType, queue, batchId, true);
 
     GfxApiGpuEventRef handle;

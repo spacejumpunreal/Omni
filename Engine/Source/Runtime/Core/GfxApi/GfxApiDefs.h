@@ -17,7 +17,6 @@ enum class GfxApiObjectType : u8
     Buffer,
     Texture,
     Sampler,
-    Pso,
     Shader,
     Fence,
     Swapchain,
@@ -60,4 +59,23 @@ enum class GfxApiLoadStoreActions : u32
     Discard = 1 << 4,
 };
 DEFINE_BITMASK_ENUM_OPS(GfxApiLoadStoreActions);
+
+enum class GfxApiShaderStage
+{
+    //Graphics
+    Vertex,
+    Fragment,
+    //Compute
+    Compute,
+};
+DEFINE_BITMASK_ENUM_OPS(GfxApiShaderStage);
+
+enum class GfxApiShaderArgGroupSlot : u8
+{
+    Pass = 0,
+    Material,
+    Instance,
+    Count
+};
+
 } // namespace Omni
