@@ -6,17 +6,22 @@
 #include "Runtime/Core/GfxApi/DX12/DX12Basics.h"
 #include "Runtime/Core/GfxApi/DX12/DX12ForwardDecl.h"
 
+
+struct ID3D10Blob;
+
 namespace Omni
 {
+
+
 class DX12Shader
 {
 public:
     DX12Shader(const GfxApiShaderDesc& desc);
     ~DX12Shader();
-    ID3DBlob* GetCompiledBinary();
+    ID3D10Blob* GetCompiledBinary();
 
 private:
-    ID3DBlob* mCompiledBinary;
+    ID3D10Blob* mCompiledBinary;
 };
 } // namespace Omni
 

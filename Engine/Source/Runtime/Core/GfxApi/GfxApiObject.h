@@ -7,6 +7,7 @@
 #include "Runtime/Core/CoreAPI.h"
 #include "Runtime/Core/Platform/WindowUtils.h"
 #include "Runtime/Core/GfxApi/GfxApiDefs.h"
+#include "Runtime/Core/GfxApi/GfxApiShader.h"
 
 #include <variant>
 
@@ -118,14 +119,20 @@ public:
 struct GfxApiShaderDesc : public GfxApiObjectDesc
 {
 public:
-    std::string_view  Source;
-    const char*       EntryName;
-    GfxApiShaderStage Stage;
+    std::string_view           Source;
+    const u8*                  BinaryPtr;
+    size_t                     BinarySize;
+    const char*                EntryName;
+    GfxApiShaderStage          Stage;
+    GfxApiShaderCompileOptions Options;
 
 public:
-    GfxApiShaderDesc() 
+    GfxApiShaderDesc()
         : GfxApiObjectDesc(GfxApiObjectType::Shader)
         , Source(nullptr, 0)
+        , BinaryPtr(nullptr)
+        , BinarySize(0)
+        , EntryName(nullptr)
         , Stage(GfxApiShaderStage::Vertex)
     {
     }

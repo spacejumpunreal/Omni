@@ -105,11 +105,12 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     {
         PMRUTF16String tpath(mm.GetPMRAllocator(MemoryKind::UserDefault));
         PMRVector<u8>  tdata(mm.GetPMRAllocator(MemoryKind::UserDefault));
-        fm.GetPath(tpath, PredefinedPath::ProjectRoot, L"Assets/Shader/Basics.hlsl");
+        fm.GetPath(tpath, PredefinedPath::ProjectRoot, L"Assets/Shader/SimpleTest_VS.hlsl");
         fm.ReadFileContent(tpath, tdata);
 
         GfxApiShaderDesc shaderDesc;
-        shaderDesc.Name = "TestShaderVS";
+        shaderDesc.EntryName = shaderDesc.Name = "VertexFunc";
+        
         /*
         *  = (const char*)tdata.data();
         shaderDesc.SourceLength = (const char*)tdata.data();

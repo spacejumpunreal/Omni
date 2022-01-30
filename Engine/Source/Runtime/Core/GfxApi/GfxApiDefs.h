@@ -67,6 +67,7 @@ enum class GfxApiShaderStage
     Fragment,
     //Compute
     Compute,
+    Count,
 };
 DEFINE_BITMASK_ENUM_OPS(GfxApiShaderStage);
 

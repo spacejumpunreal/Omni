@@ -16,6 +16,7 @@ class DX12SwapChain;
 class DX12Buffer;
 class DX12Shader;
 class DX12GpuEvent;
+class DXCWrapper;
 
 struct DX12Singletons
 {
@@ -59,6 +60,7 @@ public: // managers
     class DX12TimelineManager* TimelineManager;
     class DX12DeleteManager*   DeleteManager;
     class DX12BufferManager*   BufferManager;
+    class DXCWrapper*          DXCInstance;
 };
 
 extern DX12GlobalState gDX12GlobalState;

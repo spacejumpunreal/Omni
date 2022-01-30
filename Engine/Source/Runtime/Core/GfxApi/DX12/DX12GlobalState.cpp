@@ -16,6 +16,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12DeleteManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12BufferManager.h"
+#include "Runtime/Core/GfxApi/DX12/DXCWrapper.h"
 #include <d3d12.h>
 
 #include <dxgidebug.h>
@@ -51,6 +52,7 @@ DX12GlobalState::DX12GlobalState()
     , TimelineManager(nullptr)
     , DeleteManager(nullptr)
     , BufferManager(nullptr)
+    , DXCInstance(nullptr)
 {
 }
 
@@ -141,6 +143,7 @@ void DX12GlobalState::Initialize()
     TimelineManager = DX12TimelineManager::Create((ID3D12Device*)Singletons.D3DDevice);
     DeleteManager = DX12DeleteManager::Create();
     BufferManager = DX12BufferManager::Create();
+    DXCInstance = DXCWrapper::Create();
 
     CheckSupportedFeatures(Singletons.D3DDevice);
 
@@ -155,6 +158,7 @@ void DX12GlobalState::Finalize()
     /**
      * managers
      */
+    DXCInstance->Destroy();
     BufferManager->Destroy();
     DeleteManager->Destroy();
     TimelineManager->Destroy();
