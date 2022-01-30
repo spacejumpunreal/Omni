@@ -42,6 +42,7 @@ public:
     GfxApiTextureRef    Backbuffers[BackbufferCount];
     GfxApiBufferRef     TestUploadBuffer;
     GfxApiBufferRef     TestGPUBuffer;
+    GfxApiShaderRef     TestShaderVS;
     GfxApiGpuEventRef   GpuEvent;
     u32                 ClientAreaSizeX = 0;
     u32                 ClientAreaSizeY = 0;
@@ -101,15 +102,26 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
         bufferDesc.AccessFlags = GfxApiAccessFlags::GPUPrivate;
         self.TestGPUBuffer = gfxApi.CreateBuffer(bufferDesc);
     }
+    {
+        PMRUTF16String tpath(mm.GetPMRAllocator(MemoryKind::UserDefault));
+        PMRVector<u8>  tdata(mm.GetPMRAllocator(MemoryKind::UserDefault));
+        fm.GetPath(tpath, PredefinedPath::ProjectRoot, L"Assets/Shader/Basics.hlsl");
+        fm.ReadFileContent(tpath, tdata);
+
+        GfxApiShaderDesc shaderDesc;
+        shaderDesc.Name = "TestShaderVS";
+        /*
+        *  = (const char*)tdata.data();
+        shaderDesc.SourceLength = (const char*)tdata.data();
+        */
+        shaderDesc.Source = std::string_view((const char*)tdata.data(), tdata.size());
+        shaderDesc.Stage = GfxApiShaderStage::Vertex;
+        self.TestShaderVS = gfxApi.CreateShader(shaderDesc);
+    }
 
     tm.RegisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority, DemoRendererImpl::GetData(this),
                                      QueueKind::Main);
     tm.SetFrameRate_OnMainThread(EngineFrameType::Render, 30);
-
-    PMRUTF16String tpath(mm.GetPMRAllocator(MemoryKind::UserDefault));
-    PMRVector<u8>  tdata(mm.GetPMRAllocator(MemoryKind::UserDefault));
-    fm.GetPath(tpath, PredefinedPath::ProjectRoot, L"Assets/Shader/Basics.hlsl");
-    fm.ReadFileContent(tpath, tdata);
 
 
     Module::Initialize(args);
@@ -140,6 +152,7 @@ void DemoRendererModule::Finalize()
 
     gfxApi.DestroyBuffer(self.TestUploadBuffer);
     gfxApi.DestroyBuffer(self.TestGPUBuffer);
+    gfxApi.DestroyShader(self.TestShaderVS);
     self.SwapChain = (GfxApiSwapChainRef)GfxApiSwapChainRef::Null();
     for (u32 iBuffer = 0; iBuffer < BackbufferCount; ++iBuffer)
     {

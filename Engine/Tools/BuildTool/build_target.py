@@ -89,6 +89,10 @@ class BuildTarget(object):
         self.dependencies = []
         self.public_includes = []
         self.private_includes = [global_states.source_root]
+        self.public_prebuilt_libs = []
+        self.private_prebuilt_libs = []
+        self.public_system_libs = []
+        self.private_system_libs = []
         self.files = []
         self.public_defines = []
         self.private_defines = []
@@ -136,6 +140,18 @@ class BuildTarget(object):
             self.public_includes.append(path)
         if acl & PRIVATE_ITEMS:
             self.private_includes.append(path)
+
+    def add_prebuilt_lib(self, lib_path, acl=PUBLIC_ITEMS | PRIVATE_ITEMS):
+        if acl & PUBLIC_ITEMS:
+            self.public_prebuilt_libs.append(lib_path)
+        if acl & PRIVATE_ITEMS:
+            self.private_prebuilt_libs.append(lib_path)
+
+    def add_system_lib(self, lib_path, acl=PUBLIC_ITEMS | PRIVATE_ITEMS):
+        if acl & PUBLIC_ITEMS:
+            self.public_system_libs.append(lib_path)
+        if acl & PRIVATE_ITEMS:
+            self.private_system_libs.append(lib_path)
 
     def add_macro_define(self, kv_pair, acl=PUBLIC_ITEMS | PRIVATE_ITEMS):
         if acl & PUBLIC_ITEMS:

@@ -13,6 +13,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Texture.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Buffer.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Shader.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Event.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12DeleteManager.h"
@@ -144,14 +145,25 @@ void DX12Module::DestroyTexture(GfxApiTextureRef texture)
 // Shader
 GfxApiShaderRef DX12Module::CreateShader(const GfxApiShaderDesc& desc)
 {
-    (void)desc;
-    NotImplemented();
-    return {};
+    GfxApiShaderRef handle;
+    DX12Shader*     obj;
+    std::tie((GfxApiShaderRef::UnderlyingHandle&)handle, obj) = gDX12GlobalState.DX12ShaderPool.Alloc();
+    new ((void*)obj) DX12Shader(desc);
+    return handle;
 }
 
-void DX12Module::DestroyTexture(GfxApiShaderRef shader)
+void FreeShaderHandle(void* p)
 {
-    (void)shader;
+    GfxApiShaderRef::UnderlyingHandle& handle = *reinterpret_cast<GfxApiShaderRef::UnderlyingHandle*>(&p);
+    gDX12GlobalState.DX12ShaderPool.ToPtr(handle)->~DX12Shader();
+    gDX12GlobalState.DX12ShaderPool.Free(handle);
+}
+
+void DX12Module::DestroyShader(GfxApiShaderRef shader)
+{
+    gDX12GlobalState.DeleteManager->AddForHandleFree(FreeShaderHandle,
+                                                     (GfxApiSwapChainRef::UnderlyingHandle&)shader,
+                                                     AllQueueMask);
 }
 
 // SwapChain

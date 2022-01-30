@@ -14,6 +14,7 @@ namespace Omni
 class DX12Texture;
 class DX12SwapChain;
 class DX12Buffer;
+class DX12Shader;
 class DX12GpuEvent;
 
 struct DX12Singletons
@@ -48,6 +49,7 @@ public: // object pools
     RawPtrObjectPool<DX12SwapChain> DX12SwapChainPool;
     RawPtrObjectPool<DX12Buffer>    DX12BufferPool;
     RawPtrObjectPool<DX12Texture>   DX12TexturePool;
+    RawPtrObjectPool<DX12Shader>    DX12ShaderPool;
     RawPtrObjectPool<DX12GpuEvent>  DX12GpuEventPool;
 
 public: // state flags

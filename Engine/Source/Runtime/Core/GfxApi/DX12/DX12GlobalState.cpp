@@ -10,6 +10,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12Buffer.h"
 #include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Event.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Shader.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
 #include "Runtime/Core/GfxApi/DX12/DX12ObjectFactories.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
@@ -131,6 +132,7 @@ void DX12GlobalState::Initialize()
     DX12SwapChainPool.Initialize(gfxApiAllocator, 2);
     DX12BufferPool.Initialize(gfxApiAllocator, 128);
     DX12TexturePool.Initialize(gfxApiAllocator, 4);
+    DX12ShaderPool.Initialize(gfxApiAllocator, 8);
     DX12GpuEventPool.Initialize(gfxApiAllocator, 16);
 
     /**
@@ -163,6 +165,7 @@ void DX12GlobalState::Finalize()
     DX12SwapChainPool.Finalize();
     DX12BufferPool.Finalize();
     DX12TexturePool.Finalize();
+    DX12ShaderPool.Finalize();
     DX12GpuEventPool.Finalize();
 
     /**
@@ -214,11 +217,19 @@ void DX12GlobalState::WaitGPUIdle()
 
 void CheckSupportedFeatures(ID3D12Device* device)
 {
+    // https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_heap_tier
     D3D12_FEATURE_DATA_D3D12_OPTIONS featureOptions{};
     CheckSucceeded(device->CheckFeatureSupport(D3D12_FEATURE::D3D12_FEATURE_D3D12_OPTIONS,
                                                &featureOptions,
                                                sizeof(featureOptions)));
-    // https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_heap_tier
+    
+    //check SM6.0 support
+    D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = {D3D_SHADER_MODEL_6_0};
+    if (FAILED(device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(shaderModel))) ||
+        (shaderModel.HighestShaderModel < D3D_SHADER_MODEL_6_0))
+    {
+        CheckAlways(false, "Shader Model 6.0 is not supported!");
+    }
 }
 } // namespace Omni
 

@@ -118,11 +118,15 @@ public:
 struct GfxApiShaderDesc : public GfxApiObjectDesc
 {
 public:
-    const char*       Source;
+    std::string_view  Source;
+    const char*       EntryName;
     GfxApiShaderStage Stage;
 
 public:
-    GfxApiShaderDesc() : GfxApiObjectDesc(GfxApiObjectType::Shader), Source(nullptr), Stage(GfxApiShaderStage::Vertex)
+    GfxApiShaderDesc() 
+        : GfxApiObjectDesc(GfxApiObjectType::Shader)
+        , Source(nullptr, 0)
+        , Stage(GfxApiShaderStage::Vertex)
     {
     }
 };

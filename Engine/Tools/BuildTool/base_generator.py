@@ -23,12 +23,14 @@ class BaseGenerator(object):
         ret.sort()
         return ret
 
+    path_properties = {"includes", "prebuilt_libs"}
+
     def get_dependent_properties(self, target, prop_name, self_option):
         ret = set()
 
         def handle_target_items(pub_priv, atarget):
             for x_item in getattr(atarget, pub_priv + prop_name):
-                if prop_name == "includes" and not os.path.isabs(x_item):
+                if prop_name in self.path_properties and not os.path.isabs(x_item):
                     ret.add(os.path.join(atarget.base_dir, x_item))
                 else:
                     ret.add(x_item)
