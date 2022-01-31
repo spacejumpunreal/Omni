@@ -6,7 +6,7 @@ struct VSOut
 };
 
 
-float4 FSMain(VSOut vsout) : SV_TARGET
+float4 FSMain(VSOut vsout) : SV_TARGET0
 {
 	return vsout.color;
 }

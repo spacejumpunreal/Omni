@@ -73,7 +73,7 @@ ID3DBlob* DXCWrapper::CompileShaderSource(std::string_view                  sour
     IDxcBlobUtf8* errors;
 
     CheckDX12(self->Compiler->Compile(&srcBuff, args.data(), (u32)args.size(), nullptr, IID_PPV_ARGS(&result)));
-    result->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&errors), nullptr);
+    CheckDX12(result->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&errors), nullptr));
     if (errors && errors->GetStringLength() > 0)
     {
         const char* msg = errors->GetStringPointer();

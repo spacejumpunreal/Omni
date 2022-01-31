@@ -1,8 +1,6 @@
 # todo
 - DrawTriangle
 	- first drawcall
-		- write vs/ps
-		- load vs/ps
 		- drawcall
 			- index buffer
 			- PSO params

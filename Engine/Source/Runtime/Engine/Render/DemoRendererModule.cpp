@@ -36,17 +36,17 @@ public:
     }
 
 public:
-    DispatchWorkItem*   TickRegistry = nullptr;
-    GfxApiSwapChainDesc DescSwapChain;
-    GfxApiSwapChainRef  SwapChain = {};
-    GfxApiTextureRef    Backbuffers[BackbufferCount];
-    GfxApiBufferRef     TestUploadBuffer;
-    GfxApiBufferRef     TestGPUBuffer;
-    GfxApiShaderRef     TestShaderVS;
-    GfxApiGpuEventRef   GpuEvent;
-    u32                 ClientAreaSizeX = 0;
-    u32                 ClientAreaSizeY = 0;
-    u32                 FrameIndex = 0;
+    DispatchWorkItem*              TickRegistry = nullptr;
+    GfxApiSwapChainDesc            DescSwapChain;
+    GfxApiSwapChainRef             SwapChain = {};
+    GfxApiTextureRef               Backbuffers[BackbufferCount];
+    GfxApiBufferRef                TestUploadBuffer;
+    GfxApiBufferRef                TestGPUBuffer;
+    std::array<GfxApiShaderRef, 2> TestShaders;
+    GfxApiGpuEventRef              GpuEvent;
+    u32                            ClientAreaSizeX = 0;
+    u32                            ClientAreaSizeY = 0;
+    u32                            FrameIndex = 0;
 };
 
 using DemoRendererImpl = PImplCombine<DemoRendererModule, DemoRendererModulePrivateImpl>;
@@ -62,6 +62,37 @@ static constexpr u32 DemoRendererTickPriority = 100;
 
 DemoRendererModulePrivateImpl::DemoRendererModulePrivateImpl()
 {
+}
+
+static void LoadSourceShaders(const wchar_t*          paths[],
+                              const char*             entryNames[],
+                              const GfxApiShaderStage stages[],
+                              u32                     count,
+                              GfxApiShaderRef         outShaderHandles[])
+{
+    MemoryModule& mm = MemoryModule::Get();
+    FileModule&   fm = FileModule::Get();
+    GfxApiModule& gfxApi = GfxApiModule::Get();
+
+    PMRUTF16String tpath(mm.GetPMRAllocator(MemoryKind::UserDefault));
+    PMRVector<u8>  tdata(mm.GetPMRAllocator(MemoryKind::UserDefault));
+
+    for (u32 iShader = 0; iShader < count; ++iShader)
+    {
+        fm.GetPath(tpath, PredefinedPath::ProjectRoot, paths[iShader]);
+        fm.ReadFileContent(tpath, tdata);
+
+        GfxApiShaderDesc shaderDesc;
+        shaderDesc.EntryName = shaderDesc.Name = entryNames[iShader];
+
+        shaderDesc.Source = std::string_view((const char*)tdata.data(), tdata.size());
+        shaderDesc.Stage = stages[iShader];
+
+        outShaderHandles[iShader] = gfxApi.CreateShader(shaderDesc);
+
+        tpath.clear();
+        tdata.clear();
+    }
 }
 
 void DemoRendererModule::Initialize(const EngineInitArgMap& args)
@@ -103,27 +134,29 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
         self.TestGPUBuffer = gfxApi.CreateBuffer(bufferDesc);
     }
     {
-        PMRUTF16String tpath(mm.GetPMRAllocator(MemoryKind::UserDefault));
-        PMRVector<u8>  tdata(mm.GetPMRAllocator(MemoryKind::UserDefault));
-        fm.GetPath(tpath, PredefinedPath::ProjectRoot, L"Assets/Shader/SimpleTest_VS.hlsl");
-        fm.ReadFileContent(tpath, tdata);
+        // self.TestShaderVS = gfxApi.CreateShader(shaderDesc);
+        const wchar_t* paths[] = {
+            L"Assets/Shader/SimpleTest_VS.hlsl",
+            L"Assets/Shader/SimpleTest_FS.hlsl",
+        };
+        const char* entryNames[] = {
+            "VSMain", // VS
+            "FSMain", // PS
+        };
 
-        GfxApiShaderDesc shaderDesc;
-        shaderDesc.EntryName = shaderDesc.Name = "VertexFunc";
-        
-        /*
-        *  = (const char*)tdata.data();
-        shaderDesc.SourceLength = (const char*)tdata.data();
-        */
-        shaderDesc.Source = std::string_view((const char*)tdata.data(), tdata.size());
-        shaderDesc.Stage = GfxApiShaderStage::Vertex;
-        self.TestShaderVS = gfxApi.CreateShader(shaderDesc);
+        GfxApiShaderStage stages[] = {
+            GfxApiShaderStage::Vertex,
+            GfxApiShaderStage::Fragment,
+        };
+
+        LoadSourceShaders(paths, entryNames, stages, 2, &self.TestShaders[0]);
     }
 
-    tm.RegisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority, DemoRendererImpl::GetData(this),
+    tm.RegisterFrameTick_OnAnyThread(EngineFrameType::Render,
+                                     DemoRendererTickPriority,
+                                     DemoRendererImpl::GetData(this),
                                      QueueKind::Main);
     tm.SetFrameRate_OnMainThread(EngineFrameType::Render, 30);
-
 
     Module::Initialize(args);
 }
@@ -134,15 +167,15 @@ void DemoRendererModule::Finalize()
     if (GetUserCount() > 0)
         return;
 
-    TimingModule&     tm = TimingModule::Get();
-    GfxApiModule&     gfxApi = GfxApiModule::Get();
-    WindowModule&     wm = WindowModule::Get();
-    MemoryModule&     mm = MemoryModule::Get();
-    FileModule&       fm = FileModule::Get();
+    TimingModule& tm = TimingModule::Get();
+    GfxApiModule& gfxApi = GfxApiModule::Get();
+    WindowModule& wm = WindowModule::Get();
+    MemoryModule& mm = MemoryModule::Get();
+    FileModule&   fm = FileModule::Get();
 
     DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
     gfxApi.DestroySwapChain(self.SwapChain);
-    u8* range = (u8*)gfxApi.MapBuffer(self.TestUploadBuffer, 0, 1024);
+    u8*           range = (u8*)gfxApi.MapBuffer(self.TestUploadBuffer, 0, 1024);
     ScratchStack& stk = MemoryModule::Get().GetThreadScratchStack();
     stk.Push();
     u8* tmp = (u8*)stk.Allocate(1024);
@@ -153,7 +186,10 @@ void DemoRendererModule::Finalize()
 
     gfxApi.DestroyBuffer(self.TestUploadBuffer);
     gfxApi.DestroyBuffer(self.TestGPUBuffer);
-    gfxApi.DestroyShader(self.TestShaderVS);
+    for (u32 iShader = 0; iShader < self.TestShaders.size(); ++iShader)
+    {
+        gfxApi.DestroyShader(self.TestShaders[iShader]);
+    }
     self.SwapChain = (GfxApiSwapChainRef)GfxApiSwapChainRef::Null();
     for (u32 iBuffer = 0; iBuffer < BackbufferCount; ++iBuffer)
     {
