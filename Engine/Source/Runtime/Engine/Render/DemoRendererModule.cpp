@@ -9,6 +9,7 @@
 #include "Runtime/Core/System/ModuleImplHelpers.h"
 #include "Runtime/Core/GfxApi/GfxApiModule.h"
 #include "Runtime/Core/GfxApi/GfxApiRenderPass.h"
+#include "Runtime/Core/GfxApi/GfxApiBlitPass.h"
 #include "Runtime/Core/Platform/WindowModule.h"
 #include "Runtime/Engine/Timing/TimingModule.h"
 
@@ -119,21 +120,48 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     self.SwapChain = gfxApi.CreateSwapChain(self.DescSwapChain);
     gfxApi.GetBackbufferTextures(self.SwapChain, self.Backbuffers, BackbufferCount);
 
-    {
+    constexpr u32 tmpBufferSize = 6 * sizeof(u16);
+    { // Buffer
+        auto& stk = mm.GetThreadScratchStack();
+        auto  scope = stk.PushScope();
+        u16*  tmpBuffer = (u16*)stk.Allocate(tmpBufferSize);
+        tmpBuffer[0] = 0;
+        tmpBuffer[1] = 1;
+        tmpBuffer[2] = 2;
+        tmpBuffer[3] = 1;
+        tmpBuffer[4] = 3;
+        tmpBuffer[5] = 2;
+
         GfxApiBufferDesc bufferDesc;
         bufferDesc.Size = 16 * 1024;
         bufferDesc.AccessFlags = GfxApiAccessFlags::Upload;
-        bufferDesc.Name = "16kBuffer";
+        bufferDesc.Name = "16KUploadBuffer";
         self.TestUploadBuffer = gfxApi.CreateBuffer(bufferDesc);
-        u8* range = (u8*)gfxApi.MapBuffer(self.TestUploadBuffer, 0, 1024);
-        memset(range, 0x88, 1024);
-        gfxApi.UnmapBuffer(self.TestUploadBuffer, 0, 1024);
+        u8* range = (u8*)gfxApi.MapBuffer(self.TestUploadBuffer, 0, tmpBufferSize);
+        memcpy(range, tmpBuffer, tmpBufferSize);
+        gfxApi.UnmapBuffer(self.TestUploadBuffer, 0, tmpBufferSize);
 
         bufferDesc.Size = 32 * 1024;
         bufferDesc.AccessFlags = GfxApiAccessFlags::GPUPrivate;
+        bufferDesc.Name = "32KGPUBuffer";
         self.TestGPUBuffer = gfxApi.CreateBuffer(bufferDesc);
     }
-    {
+    
+    { // blitpass
+        GfxApiBlitPass* blitPass = new GfxApiBlitPass(1);
+        blitPass->CopyBufferCmds[0] = GfxApiCopyBuffer{
+            .Src = self.TestUploadBuffer,
+            .SrcOffset = 0,
+            .Dst = self.TestGPUBuffer,
+            .DstOffset = 0,
+            .Bytes = tmpBufferSize,
+        };
+        gfxApi.CopyBlitPass(blitPass);
+        //GfxApiGpuEventRef copyDone = gfxApi.ScheduleGpuEvent(GfxApiQueueType::CopyQueue);
+        //gfxApi.WaitEvent(copyDone);
+        //gfxApi.DestroyEvent(copyDone);
+    }
+    { // Shader
         // self.TestShaderVS = gfxApi.CreateShader(shaderDesc);
         const wchar_t* paths[] = {
             L"Assets/Shader/SimpleTest_VS.hlsl",
@@ -175,15 +203,6 @@ void DemoRendererModule::Finalize()
 
     DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
     gfxApi.DestroySwapChain(self.SwapChain);
-    u8*           range = (u8*)gfxApi.MapBuffer(self.TestUploadBuffer, 0, 1024);
-    ScratchStack& stk = MemoryModule::Get().GetThreadScratchStack();
-    stk.Push();
-    u8* tmp = (u8*)stk.Allocate(1024);
-    memcpy(tmp, range, 1024);
-    for (int i = 0; i < 1024; ++i)
-        CheckAlways(tmp[i] == 0x88);
-    stk.Pop();
-
     gfxApi.DestroyBuffer(self.TestUploadBuffer);
     gfxApi.DestroyBuffer(self.TestGPUBuffer);
     for (u32 iShader = 0; iShader < self.TestShaders.size(); ++iShader)

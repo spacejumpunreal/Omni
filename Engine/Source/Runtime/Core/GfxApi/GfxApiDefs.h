@@ -47,7 +47,10 @@ enum class GfxApiQueueType : u8
 };
 
 using GfxApiQueueMask = u32;
-constexpr GfxApiQueueMask AllQueueMask = 1 << (u32)GfxApiQueueType::GraphicsQueue;
+constexpr GfxApiQueueMask AllQueueMask = (1 << (u32)GfxApiQueueType::GraphicsQueue) |
+                                         (1 << (u32)GfxApiQueueType::ComputeQueue) |
+                                         (1 << (u32)GfxApiQueueType::CopyQueue);
+
 static_assert(sizeof(GfxApiQueueMask) * 8 > (size_t)GfxApiQueueType::Count);
 
 enum class GfxApiLoadStoreActions : u32
@@ -62,10 +65,10 @@ DEFINE_BITMASK_ENUM_OPS(GfxApiLoadStoreActions);
 
 enum class GfxApiShaderStage
 {
-    //Graphics
+    // Graphics
     Vertex,
     Fragment,
-    //Compute
+    // Compute
     Compute,
     Count,
 };

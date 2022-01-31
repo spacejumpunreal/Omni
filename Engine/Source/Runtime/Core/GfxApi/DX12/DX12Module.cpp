@@ -122,10 +122,18 @@ void DX12Module::UnmapBuffer(GfxApiBufferRef handle, u32 offset, u32 size)
     buffer->Unmap(offset, size);
 }
 
-void DX12Module::DestroyBuffer(GfxApiBufferRef handle)
+void FreeBufferHandle(void* p)
 {
+    GfxApiBufferRef::UnderlyingHandle& handle = *reinterpret_cast<GfxApiBufferRef::UnderlyingHandle*>(&p);
     gDX12GlobalState.DX12BufferPool.ToPtr(handle)->~DX12Buffer();
     gDX12GlobalState.DX12BufferPool.Free(handle);
+}
+
+void DX12Module::DestroyBuffer(GfxApiBufferRef buffer)
+{
+    gDX12GlobalState.DeleteManager->AddForHandleFree(FreeBufferHandle,
+                                                     (GfxApiBufferRef::UnderlyingHandle&)buffer,
+                                                     AllQueueMask);
 }
 
 // Texture
@@ -254,7 +262,7 @@ void DX12Module::Present(GfxApiSwapChainRef swapChain, bool waitVSync)
 
 GfxApiGpuEventRef DX12Module::ScheduleGpuEvent(GfxApiQueueType queueType)
 {
-    ID3D12CommandQueue* queue = gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue];
+    ID3D12CommandQueue* queue = gDX12GlobalState.Singletons.D3DQueues[(u32)queueType];
     u64                 batchId;
     gDX12GlobalState.TimelineManager->CloseBatchAndSignalOnGPU(queueType, queue, batchId, true);
 

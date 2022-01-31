@@ -205,11 +205,12 @@ u64 DX12TimelineManager::AddBatchCallback(GfxApiQueueType queueType, DX12BatchCB
 void DX12TimelineManager::AddMultiQueueBatchCallback(GfxApiQueueType queuesTypes[], u32 queueCount, DX12BatchCB action)
 {
     DX12MultiQueueCallback* ccb = new DX12MultiQueueCallback(action, queueCount);
-    u32 mask = 0;
+    u32 handledMask = 0; //check duplication
     for (u32 iQueue = 0; iQueue < queueCount; ++iQueue)
     {
         GfxApiQueueType queueType = queuesTypes[iQueue];
-        CheckDebug(mask & (1 << (u32)queueType));
+        CheckDebug((handledMask & (1 << (u32)queueType)) == 0);
+        handledMask |= (1 << (u32)queueType);
         AddBatchCallback(queueType, TimelineHelpers::CreateBatchCB(DX12MultiQueueCallback::Satisfy, ccb));
     }
 }

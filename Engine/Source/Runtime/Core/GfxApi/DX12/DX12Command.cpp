@@ -140,7 +140,7 @@ void DX12DrawRenderPass(GfxApiRenderPass* renderPass)
     CloseCommandListForPass(renderPass, cmdList);
     ID3D12CommandList* cmd = cmdList;
     gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue]->ExecuteCommandLists(1, &cmd);
-    gDX12GlobalState.CommandListCache[(u32)D3D12_COMMAND_LIST_TYPE_DIRECT].Free(cmdList);
+    gDX12GlobalState.CommandListCache[(u32)GfxApiQueueType::GraphicsQueue].Free(cmdList);
 
     delete renderPass;
 }
@@ -151,7 +151,6 @@ void DX12CopyBlitPass(GfxApiBlitPass* blitPass)
     ID3D12GraphicsCommandList4* cmdListCopy = SetupCommandList(GfxApiQueueType::CopyQueue);
 
     PMRVector<D3D12_RESOURCE_BARRIER> barriersToCopyDest(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApiTmp));
-    PMRVector<D3D12_RESOURCE_BARRIER> barriersToGenericRead(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApiTmp));
 
     barriersToCopyDest.reserve(blitPass->CopyBufferCmds.size());
     for (GfxApiCopyBuffer& copyBufferCmd : blitPass->CopyBufferCmds)
@@ -160,7 +159,7 @@ void DX12CopyBlitPass(GfxApiBlitPass* blitPass)
         barriersToCopyDest.emplace_back();
         if (!dstBuffer->EmitBarrier(D3D12_RESOURCE_STATE_COPY_DEST, &barriersToCopyDest.back()))
             barriersToCopyDest.pop_back();
-        DX12Buffer* srcBuffer = gDX12GlobalState.DX12BufferPool.ToPtr(copyBufferCmd.Dst);
+        DX12Buffer* srcBuffer = gDX12GlobalState.DX12BufferPool.ToPtr(copyBufferCmd.Src);
         cmdListCopy->CopyBufferRegion(dstBuffer->GetResource(),
                                       copyBufferCmd.DstOffset,
                                       srcBuffer->GetResource(),
@@ -169,18 +168,12 @@ void DX12CopyBlitPass(GfxApiBlitPass* blitPass)
     }
     cmdListPrelude->ResourceBarrier((u32)barriersToCopyDest.size(), barriersToCopyDest.data());
 
-    for (GfxApiCopyBuffer& copyBufferCmd : blitPass->CopyBufferCmds)
-    {
-        DX12Buffer* dstBuffer = gDX12GlobalState.DX12BufferPool.ToPtr(copyBufferCmd.Dst);
-        barriersToGenericRead.emplace_back();
-        if (!dstBuffer->EmitBarrier(D3D12_RESOURCE_STATE_GENERIC_READ, &barriersToGenericRead.back()))
-            barriersToGenericRead.pop_back();
-    }
-    cmdListCopy->ResourceBarrier((u32)barriersToGenericRead.size(), barriersToGenericRead.data());
+    CheckDX12(cmdListPrelude->Close());
+    CheckDX12(cmdListCopy->Close());
     ID3D12CommandList* cmdLists[] = {cmdListPrelude, cmdListCopy};
     gDX12GlobalState.Singletons.D3DQueues[(u8)GfxApiQueueType::CopyQueue]->ExecuteCommandLists(2, cmdLists);
-
-    auto& cmdListCache = gDX12GlobalState.CommandListCache[(u32)D3D12_COMMAND_LIST_TYPE_COPY];
+    
+    auto& cmdListCache = gDX12GlobalState.CommandListCache[(u32)GfxApiQueueType::CopyQueue];
     cmdListCache.Free(cmdListPrelude);
     cmdListCache.Free(cmdListCopy);
 

@@ -18,6 +18,7 @@ namespace Omni
     struct TimelineHelpers
     {
         static void RecycleDirectCommandAllocator(ID3D12CommandAllocator* commandAllocator);
+        static void RecycleComputeCommandAllocator(ID3D12CommandAllocator* commandAllocator);
         static void RecycleCopyCommandAllocator(ID3D12CommandAllocator* commandAllocator);
         static void ReleaseD3DObject(IUnknown* obj);
         static void ReleaseSharedObject(SharedObject* obj);

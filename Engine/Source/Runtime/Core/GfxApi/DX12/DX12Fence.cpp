@@ -24,7 +24,8 @@ namespace Omni
 	}
 	void WaitForFence(ID3D12Fence* fence, u64 waitValue)
 	{
-        if (fence->GetCompletedValue() >= waitValue)
+        u64 doneId = fence->GetCompletedValue();
+        if (doneId >= waitValue)
             return;
 		HANDLE winHandle = ::CreateEvent(nullptr, FALSE, FALSE, L"WaitForFenceInPlace");
 		if (winHandle != nullptr)
