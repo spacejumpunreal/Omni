@@ -1,8 +1,34 @@
 # todo
 - DrawTriangle
-	- FileModule
-		- SetRootDir()
-		- ReadFromFile()
+	- first drawcall
+		- write vs/ps
+		- load vs/ps
+		- drawcall
+			- index buffer
+			- PSO params
+				- params
+					- BingPrototype(RootSignature)
+					- ShaderByteCode
+					- BlendDesc
+					- RasterizerDesc
+					- DepthStencilDesc
+					- IADesc
+				- ref
+					- https://github.com/gpuweb/gpuweb/issues/26
+					- metal
+						- https://developer.apple.com/documentation/metal/mtlrenderpipelinedescriptor?language=objc
+					- DX12
+						- https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_pipeline_state_stream_desc
+						- https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_graphics_pipeline_state_desc
+						- https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_compute_pipeline_state_desc
+				
+		
+		- DX12RenderPass, handle drawcall
+			- PSOManager
+				- get
+				- purge
+				- xxhash related binary hash function
+			- DrawIndexed
 	- DX12Module
 		- DX12Shader
 		- DX12PSO/DX12PSOManager

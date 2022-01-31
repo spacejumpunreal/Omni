@@ -1,18 +1,17 @@
-#ifndef OMNI_BASICS_HLSL
-#define OMNI_BASICS_HLSL
 
 struct VSOut
 {
 	float4 hpos : SV_POSITION;
+	float4 color : TEXCOORD0;
 };
 
-StructuredBuffer<float4> PositionStream;
-
-VSOut VertexFunc(uint vid : SV_VertexID)
+VSOut VSMain(uint vid : SV_VertexID)
 {
 	VSOut o;
-	o.hpos = PositionStream[vid];
+	uint x = vid % 2;
+	uint y = vid / 2;
+	float2 xy = float2(x, y) * 2 - 1;
+	o.hpos = float4(xy * 0.5f, 0.5f, 1);
+	o.color = float4(xy, 1 - xy.x - xy.y, 1);
 	return o;
 }
-
-#endif//OMNI_BASICS_HLSL
