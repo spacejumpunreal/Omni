@@ -7,7 +7,7 @@ namespace Omni
 /**
  * Constants
  */
-constexpr u32 MaxMRTCount = 8;
+constexpr u32 kMaxMRTCount = 8;
 
 /**
  * Enums
@@ -84,10 +84,91 @@ enum class GfxApiBindingGroupSlot : u8
     Count
 };
 
-#define DECLARE_GFXAPI_REF_TYPE(RefTypeName, BaseType)                                                                 \
-    struct RefTypeName : public BaseType                                                                               \
-    {                                                                                                                  \
-        using UnderlyingHandle = BaseType;                                                                             \
-    }
+/*
+ * blend related
+ */
+enum class GfxApiBlendOps : u8
+{ // FinalValue = BlendOp(SrcBlendFactor * SrcAlpha, DstBlendFactor * DstAlpha)
+    Add,
+    Subtract,        // Arg0 - Arg1
+    ReverseSubtract, // Arg1 - Arg0
+    Min,
+    Max,
+};
+
+enum class GfxApiBlendFactor : u8
+{
+    // this is the same for dx12/vulkan/metal, although for dx12 Zero's int value is 1
+    // https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ne-d3d12-d3d12_blend
+    // https://developer.apple.com/documentation/metal/mtlblendfactor?language=objc
+    // https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/VkBlendFactor.html
+    Zero,
+    One,
+    SourceColor,
+    OneMinusSourceColor,
+    SourceAlpha,
+    OneMinusSourceAlpha,
+    DstinationColor,
+    OneMinusDestinationColor,
+    DestinationAlpha,
+    OneMinusDestinationAlpha,
+    SourceAlphaSaturated,
+    BlendColor,
+    OneMinusBlendColor,
+    BlendAlpha,
+    OneMinusBlendAlpha,
+    Source1Color,
+    OneMinusSource1Color,
+    Source1Alpha,
+    OneMinusSource1Alpha,
+};
+
+/*
+ * rasterizer related
+ */
+enum class GfxApiFillMode : u8
+{
+    Wireframe,
+    Solid,
+};
+
+enum class GfxApiCullMode : u8
+{
+    CullNone,
+    CullFrontFace,
+    CullBackFace,
+};
+
+enum class GfxApiDepthClipMode : u8
+{
+    Clip,
+    Clamp,
+};
+
+/*
+ * depth stencil related
+ */
+enum class GfxApiTestFunc : u8
+{
+    Never,
+    Less,
+    LessEqual,
+    Greater,
+    NotEqual,
+    GreaterEqual,
+    Always,
+};
+
+enum class GfxApiStencilOps
+{
+    Keep,
+    Zero,
+    Replace,
+    IncClamp,
+    DecClamp,
+    Invert,
+    IncWrap,
+    DecWrap,
+};
 
 } // namespace Omni

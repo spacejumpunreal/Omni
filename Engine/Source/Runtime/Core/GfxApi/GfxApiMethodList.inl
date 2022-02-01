@@ -29,6 +29,13 @@ GfxApiMethod(void DestroyEvent(GfxApiGpuEventRef gpuEvent))
 //PSOSignature(RootSignature)
 GfxApiMethod(GfxApiPSOSignatureRef CreatePSOSignature(const GfxApiPSOSignatureDesc& desc))
 GfxApiMethod(void DestroyPSOSignature(GfxApiPSOSignatureRef PSOSignature))
+//GraphicsState
+GfxApiMethod(GfxApiBlendStateRef CreateBlendState(const GfxApiBlendStateDesc& desc))
+GfxApiMethod(void DestroyBlendState(GfxApiBlendStateRef handle))
+GfxApiMethod(GfxApiRasterizerStateRef CreateRasterizerState(const GfxApiRasterizerStateDesc& desc))
+GfxApiMethod(void DestroyRasterizerState(GfxApiRasterizerStateRef handle))
+GfxApiMethod(GfxApiDepthStencilStateRef CreateDepthStencilState(const GfxApiDepthStencilStateDesc& desc))
+GfxApiMethod(void DestroyDepthStencilState(GfxApiDepthStencilStateRef handle))
 
 /**
 * AsyncActions, One-way(RenderModule to GfxApiModule)

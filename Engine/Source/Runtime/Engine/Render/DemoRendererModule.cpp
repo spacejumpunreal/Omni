@@ -10,6 +10,7 @@
 #include "Runtime/Core/GfxApi/GfxApiModule.h"
 #include "Runtime/Core/GfxApi/GfxApiRenderPass.h"
 #include "Runtime/Core/GfxApi/GfxApiBlitPass.h"
+#include "Runtime/Core/GfxApi/GfxApiGraphicState.h"
 #include "Runtime/Core/Platform/WindowModule.h"
 #include "Runtime/Engine/Timing/TimingModule.h"
 
@@ -37,21 +38,25 @@ public:
     }
 
 public:
-    DispatchWorkItem*              TickRegistry = nullptr;
-    GfxApiSwapChainDesc            DescSwapChain;
-    GfxApiSwapChainRef             SwapChain = {};
-    GfxApiTextureRef               Backbuffers[BackbufferCount];
-    GfxApiBufferRef                TestUploadBuffer;
-    GfxApiBufferRef                TestGPUBuffer;
-    
+    DispatchWorkItem*   TickRegistry = nullptr;
+    GfxApiSwapChainDesc DescSwapChain;
+    GfxApiSwapChainRef  SwapChain = {};
+    GfxApiTextureRef    Backbuffers[BackbufferCount];
+    GfxApiBufferRef     TestUploadBuffer;
+    GfxApiBufferRef     TestGPUBuffer;
+
     std::array<GfxApiShaderRef, 2> TestShaders;
     GfxApiPSOSignatureRef          PSOSignature;
 
-    GfxApiGpuEventRef              GpuEvent;
+    GfxApiBlendStateRef        TestBlendState;
+    GfxApiRasterizerStateRef   TestRasterizerState;
+    GfxApiDepthStencilStateRef TestDepthStencilState;
 
-    u32                            ClientAreaSizeX = 0;
-    u32                            ClientAreaSizeY = 0;
-    u32                            FrameIndex = 0;
+    GfxApiGpuEventRef GpuEvent;
+
+    u32 ClientAreaSizeX = 0;
+    u32 ClientAreaSizeY = 0;
+    u32 FrameIndex = 0;
 };
 
 using DemoRendererImpl = PImplCombine<DemoRendererModule, DemoRendererModulePrivateImpl>;
@@ -69,11 +74,11 @@ DemoRendererModulePrivateImpl::DemoRendererModulePrivateImpl()
 {
 }
 
-static void LoadSourceShaders(const wchar_t*          paths[],
-                              const char*             entryNames[],
-                              const GfxApiShaderStage stages[],
-                              u32                     count,
-                              GfxApiShaderRef         outShaderHandles[])
+static void LoadSourceShaders(const wchar_t* paths[],
+    const char*                              entryNames[],
+    const GfxApiShaderStage                  stages[],
+    u32                                      count,
+    GfxApiShaderRef                          outShaderHandles[])
 {
     MemoryModule& mm = MemoryModule::Get();
     FileModule&   fm = FileModule::Get();
@@ -150,7 +155,7 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
         bufferDesc.Name = "32KGPUBuffer";
         self.TestGPUBuffer = gfxApi.CreateBuffer(bufferDesc);
     }
-    
+
     { // blitpass
         GfxApiBlitPass* blitPass = new GfxApiBlitPass(1);
         blitPass->CopyBufferCmds[0] = GfxApiCopyBuffer{
@@ -184,17 +189,37 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
 
         LoadSourceShaders(paths, entryNames, stages, 2, &self.TestShaders[0]);
     }
-    {//PSO
+    { // PSO
         GfxApiPSOSignatureDesc desc;
         desc.SlotCount = 0;
         self.PSOSignature = gfxApi.CreatePSOSignature(desc);
     }
-
+    {
+        GfxApiBlendStateDesc desc;
+        memset(&desc, 0, sizeof(desc));
+        self.TestBlendState = gfxApi.CreateBlendState(desc);
+    }
+    {
+        GfxApiRasterizerStateDesc desc;
+        memset(&desc, 0, sizeof(desc));
+        desc.FillMode = GfxApiFillMode::Solid;
+        desc.CullMode = GfxApiCullMode::CullNone;
+        desc.EnableRasterization = true;
+        self.TestRasterizerState = gfxApi.CreateRasterizerState(desc);
+    }
+    {
+        GfxApiDepthStencilStateDesc desc;
+        memset(&desc, 0, sizeof(desc));
+        desc.DepthFunc = GfxApiTestFunc::Greater;
+        desc.EnableDepth = true;
+        desc.EnableStencil = false;
+        self.TestDepthStencilState = gfxApi.CreateDepthStencilState(desc);
+    }
 
     tm.RegisterFrameTick_OnAnyThread(EngineFrameType::Render,
-                                     DemoRendererTickPriority,
-                                     DemoRendererImpl::GetData(this),
-                                     QueueKind::Main);
+        DemoRendererTickPriority,
+        DemoRendererImpl::GetData(this),
+        QueueKind::Main);
     tm.SetFrameRate_OnMainThread(EngineFrameType::Render, 30);
 
     Module::Initialize(args);
@@ -220,7 +245,11 @@ void DemoRendererModule::Finalize()
     {
         gfxApi.DestroyShader(self.TestShaders[iShader]);
     }
+
     gfxApi.DestroyPSOSignature(self.PSOSignature);
+    gfxApi.DestroyBlendState(self.TestBlendState);
+    gfxApi.DestroyRasterizerState(self.TestRasterizerState);
+    gfxApi.DestroyDepthStencilState(self.TestDepthStencilState);
 
     self.SwapChain = (GfxApiSwapChainRef)GfxApiSwapChainRef::Null();
     for (u32 iBuffer = 0; iBuffer < BackbufferCount; ++iBuffer)

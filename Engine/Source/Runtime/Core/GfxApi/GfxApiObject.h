@@ -7,6 +7,7 @@
 #include "Runtime/Core/CoreAPI.h"
 #include "Runtime/Core/Platform/WindowUtils.h"
 #include "Runtime/Core/GfxApi/GfxApiDefs.h"
+#include "Runtime/Core/GfxApi/GfxApiObjectHelper.h"
 #include "Runtime/Core/GfxApi/GfxApiShader.h"
 
 #include <variant>

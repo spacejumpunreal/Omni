@@ -11,6 +11,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Event.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Shader.h"
+#include "Runtime/Core/GfxApi/DX12/DX12GraphicsState.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
 #include "Runtime/Core/GfxApi/DX12/DX12ObjectFactories.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
@@ -153,6 +154,9 @@ void DX12GlobalState::Initialize()
     DX12ShaderPool.Initialize(gfxApiAllocator, 16);
     DX12GpuEventPool.Initialize(gfxApiAllocator, 16);
     DX12PSOSignaturePool.Initialize(gfxApiAllocator, 16);
+    DX12BlendStatePool.Initialize(gfxApiAllocator, 16);
+    DX12RasterizerStatePool.Initialize(gfxApiAllocator, 16);
+    DX12DepthStencilStatePool.Initialize(gfxApiAllocator, 16);
 
     /**
      * managers
@@ -189,6 +193,9 @@ void DX12GlobalState::Finalize()
     DX12ShaderPool.Finalize();
     DX12GpuEventPool.Finalize();
     DX12PSOSignaturePool.Finalize();
+    DX12BlendStatePool.Finalize();
+    DX12RasterizerStatePool.Finalize();
+    DX12DepthStencilStatePool.Finalize();
 
     /**
      * DX12 object cache

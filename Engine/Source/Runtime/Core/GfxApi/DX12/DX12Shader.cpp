@@ -6,6 +6,7 @@
 #include "Runtime/Base/Memory/MemoryArena.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/Platform/OSUtils_Windows.h"
+#include "Runtime/Core/GfxApi/GfxApiBinding.h"
 #include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
 #include "Runtime/Core/GfxApi/DX12/DXCWrapper.h"

@@ -21,17 +21,17 @@ static void SetupCommandListForPass(const GfxApiRenderPass*     renderPass,
                                     bool                        resume)
 {
 
-    D3D12_RENDER_PASS_RENDER_TARGET_DESC  rtDescs[MaxMRTCount] = {};
+    D3D12_RENDER_PASS_RENDER_TARGET_DESC  rtDescs[kMaxMRTCount] = {};
     D3D12_RENDER_PASS_DEPTH_STENCIL_DESC  dsDesc = {};
     D3D12_RENDER_PASS_RENDER_TARGET_DESC* pRTDescs = rtDescs;
     D3D12_RENDER_PASS_DEPTH_STENCIL_DESC* pDSDesc = &dsDesc;
     D3D12_RENDER_PASS_FLAGS               renderPassFlags = D3D12_RENDER_PASS_FLAG_NONE | D3D12_RENDER_PASS_FLAG_NONE;
 
-    CD3DX12_RESOURCE_BARRIER barriers[MaxMRTCount + 1]; // plus depth and stencil
+    CD3DX12_RESOURCE_BARRIER barriers[kMaxMRTCount + 1]; // plus depth and stencil
     // RenderTarget
     u32                      mrtCount = 0;
     u32                      barrierCount = 0;
-    for (u32 iMRT = 0; iMRT < MaxMRTCount; ++iMRT)
+    for (u32 iMRT = 0; iMRT < kMaxMRTCount; ++iMRT)
     {
         D3D12_RENDER_PASS_RENDER_TARGET_DESC& rtDesc = rtDescs[iMRT];
         if (renderPass->RenderTargets[iMRT].Texture == GfxApiTextureRef::Null())

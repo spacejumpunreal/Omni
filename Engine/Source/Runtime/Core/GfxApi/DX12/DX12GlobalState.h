@@ -18,6 +18,9 @@ class DX12Buffer;
 class DX12Shader;
 class DX12GpuEvent;
 class DX12PSOSignature;
+class DX12BlendState;
+class DX12RasterizerState;
+class DX12DepthStencilState;
 
 struct DX12Singletons
 {
@@ -48,12 +51,15 @@ public: // DX12 object pools
     ObjectCache<ID3D12CommandAllocator>     CommandAllocatorCache[(u32)GfxApiQueueType::Count];
     // we can have a ID3D12Fence cache here
 public: // object pools
-    RawPtrObjectPool<DX12SwapChain>    DX12SwapChainPool;
-    RawPtrObjectPool<DX12Buffer>       DX12BufferPool;
-    RawPtrObjectPool<DX12Texture>      DX12TexturePool;
-    RawPtrObjectPool<DX12Shader>       DX12ShaderPool;
-    RawPtrObjectPool<DX12GpuEvent>     DX12GpuEventPool;
-    RawPtrObjectPool<DX12PSOSignature> DX12PSOSignaturePool;
+    RawPtrObjectPool<DX12SwapChain>         DX12SwapChainPool;
+    RawPtrObjectPool<DX12Buffer>            DX12BufferPool;
+    RawPtrObjectPool<DX12Texture>           DX12TexturePool;
+    RawPtrObjectPool<DX12Shader>            DX12ShaderPool;
+    RawPtrObjectPool<DX12GpuEvent>          DX12GpuEventPool;
+    RawPtrObjectPool<DX12PSOSignature>      DX12PSOSignaturePool;
+    RawPtrObjectPool<DX12BlendState>        DX12BlendStatePool;
+    RawPtrObjectPool<DX12RasterizerState>   DX12RasterizerStatePool;
+    RawPtrObjectPool<DX12DepthStencilState> DX12DepthStencilStatePool;
 
 public: // state flags
     bool Initialized;

@@ -15,6 +15,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12Buffer.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Shader.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Event.h"
+#include "Runtime/Core/GfxApi/DX12/DX12GraphicsState.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12DeleteManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12BufferManager.h"
@@ -225,6 +226,13 @@ void DX12Module::DestroyEvent(GfxApiGpuEventRef gpuEvent)
 IMPLEMENT_GFXAPI_OBJECT_CREATE(PSOSignature);
 IMPLEMENT_GFXAPI_OBJECT_DIRECT_DESTROY(PSOSignature);
 
+//GraphicsState
+IMPLEMENT_GFXAPI_OBJECT_CREATE(BlendState);
+IMPLEMENT_GFXAPI_OBJECT_DELAYED_DESTROY(BlendState);
+IMPLEMENT_GFXAPI_OBJECT_CREATE(RasterizerState);
+IMPLEMENT_GFXAPI_OBJECT_DELAYED_DESTROY(RasterizerState);
+IMPLEMENT_GFXAPI_OBJECT_CREATE(DepthStencilState);
+IMPLEMENT_GFXAPI_OBJECT_DELAYED_DESTROY(DepthStencilState);
 
 // AsyncActions
 void DX12Module::DrawRenderPass(GfxApiRenderPass* renderPass)

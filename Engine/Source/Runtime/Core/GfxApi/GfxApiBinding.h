@@ -3,6 +3,8 @@
 #include "Runtime/Core/CoreAPI.h"
 #include "Runtime/Base/Container/PMRContainers.h"
 #include "Runtime/Core/GfxApi/GfxApiDefs.h"
+#include "Runtime/Core/GfxApi/GfxApiObject.h"
+#include "Runtime/Core/GfxApi/GfxApiObjectHelper.h"
 
 namespace Omni
 {

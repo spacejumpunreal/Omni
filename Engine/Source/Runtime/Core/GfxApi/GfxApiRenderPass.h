@@ -71,6 +71,9 @@ struct GfxApiDrawcall
     // Binding/Arguments
     GfxApiBindingGroup* BindingGroups[(u8)GfxApiBindingGroupSlot::Count];
 
+    // RenderState
+    u8 StencilRef;
+
     // flags
     bool IsIndirect = false;
     bool Is32BitIndexBuffer = false;
@@ -102,7 +105,7 @@ public:
     CORE_API void AddStage(u32 stageIndex, GfxApiRenderPassStage* passStage);
 
 public:
-    GfxApiRTConfig RenderTargets[MaxMRTCount];
+    GfxApiRTConfig RenderTargets[kMaxMRTCount];
     GfxApiRTConfig Depth;
     GfxApiRTConfig Stencil;
 

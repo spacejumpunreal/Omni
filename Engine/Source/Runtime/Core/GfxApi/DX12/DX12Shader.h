@@ -1,17 +1,14 @@
 #pragma once
 #include "Runtime/Prelude/Omni.h"
 #if OMNI_WINDOWS
-#include "Runtime/Core/GfxApi/GfxApiObject.h"
-#include "Runtime/Core/GfxApi/GfxApiBinding.h"
 #include "Runtime/Core/GfxApi/GfxApiNewDelete.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Basics.h"
 #include "Runtime/Core/GfxApi/DX12/DX12ForwardDecl.h"
 
-struct ID3D10Blob;
-struct ID3D12RootSignature;
-
 namespace Omni
 {
+struct GfxApiShaderDesc;
+struct GfxApiPSOSignatureDesc;
 
 class DX12Shader
 {

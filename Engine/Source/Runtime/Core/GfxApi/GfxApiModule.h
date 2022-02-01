@@ -4,6 +4,7 @@
 #include "Runtime/Base/Misc/SharedObject.h"
 #include "Runtime/Core/System/Module.h"
 #include "Runtime/Core/GfxApi/GfxApiObject.h"
+#include "Runtime/Core/GfxApi/GfxApiGraphicState.h"
 #include "Runtime/Core/GfxApi/GfxApiBinding.h"
 
 namespace Omni

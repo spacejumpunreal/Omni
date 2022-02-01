@@ -4,11 +4,9 @@
 		- drawcall
 			- PSO params
 				- params
-					- GfxApiShaderSignature
 					- GfxApiBlendState
-					- GfxApiRRasterizerState
+					- GfxApiRasterizerState
 					- DepthStencilDesc
-					- IADesc
 				- ref
 					- https://github.com/gpuweb/gpuweb/issues/26
 					- metal
