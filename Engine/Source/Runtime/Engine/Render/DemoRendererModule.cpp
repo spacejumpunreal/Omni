@@ -220,6 +220,8 @@ void DemoRendererModule::Finalize()
     {
         gfxApi.DestroyShader(self.TestShaders[iShader]);
     }
+    gfxApi.DestroyPSOSignature(self.PSOSignature);
+
     self.SwapChain = (GfxApiSwapChainRef)GfxApiSwapChainRef::Null();
     for (u32 iBuffer = 0; iBuffer < BackbufferCount; ++iBuffer)
     {
@@ -274,7 +276,6 @@ void DemoRendererModulePrivateImpl::Tick()
         .BaseVertex = 0,
         .BaseInstance = 0,
     };
-
 
     gfxApi.DrawRenderPass(renderPass);
     gfxApi.Present(self.SwapChain, true);

@@ -101,16 +101,53 @@ void DX12Module::Finalize()
  * GfxApiMethod implementations
  */
 
-// Buffer
-GfxApiBufferRef DX12Module::CreateBuffer(const GfxApiBufferDesc& desc)
-{
-    GfxApiBufferRef handle;
-    DX12Buffer*     obj;
-    std::tie((GfxApiBufferRef::UnderlyingHandle&)handle, obj) = gDX12GlobalState.DX12BufferPool.Alloc();
-    new ((void*)obj) DX12Buffer(desc);
-    return handle;
-}
+// boilerplate
+#define GFXAPI_OBJECT_REF(ObjectType) GfxApi##ObjectType##Ref
+#define GFXAPI_OBJECT_DESC(ObjectType) GfxApi##ObjectType##Desc
+#define CREATE_OBJECT_FUNC(ObjectType) Create##ObjectType
+#define DESTROY_OBJECT_FUNC(ObjectType) Destroy##ObjectType
+#define DX12_OBJECT(ObjectType) DX12##ObjectType
+#define DX12_OBJECT_POOL(ObjectType) DX12##ObjectType##Pool
+#define DELAY_FREE_FUNC(ObjectType) FreeHandleFor##ObjectType
 
+#define IMPLEMENT_GFXAPI_OBJECT_CREATE(ObjectType)                                                                     \
+    GFXAPI_OBJECT_REF(ObjectType)                                                                                      \
+    DX12Module::CREATE_OBJECT_FUNC(ObjectType)(const GFXAPI_OBJECT_DESC(ObjectType) & desc)                            \
+    {                                                                                                                  \
+        GFXAPI_OBJECT_REF(ObjectType) handle;                                                                          \
+        DX12_OBJECT(ObjectType) * obj;                                                                                 \
+        std::tie((GFXAPI_OBJECT_REF(ObjectType)::UnderlyingHandle&)handle, obj) =                                      \
+            gDX12GlobalState.DX12_OBJECT_POOL(ObjectType).Alloc();                                                     \
+        new ((void*)obj) DX12_OBJECT(ObjectType)(desc);                                                                \
+        return handle;                                                                                                 \
+    }
+
+#define IMPLEMENT_GFXAPI_OBJECT_DIRECT_DESTROY(ObjectType)                                                             \
+    void DX12Module::DESTROY_OBJECT_FUNC(ObjectType)(GFXAPI_OBJECT_REF(ObjectType) handle)                             \
+    {                                                                                                                  \
+        DX12_OBJECT(ObjectType)* obj = gDX12GlobalState.DX12_OBJECT_POOL(ObjectType).ToPtr(handle);                    \
+        obj->~DX12_OBJECT(ObjectType)();                                                                               \
+        gDX12GlobalState.DX12_OBJECT_POOL(ObjectType).Free(handle);                                                    \
+    }
+
+#define IMPLEMENT_GFXAPI_OBJECT_DELAYED_DESTROY(ObjectType)                                                            \
+    void DELAY_FREE_FUNC(ObjectType)(void* p)                                                                          \
+    {                                                                                                                  \
+        auto& handle = *reinterpret_cast<GfxApiBufferRef::UnderlyingHandle*>(&p);                                      \
+        gDX12GlobalState.DX12_OBJECT_POOL(ObjectType).ToPtr(handle)->~DX12_OBJECT(ObjectType)();                       \
+        gDX12GlobalState.DX12_OBJECT_POOL(ObjectType).Free(handle);                                                    \
+    }                                                                                                                  \
+    void DX12Module::DESTROY_OBJECT_FUNC(ObjectType)(GFXAPI_OBJECT_REF(ObjectType) handle)                             \
+    {                                                                                                                  \
+        gDX12GlobalState.DeleteManager->AddForHandleFree(DELAY_FREE_FUNC(ObjectType),                                  \
+            (GFXAPI_OBJECT_REF(ObjectType)::UnderlyingHandle&)handle,                                                  \
+            AllQueueMask);                                                                                             \
+    }
+
+
+// Buffer
+IMPLEMENT_GFXAPI_OBJECT_CREATE(Buffer);
+IMPLEMENT_GFXAPI_OBJECT_DELAYED_DESTROY(Buffer);
 void* DX12Module::DX12Module::MapBuffer(GfxApiBufferRef handle, u32 offset, u32 size)
 {
     DX12Buffer* buffer = gDX12GlobalState.DX12BufferPool.ToPtr(handle);
@@ -122,19 +159,6 @@ void DX12Module::UnmapBuffer(GfxApiBufferRef handle, u32 offset, u32 size)
     buffer->Unmap(offset, size);
 }
 
-void FreeBufferHandle(void* p)
-{
-    GfxApiBufferRef::UnderlyingHandle& handle = *reinterpret_cast<GfxApiBufferRef::UnderlyingHandle*>(&p);
-    gDX12GlobalState.DX12BufferPool.ToPtr(handle)->~DX12Buffer();
-    gDX12GlobalState.DX12BufferPool.Free(handle);
-}
-
-void DX12Module::DestroyBuffer(GfxApiBufferRef buffer)
-{
-    gDX12GlobalState.DeleteManager->AddForHandleFree(FreeBufferHandle,
-                                                     (GfxApiBufferRef::UnderlyingHandle&)buffer,
-                                                     AllQueueMask);
-}
 
 // Texture
 GfxApiTextureRef DX12Module::CreateTexture(const GfxApiTextureDesc& desc)
@@ -143,79 +167,38 @@ GfxApiTextureRef DX12Module::CreateTexture(const GfxApiTextureDesc& desc)
     NotImplemented();
     return {};
 }
-
 void DX12Module::DestroyTexture(GfxApiTextureRef texture)
 {
     (void)texture;
     NotImplemented();
 }
 
+
 // Shader
-GfxApiShaderRef DX12Module::CreateShader(const GfxApiShaderDesc& desc)
-{
-    GfxApiShaderRef handle;
-    DX12Shader*     obj;
-    std::tie((GfxApiShaderRef::UnderlyingHandle&)handle, obj) = gDX12GlobalState.DX12ShaderPool.Alloc();
-    new ((void*)obj) DX12Shader(desc);
-    return handle;
-}
+IMPLEMENT_GFXAPI_OBJECT_CREATE(Shader);
+IMPLEMENT_GFXAPI_OBJECT_DELAYED_DESTROY(Shader);
 
-void FreeShaderHandle(void* p)
-{
-    GfxApiShaderRef::UnderlyingHandle& handle = *reinterpret_cast<GfxApiShaderRef::UnderlyingHandle*>(&p);
-    gDX12GlobalState.DX12ShaderPool.ToPtr(handle)->~DX12Shader();
-    gDX12GlobalState.DX12ShaderPool.Free(handle);
-}
-
-void DX12Module::DestroyShader(GfxApiShaderRef shader)
-{
-    gDX12GlobalState.DeleteManager->AddForHandleFree(FreeShaderHandle,
-                                                     (GfxApiSwapChainRef::UnderlyingHandle&)shader,
-                                                     AllQueueMask);
-}
 
 // SwapChain
-GfxApiSwapChainRef DX12Module::CreateSwapChain(const GfxApiSwapChainDesc& desc)
-{
-    GfxApiSwapChainRef handle;
-    DX12SwapChain*     obj;
-    std::tie((GfxApiSwapChainRef::UnderlyingHandle&)handle, obj) = gDX12GlobalState.DX12SwapChainPool.Alloc();
-    new ((void*)obj) DX12SwapChain(desc);
-    return handle;
-}
-
+IMPLEMENT_GFXAPI_OBJECT_CREATE(SwapChain);
+IMPLEMENT_GFXAPI_OBJECT_DELAYED_DESTROY(SwapChain);
 void DX12Module::UpdateSwapChain(GfxApiSwapChainRef swapChain, const GfxApiSwapChainDesc& desc)
 {
     gDX12GlobalState.WaitGPUIdle();
     DX12SwapChain* dx12SwapChain = gDX12GlobalState.DX12SwapChainPool.ToPtr(swapChain);
     dx12SwapChain->Update(desc);
 }
-
-void FreeSwapChainHandle(void* p)
-{
-    GfxApiSwapChainRef::UnderlyingHandle& handle = *reinterpret_cast<GfxApiSwapChainRef::UnderlyingHandle*>(&p);
-    gDX12GlobalState.DX12SwapChainPool.ToPtr(handle)->~DX12SwapChain();
-    gDX12GlobalState.DX12SwapChainPool.Free(handle);
-}
-
-void DX12Module::DestroySwapChain(GfxApiSwapChainRef swapChain)
-{
-    gDX12GlobalState.DeleteManager->AddForHandleFree(FreeSwapChainHandle,
-                                                     (GfxApiSwapChainRef::UnderlyingHandle&)swapChain,
-                                                     AllQueueMask);
-}
-
 void DX12Module::GetBackbufferTextures(GfxApiSwapChainRef swapChain, GfxApiTextureRef backbuffers[], u32 count)
 {
     DX12SwapChain* dx12SwapChain = gDX12GlobalState.DX12SwapChainPool.ToPtr(swapChain);
     dx12SwapChain->GetBackbufferTextures(backbuffers, count);
 }
-
 u32 DX12Module::GetCurrentBackbufferIndex(GfxApiSwapChainRef swapChain)
 {
     DX12SwapChain* dx12SwapChain = gDX12GlobalState.DX12SwapChainPool.ToPtr(swapChain);
     return dx12SwapChain->GetCurrentBackbufferIndex();
 }
+
 
 // GpuEvent
 bool DX12Module::IsEventTriggered(GfxApiGpuEventRef gpuEvent)
@@ -237,17 +220,10 @@ void DX12Module::DestroyEvent(GfxApiGpuEventRef gpuEvent)
     gDX12GlobalState.DX12GpuEventPool.Free(gpuEvent);
 }
 
-// PSOSignature(RootSignature)
-GfxApiPSOSignatureRef DX12Module::CreatePSOSignature(const GfxApiPSOSignatureDesc& desc)
-{
-    (void)desc;
-    return {};
-}
-void DX12Module::DestroyPSOSignature(GfxApiPSOSignatureRef PSOSignature)
-{
-    (void)PSOSignature;
-}
 
+// PSOSignature(RootSignature)
+IMPLEMENT_GFXAPI_OBJECT_CREATE(PSOSignature);
+IMPLEMENT_GFXAPI_OBJECT_DIRECT_DESTROY(PSOSignature);
 
 
 // AsyncActions
