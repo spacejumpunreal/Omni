@@ -5,6 +5,7 @@
 #include "Runtime/Core/CoreAPI.h"
 #include "Runtime/Core/GfxApi/GfxApiDefs.h"
 #include "Runtime/Core/GfxApi/GfxApiObject.h"
+#include "Runtime/Core/GfxApi/GfxApiGraphicState.h"
 #include "Runtime/Core/GfxApi/GfxApiNewDelete.h"
 #include "Runtime/Core/GfxApi/GfxApiBinding.h"
 
@@ -72,7 +73,10 @@ struct GfxApiDrawcall
     GfxApiBindingGroup* BindingGroups[(u8)GfxApiBindingGroupSlot::Count];
 
     // RenderState
-    u8 StencilRef;
+    GfxApiBlendStateRef        BlendState;
+    GfxApiRasterizerStateRef   RasterizerState;
+    GfxApiDepthStencilStateRef DepthStencilState;
+    u8                         StencilRef;
 
     // flags
     bool IsIndirect = false;

@@ -15,10 +15,8 @@
 namespace Omni
 {
 
-static void SetupCommandListForPass(const GfxApiRenderPass*     renderPass,
-                                    ID3D12GraphicsCommandList4* cmdList,
-                                    bool                        suspend,
-                                    bool                        resume)
+static void SetupCommandListForPass(
+    const GfxApiRenderPass* renderPass, ID3D12GraphicsCommandList4* cmdList, bool suspend, bool resume)
 {
 
     D3D12_RENDER_PASS_RENDER_TARGET_DESC  rtDescs[kMaxMRTCount] = {};
@@ -161,10 +159,10 @@ void DX12CopyBlitPass(GfxApiBlitPass* blitPass)
             barriersToCopyDest.pop_back();
         DX12Buffer* srcBuffer = gDX12GlobalState.DX12BufferPool.ToPtr(copyBufferCmd.Src);
         cmdListCopy->CopyBufferRegion(dstBuffer->GetResource(),
-                                      copyBufferCmd.DstOffset,
-                                      srcBuffer->GetResource(),
-                                      copyBufferCmd.SrcOffset,
-                                      copyBufferCmd.Bytes);
+            copyBufferCmd.DstOffset,
+            srcBuffer->GetResource(),
+            copyBufferCmd.SrcOffset,
+            copyBufferCmd.Bytes);
     }
     cmdListPrelude->ResourceBarrier((u32)barriersToCopyDest.size(), barriersToCopyDest.data());
 
@@ -172,7 +170,7 @@ void DX12CopyBlitPass(GfxApiBlitPass* blitPass)
     CheckDX12(cmdListCopy->Close());
     ID3D12CommandList* cmdLists[] = {cmdListPrelude, cmdListCopy};
     gDX12GlobalState.Singletons.D3DQueues[(u8)GfxApiQueueType::CopyQueue]->ExecuteCommandLists(2, cmdLists);
-    
+
     auto& cmdListCache = gDX12GlobalState.CommandListCache[(u32)GfxApiQueueType::CopyQueue];
     cmdListCache.Free(cmdListPrelude);
     cmdListCache.Free(cmdListCopy);
