@@ -6,6 +6,7 @@
 #include "Runtime/Core/GfxApi/GfxApiDefs.h"
 #include "Runtime/Core/GfxApi/GfxApiObject.h"
 #include "Runtime/Core/GfxApi/GfxApiNewDelete.h"
+#include "Runtime/Core/GfxApi/GfxApiBinding.h"
 
 #include <variant>
 
@@ -14,6 +15,7 @@ namespace Omni
 /**
  * forward decls
  */
+struct GfxApiBindingGroup;
 
 /**
  * typedefs
@@ -28,17 +30,13 @@ using TClearValue = std::variant<u32, u8, Vector4, float>;
  * definitions
  */
 
-struct GfxApiBufferView
+struct GfxApiBindingGroup
 {
-    GfxApiBufferRef Buffer;
-    u32             Offset;
-};
-
-struct GfxApiShaderArgGroup
-{
-    GfxApiBufferView ConstantBuffer;
-    GfxApiBufferRef* BufferRefs;
-    u32              BufferCount;
+    GfxApiBufferView  ConstantBuffer;
+    GfxApiBufferRef*  Buffers;
+    u32               BufferCount;
+    GfxApiTextureRef* Textures;
+    u32               TextureCount;
 };
 
 struct GfxApiDirectDrawParams
@@ -65,17 +63,27 @@ struct GfxApiDrawcall
         GfxApiDirectDrawParams DirectDrawArgs;
         GfxApiDirectDrawParams IndirectDrawArgs;
     } DrawArgs;
-    // Binding
-    GfxApiShaderArgGroup* ArgGroups[(u8)GfxApiShaderArgGroupSlot::Count];
+
+    // PSO params
+    GfxApiShaderRef       Shaders[(u32)GfxApiShaderStage::GraphicsCount];
+    GfxApiPSOSignatureRef PSOSignature;
+
+    // Binding/Arguments
+    GfxApiBindingGroup* BindingGroups[(u8)GfxApiBindingGroupSlot::Count];
 
     // flags
     bool IsIndirect = false;
+    bool Is32BitIndexBuffer = false;
 };
 
 struct GfxApiRenderPassStage : SListNode
 {
     DEFINE_GFX_API_TEMP_NEW_DELETE()
+public:
     PMRDeque<GfxApiDrawcall> Drawcalls;
+
+public:
+    CORE_API GfxApiRenderPassStage(u32 initialCount = 0);
 };
 
 struct GfxApiRTConfig

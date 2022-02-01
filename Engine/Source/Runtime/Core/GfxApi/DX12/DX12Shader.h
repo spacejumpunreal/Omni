@@ -2,16 +2,16 @@
 #include "Runtime/Prelude/Omni.h"
 #if OMNI_WINDOWS
 #include "Runtime/Core/GfxApi/GfxApiObject.h"
+#include "Runtime/Core/GfxApi/GfxApiBinding.h"
 #include "Runtime/Core/GfxApi/GfxApiNewDelete.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Basics.h"
 #include "Runtime/Core/GfxApi/DX12/DX12ForwardDecl.h"
 
-
 struct ID3D10Blob;
+struct ID3D12RootSignature;
 
 namespace Omni
 {
-
 
 class DX12Shader
 {
@@ -23,6 +23,18 @@ public:
 private:
     ID3D10Blob* mCompiledBinary;
 };
+
+class DX12PSOSignature
+{
+public:
+    DX12PSOSignature(const GfxApiPSOSignatureDesc& desc);
+    ~DX12PSOSignature();
+    ID3D12RootSignature* GetRootSignature();
+
+private:
+    ID3D12RootSignature* mRootSignature;
+};
+
 } // namespace Omni
 
 #endif // OMNI_WINDOWS

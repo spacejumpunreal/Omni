@@ -110,7 +110,7 @@ PMRResource* SNAllocator::GetResource()
 
 MemoryStats SNAllocator::GetStats()
 {
-    MemoryStats         ret;
+    MemoryStats      ret;
     SNAllocatorImpl* self = SNAllocatorImpl::GetCombinePtr(this);
     ret.Name = GetName();
     self->mWatch.Dump(ret);
@@ -124,8 +124,8 @@ const char* SNAllocator::GetName()
 
 void SNAllocator::Shrink()
 {
-    //SNAllocatorPrivate& self = mData.Ref<SNAllocatorPrivate>();
+    // SNAllocatorPrivate& self = mData.Ref<SNAllocatorPrivate>();
     //(void)self;
-    //Omni::OmniDebugBreak();
+    // Omni::OmniDebugBreak();
 }
 } // namespace Omni

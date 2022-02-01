@@ -43,8 +43,12 @@ public:
     GfxApiTextureRef               Backbuffers[BackbufferCount];
     GfxApiBufferRef                TestUploadBuffer;
     GfxApiBufferRef                TestGPUBuffer;
+    
     std::array<GfxApiShaderRef, 2> TestShaders;
+    GfxApiPSOSignatureRef          PSOSignature;
+
     GfxApiGpuEventRef              GpuEvent;
+
     u32                            ClientAreaSizeX = 0;
     u32                            ClientAreaSizeY = 0;
     u32                            FrameIndex = 0;
@@ -157,10 +161,11 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
             .Bytes = tmpBufferSize,
         };
         gfxApi.CopyBlitPass(blitPass);
-        //GfxApiGpuEventRef copyDone = gfxApi.ScheduleGpuEvent(GfxApiQueueType::CopyQueue);
-        //gfxApi.WaitEvent(copyDone);
-        //gfxApi.DestroyEvent(copyDone);
+        GfxApiGpuEventRef copyDone = gfxApi.ScheduleGpuEvent(GfxApiQueueType::CopyQueue);
+        gfxApi.WaitEvent(copyDone);
+        gfxApi.DestroyEvent(copyDone);
     }
+
     { // Shader
         // self.TestShaderVS = gfxApi.CreateShader(shaderDesc);
         const wchar_t* paths[] = {
@@ -179,6 +184,12 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
 
         LoadSourceShaders(paths, entryNames, stages, 2, &self.TestShaders[0]);
     }
+    {//PSO
+        GfxApiPSOSignatureDesc desc;
+        desc.SlotCount = 0;
+        self.PSOSignature = gfxApi.CreatePSOSignature(desc);
+    }
+
 
     tm.RegisterFrameTick_OnAnyThread(EngineFrameType::Render,
                                      DemoRendererTickPriority,
@@ -247,10 +258,23 @@ void DemoRendererModulePrivateImpl::Tick()
     }
 
     u32               currentBuffer = gfxApi.GetCurrentBackbufferIndex(self.SwapChain);
-    GfxApiRenderPass* renderPass = new GfxApiRenderPass(0);
+    GfxApiRenderPass* renderPass = new GfxApiRenderPass(1);
     renderPass->RenderTargets[0].Texture = self.Backbuffers[currentBuffer];
     renderPass->RenderTargets[0].ClearValue = Vector4(1, 0, 0, 0);
     renderPass->RenderTargets[0].Action = GfxApiLoadStoreActions::Clear | GfxApiLoadStoreActions::Store;
+
+    GfxApiRenderPassStage* passStage = new GfxApiRenderPassStage();
+    renderPass->AddStage(0, passStage);
+    GfxApiDrawcall& dc = passStage->Drawcalls.emplace_back();
+    dc.IndexBuffer = self.TestGPUBuffer;
+    dc.DrawArgs.DirectDrawArgs = GfxApiDirectDrawParams{
+        .IndexCount = 6,
+        .InstanceCount = 1,
+        .FirstIndex = 0,
+        .BaseVertex = 0,
+        .BaseInstance = 0,
+    };
+
 
     gfxApi.DrawRenderPass(renderPass);
     gfxApi.Present(self.SwapChain, true);

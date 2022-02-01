@@ -56,6 +56,7 @@ constexpr RawPtrHandle NullPtrHandle = RawPtrHandle{
     .Gen = 0xffff,
 };
 static_assert(sizeof(RawPtrHandle) == sizeof(u64));
+
 FORCEINLINE RawPtrHandle RawPtrHandle::Null()
 {
     return NullPtrHandle;

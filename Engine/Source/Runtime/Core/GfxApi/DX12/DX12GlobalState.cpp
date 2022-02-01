@@ -148,10 +148,11 @@ void DX12GlobalState::Initialize()
      * object cache
      */
     DX12SwapChainPool.Initialize(gfxApiAllocator, 2);
-    DX12BufferPool.Initialize(gfxApiAllocator, 128);
+    DX12BufferPool.Initialize(gfxApiAllocator, 64);
     DX12TexturePool.Initialize(gfxApiAllocator, 4);
-    DX12ShaderPool.Initialize(gfxApiAllocator, 8);
+    DX12ShaderPool.Initialize(gfxApiAllocator, 16);
     DX12GpuEventPool.Initialize(gfxApiAllocator, 16);
+    DX12PSOSignaturePool.Initialize(gfxApiAllocator, 16);
 
     /**
      * managers
@@ -187,6 +188,7 @@ void DX12GlobalState::Finalize()
     DX12TexturePool.Finalize();
     DX12ShaderPool.Finalize();
     DX12GpuEventPool.Finalize();
+    DX12PSOSignaturePool.Finalize();
 
     /**
      * DX12 object cache

@@ -6,7 +6,7 @@ namespace Omni
     struct SListNode
     {
     public:
-        SListNode(SListNode* next)
+        SListNode(SListNode* next = nullptr)
             : Next(next)
         {}
     public:

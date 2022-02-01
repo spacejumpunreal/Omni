@@ -66,20 +66,28 @@ DEFINE_BITMASK_ENUM_OPS(GfxApiLoadStoreActions);
 enum class GfxApiShaderStage
 {
     // Graphics
-    Vertex,
-    Fragment,
+    Vertex = 0,
+    Fragment = 1,
+    GraphicsCount = 2,
     // Compute
-    Compute,
-    Count,
+    Compute = 2,
+    ComputeCount = 1,
+    TotalCount = 3,
 };
 DEFINE_BITMASK_ENUM_OPS(GfxApiShaderStage);
 
-enum class GfxApiShaderArgGroupSlot : u8
+enum class GfxApiBindingGroupSlot : u8
 {
     Pass = 0,
     Material,
     Instance,
     Count
 };
+
+#define DECLARE_GFXAPI_REF_TYPE(RefTypeName, BaseType)                                                                 \
+    struct RefTypeName : public BaseType                                                                               \
+    {                                                                                                                  \
+        using UnderlyingHandle = BaseType;                                                                             \
+    }
 
 } // namespace Omni

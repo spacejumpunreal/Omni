@@ -26,7 +26,9 @@ GfxApiMethod(u32 GetCurrentBackbufferIndex(GfxApiSwapChainRef swapChain))
 GfxApiMethod(bool IsEventTriggered(GfxApiGpuEventRef gpuEvent))
 GfxApiMethod(void WaitEvent(GfxApiGpuEventRef gpuEvent))
 GfxApiMethod(void DestroyEvent(GfxApiGpuEventRef gpuEvent))
-
+//PSOSignature(RootSignature)
+GfxApiMethod(GfxApiPSOSignatureRef CreatePSOSignature(const GfxApiPSOSignatureDesc& desc))
+GfxApiMethod(void DestroyPSOSignature(GfxApiPSOSignatureRef PSOSignature))
 
 /**
 * AsyncActions, One-way(RenderModule to GfxApiModule)

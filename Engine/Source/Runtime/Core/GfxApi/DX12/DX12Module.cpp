@@ -237,6 +237,19 @@ void DX12Module::DestroyEvent(GfxApiGpuEventRef gpuEvent)
     gDX12GlobalState.DX12GpuEventPool.Free(gpuEvent);
 }
 
+// PSOSignature(RootSignature)
+GfxApiPSOSignatureRef DX12Module::CreatePSOSignature(const GfxApiPSOSignatureDesc& desc)
+{
+    (void)desc;
+    return {};
+}
+void DX12Module::DestroyPSOSignature(GfxApiPSOSignatureRef PSOSignature)
+{
+    (void)PSOSignature;
+}
+
+
+
 // AsyncActions
 void DX12Module::DrawRenderPass(GfxApiRenderPass* renderPass)
 {

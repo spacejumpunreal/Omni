@@ -2,13 +2,11 @@
 - DrawTriangle
 	- first drawcall
 		- drawcall
-			- index buffer
 			- PSO params
 				- params
-					- BingPrototype(RootSignature)
-					- ShaderByteCode
-					- BlendDesc
-					- RasterizerDesc
+					- GfxApiShaderSignature
+					- GfxApiBlendState
+					- GfxApiRRasterizerState
 					- DepthStencilDesc
 					- IADesc
 				- ref
