@@ -52,4 +52,5 @@ GfxApiMethod(void ScheduleCompleteHandler(Action1<void, void*> completeHandler, 
 */
 GfxApiMethod(void CloseBatchDelete())
 GfxApiMethod(void CheckGpuEvents(GfxApiQueueMask queueMask))
+GfxApiMethod(void PurgePSOCache(const GfxApiPurgePSOOptions& options))
 

@@ -11,7 +11,6 @@
 namespace Omni
 {
 // forward decls
-class DXCWrapper;
 class DX12Texture;
 class DX12SwapChain;
 class DX12Buffer;
@@ -69,6 +68,7 @@ public: // managers
     class DX12DeleteManager*   DeleteManager;
     class DX12BufferManager*   BufferManager;
     class DXCWrapper*          DXCInstance;
+    class DX12PSOManager*      PSOManager;
 };
 
 extern DX12GlobalState gDX12GlobalState;

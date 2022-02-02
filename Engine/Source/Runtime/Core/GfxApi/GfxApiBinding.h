@@ -104,6 +104,11 @@ struct GfxApiPSOSignatureDesc // RootSignature in dx12, DescriptorSet in Vulkan,
     u32                SlotCount;
 };
 
+struct GfxApiPurgePSOOptions
+{
+    u32 MinLastUsedFrames;
+};
+
 
 /**
  * typedefs

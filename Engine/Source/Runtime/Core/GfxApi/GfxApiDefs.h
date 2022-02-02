@@ -27,6 +27,7 @@ enum class GfxApiFormat : u8
     R8G8B8A8_UNORM,
     R16G16B16A16_FLOAT,
     R11G11B10_FLOAT,
+    D24_UNORM_S8_UINT,
 };
 
 enum class GfxApiAccessFlags : u8

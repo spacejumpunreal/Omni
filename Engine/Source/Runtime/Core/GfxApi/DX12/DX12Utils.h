@@ -8,6 +8,7 @@
  * forward decls
  */
 enum D3D12_COMMAND_LIST_TYPE;
+enum DXGI_FORMAT;
 
 /*
  * macros
@@ -17,6 +18,7 @@ enum D3D12_COMMAND_LIST_TYPE;
 namespace Omni
 {
 D3D12_COMMAND_LIST_TYPE QueueTypeToCmdType(GfxApiQueueType queueType);
+DXGI_FORMAT             ToDXGIFormat(GfxApiFormat format);
 } // namespace Omni
 
 #endif // OMNI_WINDOWS

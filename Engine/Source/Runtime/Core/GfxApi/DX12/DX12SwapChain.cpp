@@ -25,12 +25,10 @@ namespace Omni
 		: mDesc(desc)
 		, mDX12SwapChain(nullptr)
 	{
-
 		DXGI_SWAP_CHAIN_DESC1 winDesc = {};
 		winDesc.Width = mDesc.Width;
 		winDesc.Height = mDesc.Height;
-		//winDesc.Format = mDesc.Format;
-		winDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        winDesc.Format = ToDXGIFormat(mDesc.Format);
 		winDesc.Stereo = FALSE;
 		winDesc.SampleDesc.Count = 1;
 		winDesc.SampleDesc.Quality = 0;

@@ -18,6 +18,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12DeleteManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12BufferManager.h"
 #include "Runtime/Core/GfxApi/DX12/DXCWrapper.h"
+#include "Runtime/Core/GfxApi/DX12/DX12PSOManager.h"
 #include <d3d12.h>
 
 #include <dxgidebug.h>
@@ -54,6 +55,7 @@ DX12GlobalState::DX12GlobalState()
     , DeleteManager(nullptr)
     , BufferManager(nullptr)
     , DXCInstance(nullptr)
+    , PSOManager(nullptr)
 {
 }
 
@@ -165,6 +167,7 @@ void DX12GlobalState::Initialize()
     DeleteManager = DX12DeleteManager::Create();
     BufferManager = DX12BufferManager::Create();
     DXCInstance = DXCWrapper::Create();
+    PSOManager = DX12PSOManager::Create();
 
     CheckSupportedFeatures(Singletons.D3DDevice);
 
@@ -183,6 +186,7 @@ void DX12GlobalState::Finalize()
     BufferManager->Destroy();
     DeleteManager->Destroy();
     TimelineManager->Destroy();
+    PSOManager->Destroy();
 
     /**
      * object cache

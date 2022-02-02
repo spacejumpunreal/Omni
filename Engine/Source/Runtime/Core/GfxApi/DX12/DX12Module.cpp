@@ -297,6 +297,11 @@ void DX12Module::CheckGpuEvents(GfxApiQueueMask queueMask)
     gDX12GlobalState.TimelineManager->PollBatch(queueMask);
 }
 
+void DX12Module::PurgePSOCache(const GfxApiPurgePSOOptions& options)
+{
+    (void)options;
+}
+
 // Private functions
 
 #if DEBUG_DX_OBJECT_LEAK_ON_QUIT
