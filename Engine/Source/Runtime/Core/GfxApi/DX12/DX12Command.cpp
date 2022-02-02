@@ -2,6 +2,7 @@
 #include "Runtime/Core/CorePCH.h"
 #if OMNI_WINDOWS
 #include "Runtime/Base/Memory/HandleObjectPoolImpl.h"
+#include "Runtime/Base/Memory/MemoryArena.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Utils.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Command.h"
 #include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
@@ -10,6 +11,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12Descriptor.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Texture.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Buffer.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Shader.h"
 #include "Runtime/Core/GfxApi/DX12/d3dx12.h"
 
 namespace Omni
@@ -131,14 +133,79 @@ static void CloseCommandListForPass(const GfxApiRenderPass* renderPass, ID3D12Gr
     CheckDX12(cmdList->Close());
 }
 
+static void EncodeDrawcalls(GfxApiDrawcall drawcalls[], u32 drawcallCount, ID3D12GraphicsCommandList4* gCmdList)
+{
+    for (u32 idc = 0; idc < drawcallCount; ++idc)
+    {
+        GfxApiDrawcall& dc = drawcalls[idc];
+        // IA
+        {
+            if (dc.IndexBuffer != GfxApiBufferRef::Null())
+            {
+                DX12Buffer*             indexBuffer = gDX12GlobalState.DX12BufferPool.ToPtr(dc.IndexBuffer);
+                D3D12_INDEX_BUFFER_VIEW ibv;
+                ibv.BufferLocation = indexBuffer->GetResource()->GetGPUVirtualAddress();
+                ibv.Format = dc.Is32BitIndexBuffer ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_R16_UINT;
+                ibv.SizeInBytes = indexBuffer->GetDesc().Size;
+                gCmdList->IASetIndexBuffer(&ibv);
+            }
+            else
+                gCmdList->IASetIndexBuffer(nullptr);
+            gCmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        }
+        // PSO
+        {
+            DX12PSOSignature* rootSig = gDX12GlobalState.DX12PSOSignaturePool.ToPtr(dc.PSOSignature);
+            gCmdList->SetGraphicsRootSignature(rootSig->GetRootSignature());
+
+            // PSOManager::GetPSO()
+        }
+        // Binding
+        {} // call draw
+        {
+        }
+    }
+}
+
 void DX12DrawRenderPass(GfxApiRenderPass* renderPass)
 {
-    ID3D12GraphicsCommandList4* cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
-    SetupCommandListForPass(renderPass, cmdList, false, false);
-    CloseCommandListForPass(renderPass, cmdList);
-    ID3D12CommandList* cmd = cmdList;
-    gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue]->ExecuteCommandLists(1, &cmd);
-    gDX12GlobalState.CommandListCache[(u32)GfxApiQueueType::GraphicsQueue].Free(cmdList);
+    u32                 stageCount = renderPass->GetStageCount();
+    auto&               stk = MemoryModule::Get().GetThreadScratchStack();
+    auto                stkScope = stk.PushScope();
+    ID3D12CommandList** cmdLists = stk.AllocArray<ID3D12CommandList*>(stageCount + 2);
+    u32                 listCount = 0;
+
+    { // use first command list to do RT transition
+        ID3D12GraphicsCommandList4* cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
+        SetupCommandListForPass(renderPass, cmdList, true, false);
+        CloseCommandListForPass(renderPass, cmdList);
+        cmdLists[listCount++] = (ID3D12CommandList*)cmdList;
+    }
+    for (u32 iStage = 0; iStage < renderPass->PhaseCount; ++iStage)
+    {
+        for (auto* stage = renderPass->PhaseArray[iStage]; stage != nullptr;
+             stage = (GfxApiRenderPassStage*)stage->Next)
+        {
+            ID3D12GraphicsCommandList4* cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
+            SetupCommandListForPass(renderPass, cmdList, true, true);
+            EncodeDrawcalls(stage->Drawcalls, stage->DrawcallCount, cmdList);
+            CloseCommandListForPass(renderPass, cmdList);
+            cmdLists[listCount++] = (ID3D12CommandList*)cmdList;
+        }
+    }
+    { // empty last to make sure resume with no suspend
+        ID3D12GraphicsCommandList4* cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
+        SetupCommandListForPass(renderPass, cmdList, false, true);
+        CloseCommandListForPass(renderPass, cmdList);
+        cmdLists[listCount++] = (ID3D12CommandList*)cmdList;
+    }
+    gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue]->ExecuteCommandLists(listCount,
+        cmdLists);
+    for (u32 iCmdList = 0; iCmdList < listCount; ++iCmdList)
+    {
+        auto glist = (ID3D12GraphicsCommandList4*)cmdLists[iCmdList];
+        gDX12GlobalState.CommandListCache[(u32)GfxApiQueueType::GraphicsQueue].Free(glist);
+    }
 }
 
 void DX12CopyBlitPass(GfxApiBlitPass* blitPass)
@@ -149,11 +216,11 @@ void DX12CopyBlitPass(GfxApiBlitPass* blitPass)
     PMRVector<D3D12_RESOURCE_BARRIER> barriersToCopyDest(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApiTmp));
 
     barriersToCopyDest.reserve(blitPass->CopyBufferCmdCount);
-    //for (GfxApiCopyBuffer& copyBufferCmd : blitPass->CopyBufferCmds)
+    // for (GfxApiCopyBuffer& copyBufferCmd : blitPass->CopyBufferCmds)
     for (u32 iCmd = 0; iCmd < blitPass->CopyBufferCmdCount; ++iCmd)
     {
         GfxApiCopyBuffer& copyBufferCmd = blitPass->CopyBufferCmds[iCmd];
-        DX12Buffer* dstBuffer = gDX12GlobalState.DX12BufferPool.ToPtr(copyBufferCmd.Dst);
+        DX12Buffer*       dstBuffer = gDX12GlobalState.DX12BufferPool.ToPtr(copyBufferCmd.Dst);
         barriersToCopyDest.emplace_back();
         if (!dstBuffer->EmitBarrier(D3D12_RESOURCE_STATE_COPY_DEST, &barriersToCopyDest.back()))
             barriersToCopyDest.pop_back();

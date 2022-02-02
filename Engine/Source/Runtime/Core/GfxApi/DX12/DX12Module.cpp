@@ -225,7 +225,7 @@ void DX12Module::DestroyEvent(GfxApiGpuEventRef gpuEvent)
 
 // PSOSignature(RootSignature)
 IMPLEMENT_GFXAPI_OBJECT_CREATE(PSOSignature);
-IMPLEMENT_GFXAPI_OBJECT_DIRECT_DESTROY(PSOSignature);
+IMPLEMENT_GFXAPI_OBJECT_DELAYED_DESTROY(PSOSignature);
 
 //GraphicsState
 IMPLEMENT_GFXAPI_OBJECT_CREATE(BlendState);

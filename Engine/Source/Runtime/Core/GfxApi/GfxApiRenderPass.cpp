@@ -5,22 +5,36 @@
 
 namespace Omni
 {
-GfxApiRenderPassStage::GfxApiRenderPassStage(PageSubAllocator* alloc, u32 capacity)
+GfxApiRenderPassStage::GfxApiRenderPassStage(PageSubAllocator* alloc, u32 capacity) : DrawcallCount(capacity)
 {
     Drawcalls = alloc->AllocArray<GfxApiDrawcall>(capacity);
 }
 
-GfxApiRenderPass::GfxApiRenderPass(PageSubAllocator* alloc, u32 stageCount) : mStageCount(stageCount)
+GfxApiRenderPass::GfxApiRenderPass(PageSubAllocator* alloc, u32 PhaseCount) : PhaseCount(PhaseCount)
 {
-    mStages = alloc->AllocArray<GfxApiRenderPassStage*>(mStageCount);
+    PhaseArray = alloc->AllocArray<GfxApiRenderPassStage*>(PhaseCount);
+    memset(PhaseArray, 0, sizeof(GfxApiRenderPassStage*) * PhaseCount);
 }
 
 void GfxApiRenderPass::AddStage(u32 stageIndex, GfxApiRenderPassStage* stage)
 {
-    CheckAlways(stageIndex < mStageCount);
-    GfxApiRenderPassStage* prevHead = mStages[stageIndex];
+    CheckAlways(stageIndex < PhaseCount);
+    GfxApiRenderPassStage* prevHead = PhaseArray[stageIndex];
     stage->Next = prevHead;
-    mStages[stageIndex] = stage;
+    PhaseArray[stageIndex] = stage;
+}
+
+u32 GfxApiRenderPass::GetStageCount()
+{
+    u32 acc = 0;
+    for (u32 iPhase = 0; iPhase < PhaseCount; ++iPhase)
+    {
+        for (GfxApiRenderPassStage* ptr = PhaseArray[iPhase]; ptr != nullptr; ptr = (GfxApiRenderPassStage*)ptr->Next)
+        {
+            ++acc;
+        }
+    }
+    return acc;
 }
 
 } // namespace Omni

@@ -2,7 +2,6 @@
 #include "Runtime/Prelude/Omni.h"
 
 #if OMNI_WINDOWS
-#include "Runtime/Base/Misc/PrivateData.h"
 #include "Runtime/Base/Misc/FunctorUtils.h"
 #include "Runtime/Base/Memory/ObjectHandle.h"
 #include "Runtime/Core/GfxApi/GfxApiDefs.h"

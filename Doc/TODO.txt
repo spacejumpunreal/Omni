@@ -1,7 +1,6 @@
 # todo
 - DrawTriangle
 	- first drawcall
-		- PageSubAllocator
 		- DX12RenderPass, handle drawcall
 			- PSOManager
 				- get

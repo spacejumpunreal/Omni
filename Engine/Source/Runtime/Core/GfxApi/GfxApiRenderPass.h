@@ -89,9 +89,10 @@ struct GfxApiRenderPassStage : SListNode
 public:
     CORE_API GfxApiRenderPassStage(PageSubAllocator* alloc, u32 capacity);
     ~GfxApiRenderPassStage() = delete;
-    GfxApiDrawcall* Drawcalls;
 
 public:
+    GfxApiDrawcall* Drawcalls;
+    u32             DrawcallCount;
 };
 
 struct GfxApiRTConfig
@@ -104,18 +105,19 @@ struct GfxApiRTConfig
 class GfxApiRenderPass
 {
 public:
-    CORE_API GfxApiRenderPass(PageSubAllocator* alloc, u32 stageCount);
+    CORE_API GfxApiRenderPass(PageSubAllocator* alloc, u32 PhaseCount);
     ~GfxApiRenderPass() = delete;
     CORE_API void AddStage(u32 stageIndex, GfxApiRenderPassStage* passStage);
+    CORE_API u32  GetStageCount();
 
 public:
     GfxApiRTConfig RenderTargets[kMaxMRTCount];
     GfxApiRTConfig Depth;
     GfxApiRTConfig Stencil;
 
-private:
-    GfxApiRenderPassStage** mStages;
-    u32                     mStageCount;
+public:
+    GfxApiRenderPassStage** PhaseArray;
+    u32                     PhaseCount;
 };
 
 } // namespace Omni

@@ -47,7 +47,7 @@ public:
     GfxApiBufferRef     TestGPUBuffer;
 
     std::array<GfxApiShaderRef, 2> TestShaders;
-    GfxApiPSOSignatureRef          PSOSignature;
+    GfxApiPSOSignatureRef          TestPSOSignature;
 
     GfxApiBlendStateRef        TestBlendState;
     GfxApiRasterizerStateRef   TestRasterizerState;
@@ -197,7 +197,7 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     { // PSO
         GfxApiPSOSignatureDesc desc;
         desc.SlotCount = 0;
-        self.PSOSignature = gfxApi.CreatePSOSignature(desc);
+        self.TestPSOSignature = gfxApi.CreatePSOSignature(desc);
     }
     {
         GfxApiBlendStateDesc desc;
@@ -254,7 +254,7 @@ void DemoRendererModule::Finalize()
         gfxApi.DestroyShader(self.TestShaders[iShader]);
     }
 
-    gfxApi.DestroyPSOSignature(self.PSOSignature);
+    gfxApi.DestroyPSOSignature(self.TestPSOSignature);
     gfxApi.DestroyBlendState(self.TestBlendState);
     gfxApi.DestroyRasterizerState(self.TestRasterizerState);
     gfxApi.DestroyDepthStencilState(self.TestDepthStencilState);
@@ -308,15 +308,26 @@ void DemoRendererModulePrivateImpl::Tick()
 
     GfxApiRenderPassStage* passStage = new GfxApiRenderPassStage(psa, 1);
     renderPass->AddStage(0, passStage);
-    GfxApiDrawcall& dc = passStage->Drawcalls[0];
-    dc.IndexBuffer = self.TestGPUBuffer;
-    dc.DrawArgs.DirectDrawArgs = GfxApiDirectDrawParams{
-        .IndexCount = 6,
-        .InstanceCount = 1,
-        .FirstIndex = 0,
-        .BaseVertex = 0,
-        .BaseInstance = 0,
-    };
+    {
+        GfxApiDrawcall& dc = passStage->Drawcalls[0];
+        memset(&dc, 0, sizeof(dc));
+        dc.IndexBuffer = self.TestGPUBuffer;
+        dc.DrawArgs.DirectDrawArgs = GfxApiDirectDrawParams{
+            .IndexCount = 6,
+            .InstanceCount = 1,
+            .FirstIndex = 0,
+            .BaseVertex = 0,
+            .BaseInstance = 0,
+        };
+        dc.Shaders[(u32)GfxApiShaderStage::Vertex] = self.TestShaders[(u32)GfxApiShaderStage::Vertex];
+        dc.Shaders[(u32)GfxApiShaderStage::Fragment] = self.TestShaders[(u32)GfxApiShaderStage::Fragment];
+        dc.PSOSignature = self.TestPSOSignature;
+        dc.BlendState = self.TestBlendState;
+        dc.RasterizerState = self.TestRasterizerState;
+        dc.DepthStencilState = self.TestDepthStencilState;
+    }
+    
+
 
     gfxApi.DrawRenderPass(renderPass);
     gfxApi.Present(self.SwapChain, true);
