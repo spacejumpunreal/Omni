@@ -2,15 +2,12 @@
 #include "Runtime/Core/GfxApi/GfxApiBlitPass.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
 
-
 namespace Omni
 {
 
-
-GfxApiBlitPass::GfxApiBlitPass(u32 reserveCopyCmds) 
-    : CopyBufferCmds(reserveCopyCmds, MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApiTmp))
+GfxApiBlitPass::GfxApiBlitPass(PageSubAllocator* alloc, u32 capacity) : CopyBufferCmdCount(capacity)
 {
+    CopyBufferCmds = alloc->AllocArray<GfxApiCopyBuffer>(capacity);
 }
-
 
 } // namespace Omni

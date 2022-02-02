@@ -1,22 +1,7 @@
 # todo
 - DrawTriangle
 	- first drawcall
-		- drawcall
-			- PSO params
-				- params
-					- GfxApiBlendState
-					- GfxApiRasterizerState
-					- DepthStencilDesc
-				- ref
-					- https://github.com/gpuweb/gpuweb/issues/26
-					- metal
-						- https://developer.apple.com/documentation/metal/mtlrenderpipelinedescriptor?language=objc
-					- DX12
-						- https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_pipeline_state_stream_desc
-						- https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_graphics_pipeline_state_desc
-						- https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ns-d3d12-d3d12_compute_pipeline_state_desc
-				
-		
+		- PageSubAllocator
 		- DX12RenderPass, handle drawcall
 			- PSOManager
 				- get

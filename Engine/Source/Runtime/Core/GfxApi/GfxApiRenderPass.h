@@ -1,8 +1,9 @@
 #pragma once
 #include "Runtime/Prelude/Omni.h"
+#include "Runtime/Core/CoreAPI.h"
 #include "Runtime/Base/Container/LinkedList.h"
 #include "Runtime/Base/Container/PMRContainers.h"
-#include "Runtime/Core/CoreAPI.h"
+#include "Runtime/Base/Memory/PageSubAllocator.h"
 #include "Runtime/Core/GfxApi/GfxApiDefs.h"
 #include "Runtime/Core/GfxApi/GfxApiObject.h"
 #include "Runtime/Core/GfxApi/GfxApiGraphicState.h"
@@ -58,7 +59,7 @@ struct GfxApiIndirectDrawParams
 struct GfxApiDrawcall
 {
     // Drawcall Api
-    GfxApiBufferRef IndexBuffer = (GfxApiBufferRef)NullPtrHandle;
+    GfxApiBufferRef IndexBuffer;
     union
     {
         GfxApiDirectDrawParams DirectDrawArgs;
@@ -79,18 +80,18 @@ struct GfxApiDrawcall
     u8                         StencilRef;
 
     // flags
-    bool IsIndirect = false;
-    bool Is32BitIndexBuffer = false;
+    bool IsIndirect;
+    bool Is32BitIndexBuffer;
 };
 
 struct GfxApiRenderPassStage : SListNode
 {
-    DEFINE_GFX_API_TEMP_NEW_DELETE()
 public:
-    PMRDeque<GfxApiDrawcall> Drawcalls;
+    CORE_API GfxApiRenderPassStage(PageSubAllocator* alloc, u32 capacity);
+    ~GfxApiRenderPassStage() = delete;
+    GfxApiDrawcall* Drawcalls;
 
 public:
-    CORE_API GfxApiRenderPassStage(u32 initialCount = 0);
 };
 
 struct GfxApiRTConfig
@@ -103,9 +104,8 @@ struct GfxApiRTConfig
 class GfxApiRenderPass
 {
 public:
-    DEFINE_GFX_API_TEMP_NEW_DELETE()
-    CORE_API GfxApiRenderPass(u32 stageCount);
-    CORE_API ~GfxApiRenderPass();
+    CORE_API GfxApiRenderPass(PageSubAllocator* alloc, u32 stageCount);
+    ~GfxApiRenderPass() = delete;
     CORE_API void AddStage(u32 stageIndex, GfxApiRenderPassStage* passStage);
 
 public:

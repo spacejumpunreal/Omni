@@ -5,26 +5,16 @@
 
 namespace Omni
 {
-GfxApiRenderPassStage::GfxApiRenderPassStage(u32 initialCount)
-    : Drawcalls(initialCount, MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApiTmp))
+GfxApiRenderPassStage::GfxApiRenderPassStage(PageSubAllocator* alloc, u32 capacity)
 {
+    Drawcalls = alloc->AllocArray<GfxApiDrawcall>(capacity);
 }
 
+GfxApiRenderPass::GfxApiRenderPass(PageSubAllocator* alloc, u32 stageCount) : mStageCount(stageCount)
+{
+    mStages = alloc->AllocArray<GfxApiRenderPassStage*>(mStageCount);
+}
 
-GfxApiRenderPass::GfxApiRenderPass(u32 phaseCount) : mStageCount(phaseCount)
-{
-    PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApiTmp);
-    mStages = alloc.allocate_object<GfxApiRenderPassStage*>(mStageCount);
-}
-GfxApiRenderPass::~GfxApiRenderPass()
-{
-    for (u32 iPhase = 0; iPhase < mStageCount; ++iPhase)
-    {
-        delete mStages[iPhase];
-    }
-    PMRAllocator alloc = MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApiTmp);
-    alloc.deallocate_object(mStages, mStageCount);
-}
 void GfxApiRenderPass::AddStage(u32 stageIndex, GfxApiRenderPassStage* stage)
 {
     CheckAlways(stageIndex < mStageCount);

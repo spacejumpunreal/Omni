@@ -47,7 +47,7 @@ enum class GfxApiQueueType : u8
 };
 
 using GfxApiQueueMask = u32;
-constexpr GfxApiQueueMask AllQueueMask = (1 << (u32)GfxApiQueueType::GraphicsQueue) |
+constexpr GfxApiQueueMask kAllQueueMask = (1 << (u32)GfxApiQueueType::GraphicsQueue) |
                                          (1 << (u32)GfxApiQueueType::ComputeQueue) |
                                          (1 << (u32)GfxApiQueueType::CopyQueue);
 

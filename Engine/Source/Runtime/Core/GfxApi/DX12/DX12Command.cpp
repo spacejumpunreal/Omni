@@ -139,8 +139,6 @@ void DX12DrawRenderPass(GfxApiRenderPass* renderPass)
     ID3D12CommandList* cmd = cmdList;
     gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue]->ExecuteCommandLists(1, &cmd);
     gDX12GlobalState.CommandListCache[(u32)GfxApiQueueType::GraphicsQueue].Free(cmdList);
-
-    delete renderPass;
 }
 
 void DX12CopyBlitPass(GfxApiBlitPass* blitPass)
@@ -150,9 +148,11 @@ void DX12CopyBlitPass(GfxApiBlitPass* blitPass)
 
     PMRVector<D3D12_RESOURCE_BARRIER> barriersToCopyDest(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApiTmp));
 
-    barriersToCopyDest.reserve(blitPass->CopyBufferCmds.size());
-    for (GfxApiCopyBuffer& copyBufferCmd : blitPass->CopyBufferCmds)
+    barriersToCopyDest.reserve(blitPass->CopyBufferCmdCount);
+    //for (GfxApiCopyBuffer& copyBufferCmd : blitPass->CopyBufferCmds)
+    for (u32 iCmd = 0; iCmd < blitPass->CopyBufferCmdCount; ++iCmd)
     {
+        GfxApiCopyBuffer& copyBufferCmd = blitPass->CopyBufferCmds[iCmd];
         DX12Buffer* dstBuffer = gDX12GlobalState.DX12BufferPool.ToPtr(copyBufferCmd.Dst);
         barriersToCopyDest.emplace_back();
         if (!dstBuffer->EmitBarrier(D3D12_RESOURCE_STATE_COPY_DEST, &barriersToCopyDest.back()))
@@ -174,8 +174,6 @@ void DX12CopyBlitPass(GfxApiBlitPass* blitPass)
     auto& cmdListCache = gDX12GlobalState.CommandListCache[(u32)GfxApiQueueType::CopyQueue];
     cmdListCache.Free(cmdListPrelude);
     cmdListCache.Free(cmdListCopy);
-
-    delete blitPass;
 }
 
 } // namespace Omni

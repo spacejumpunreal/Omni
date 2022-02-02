@@ -5,7 +5,7 @@
 #include "Runtime/Core/CoreAPI.h"
 #include "Runtime/Core/GfxApi/GfxApiDefs.h"
 #include "Runtime/Core/GfxApi/GfxApiObject.h"
-#include "Runtime/Core/GfxApi/GfxApiNewDelete.h"
+#include "Runtime/Base/Memory/PageSubAllocator.h"
 
 
 namespace Omni
@@ -39,10 +39,11 @@ struct GfxApiCopyBuffer
 class GfxApiBlitPass
 {
 public:
-    DEFINE_GFX_API_TEMP_NEW_DELETE()
-    CORE_API GfxApiBlitPass(u32 nCopyBufferCmds = 0);
+    CORE_API GfxApiBlitPass(PageSubAllocator* alloc, u32 capacity = 0);
 public:
-    PMRVector<GfxApiCopyBuffer> CopyBufferCmds;
+    GfxApiCopyBuffer* CopyBufferCmds;
+    u32               CopyBufferCmdCount;
+
 
 };
 

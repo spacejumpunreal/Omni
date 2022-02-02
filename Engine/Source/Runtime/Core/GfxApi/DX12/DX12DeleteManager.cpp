@@ -4,6 +4,7 @@
 #include "Runtime/Base/Memory/MemoryArena.h"
 #include "Runtime/Base/Math/SepcialFunctions.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
+#include "Runtime/Core/GfxApi/GfxApiUtils.h"
 #include "Runtime/Core/GfxApi/DX12/DX12DeleteManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineUtils.h"
@@ -21,11 +22,11 @@ namespace Omni
  * forward decls
  */
 using DX12DeleteCBBatch = PMRVector<DX12DeleteManager::DX12DeleteCB>;
-using DX12DeleteCBBatchMap = PMRUnorderedMap<GfxApiQueueMask,               // key
-                                             DX12DeleteCBBatch*,            // value
-                                             std::hash<GfxApiQueueMask>,    // hasher
-                                             std::equal_to<GfxApiQueueMask> // equal_to
-                                             >;
+using DX12DeleteCBBatchMap = PMRUnorderedMap<GfxApiQueueMask, // key
+    DX12DeleteCBBatch*,                                       // value
+    std::hash<GfxApiQueueMask>,                               // hasher
+    std::equal_to<GfxApiQueueMask>                            // equal_to
+    >;
 
 /**
  * declarations
@@ -33,11 +34,11 @@ using DX12DeleteCBBatchMap = PMRUnorderedMap<GfxApiQueueMask,               // k
 struct DX12DeleteManagerPrivateData
 {
 public:
-    //DX12DeleteManagerPrivateData();
+    // DX12DeleteManagerPrivateData();
 
 public:
-    DX12DeleteCBBatchMap mKey2Batch {MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi)};
-    u32                  mInFlightBatches {0};
+    DX12DeleteCBBatchMap mKey2Batch{MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi)};
+    u32                  mInFlightBatches{0};
 };
 
 using DX12DeleteManagerImpl = PImplCombine<DX12DeleteManager, DX12DeleteManagerPrivateData>;
@@ -86,14 +87,7 @@ void DX12DeleteManager::Flush()
             ScratchStack& stk = MemoryModule::GetThreadScratchStack();
             stk.Push();
             GfxApiQueueType* tps = (GfxApiQueueType*)stk.Allocate(sizeof(GfxApiQueueType[(u32)GfxApiQueueType::Count]));
-            u32              typeCount = 0;
-            while (mask != 0)
-            {
-                u32 bitIdx = Mathf::FindMostSignificant1Bit(mask);
-                tps[typeCount] = (GfxApiQueueType)bitIdx;
-                ++typeCount;
-                mask = mask & ~(GfxApiQueueMask(1) << bitIdx);
-            }
+            u32              typeCount = DecodeQueueTypeMask(mask, tps);
             tm->AddMultiQueueBatchCallback(tps, typeCount, cb);
             stk.Pop();
         }

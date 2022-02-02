@@ -9,6 +9,7 @@
 #include "Runtime/Core/System/ModuleExport.h"
 #include "Runtime/Core/System/ModuleImplHelpers.h"
 #include "Runtime/Core/GfxApi/GfxApiModule.h"
+#include "Runtime/Core/GfxApi/GfxApiUtils.h"
 #include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
 #include "Runtime/Core/GfxApi/DX12/DX12SwapChain.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Texture.h"
@@ -142,7 +143,7 @@ void DX12Module::Finalize()
     {                                                                                                                  \
         gDX12GlobalState.DeleteManager->AddForHandleFree(DELAY_FREE_FUNC(ObjectType),                                  \
             (GFXAPI_OBJECT_REF(ObjectType)::UnderlyingHandle&)handle,                                                  \
-            AllQueueMask);                                                                                             \
+            kAllQueueMask);                                                                                             \
     }
 
 
@@ -269,6 +270,22 @@ GfxApiGpuEventRef DX12Module::ScheduleGpuEvent(GfxApiQueueType queueType)
     new ((void*)gpuEvent) DX12GpuEvent(batchId, queueType);
     return handle;
 }
+
+void DX12Module::ScheduleCompleteHandler(Action1<void, void*> completeHandler, GfxApiQueueMask queueMask)
+{
+    GfxApiQueueType tps[(u32)GfxApiQueueType::Count];
+    u32 tpc = DecodeQueueTypeMask(queueMask, tps);
+    if (tpc == 1)
+    {
+        gDX12GlobalState.TimelineManager->AddBatchCallback(tps[0], completeHandler);
+    }
+    else
+    {
+        gDX12GlobalState.TimelineManager->AddMultiQueueBatchCallback(tps, tpc, completeHandler);
+    }
+}
+
+
 // Maintain operations
 void DX12Module::CloseBatchDelete()
 {

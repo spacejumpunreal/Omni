@@ -2,6 +2,7 @@
 #include "Runtime/Engine/Render/DemoRendererModule.h"
 #include "Runtime/Base/Misc/PImplUtils.h"
 #include "Runtime/Base/Memory/MemoryArena.h"
+#include "Runtime/Base/Memory/PageSubAllocator.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
 #include "Runtime/Core/Concurrency/JobPrimitives.h"
 #include "Runtime/Core/File/FileModule.h"
@@ -118,6 +119,10 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     FileModule& fm = FileModule::Get();
     fm.Retain();
 
+    PMRAllocator gfxApiAlloc = mm.GetPMRAllocator(MemoryKind::GfxApiTmp);
+
+    PageSubAllocator* psa = PageSubAllocator::Create(1 << 20, gfxApiAlloc, gfxApiAlloc);
+
     DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
     // create swapchain
     wm.GetClientAreaSize(self.ClientAreaSizeX, self.ClientAreaSizeY);
@@ -157,7 +162,7 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     }
 
     { // blitpass
-        GfxApiBlitPass* blitPass = new GfxApiBlitPass(1);
+        GfxApiBlitPass* blitPass = new GfxApiBlitPass(psa, 1);
         blitPass->CopyBufferCmds[0] = GfxApiCopyBuffer{
             .Src = self.TestUploadBuffer,
             .SrcOffset = 0,
@@ -221,6 +226,9 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
         DemoRendererImpl::GetData(this),
         QueueKind::Main);
     tm.SetFrameRate_OnMainThread(EngineFrameType::Render, 30);
+    
+    Action1<void, void*> cb(PageSubAllocator::Destroy, psa);
+    gfxApi.ScheduleCompleteHandler(cb, kAllQueueMask);
 
     Module::Initialize(args);
 }
@@ -269,8 +277,12 @@ void DemoRendererModule::Finalize()
 void DemoRendererModulePrivateImpl::Tick()
 {
     GfxApiModule&     gfxApi = GfxApiModule::Get();
+    MemoryModule&     mm = MemoryModule::Get();
+    PMRAllocator      gfxApiAlloc = mm.GetPMRAllocator(MemoryKind::GfxApiTmp);
     DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
-    gfxApi.CheckGpuEvents(AllQueueMask);
+    PageSubAllocator* psa = PageSubAllocator::Create(1 << 20, gfxApiAlloc, gfxApiAlloc);
+
+    gfxApi.CheckGpuEvents(kAllQueueMask);
 
     {
         u32           cwidth, cheight;
@@ -289,14 +301,14 @@ void DemoRendererModulePrivateImpl::Tick()
     }
 
     u32               currentBuffer = gfxApi.GetCurrentBackbufferIndex(self.SwapChain);
-    GfxApiRenderPass* renderPass = new GfxApiRenderPass(1);
+    GfxApiRenderPass* renderPass = new GfxApiRenderPass(psa, 1);
     renderPass->RenderTargets[0].Texture = self.Backbuffers[currentBuffer];
     renderPass->RenderTargets[0].ClearValue = Vector4(1, 0, 0, 0);
     renderPass->RenderTargets[0].Action = GfxApiLoadStoreActions::Clear | GfxApiLoadStoreActions::Store;
 
-    GfxApiRenderPassStage* passStage = new GfxApiRenderPassStage();
+    GfxApiRenderPassStage* passStage = new GfxApiRenderPassStage(psa, 1);
     renderPass->AddStage(0, passStage);
-    GfxApiDrawcall& dc = passStage->Drawcalls.emplace_back();
+    GfxApiDrawcall& dc = passStage->Drawcalls[0];
     dc.IndexBuffer = self.TestGPUBuffer;
     dc.DrawArgs.DirectDrawArgs = GfxApiDirectDrawParams{
         .IndexCount = 6,
@@ -310,6 +322,8 @@ void DemoRendererModulePrivateImpl::Tick()
     gfxApi.Present(self.SwapChain, true);
     GfxApiGpuEventRef gpuEvent = gfxApi.ScheduleGpuEvent(GfxApiQueueType::GraphicsQueue);
     gfxApi.DestroyEvent(gpuEvent);
+    Action1<void, void*> cb(PageSubAllocator::Destroy, psa);
+    gfxApi.ScheduleCompleteHandler(cb, kAllQueueMask);
 }
 
 static Module* DemoRendererModuleCtor(const EngineInitArgMap&)

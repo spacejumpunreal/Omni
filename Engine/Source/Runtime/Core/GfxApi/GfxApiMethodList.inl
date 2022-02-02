@@ -45,6 +45,7 @@ GfxApiMethod(void DispatchComputePass(GfxApiComputePass* computePass))
 GfxApiMethod(void CopyBlitPass(GfxApiBlitPass* blitPass))
 GfxApiMethod(void Present(GfxApiSwapChainRef swapChain, bool waitVSync))
 GfxApiMethod(GfxApiGpuEventRef ScheduleGpuEvent(GfxApiQueueType queueType))
+GfxApiMethod(void ScheduleCompleteHandler(Action1<void, void*> completeHandler, GfxApiQueueMask queueMask))
 
 /**
 * Maintain operations
