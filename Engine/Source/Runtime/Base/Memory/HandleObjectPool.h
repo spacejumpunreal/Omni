@@ -22,7 +22,6 @@ namespace Omni
         
     private:
         FORCEINLINE void AddPage();
-        FORCEINLINE std::tuple<u32, u32> DecodeIndex(THandleIndex idx);
     protected:
         PMRVector<u8*>      mPageTable;
         u32                 mPageAlign;

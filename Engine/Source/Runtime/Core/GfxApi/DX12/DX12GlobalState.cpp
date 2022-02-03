@@ -89,10 +89,9 @@ void DX12GlobalState::Initialize()
     }
     CheckSucceeded(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&Singletons.DXGIFactory)));
     // just use most powerful gpu
-    CheckSucceeded(
-        Singletons.DXGIFactory->EnumAdapterByGpuPreference(0,
-                                                           DXGI_GPU_PREFERENCE::DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
-                                                           IID_PPV_ARGS(&Singletons.DXGIAdaptor)));
+    CheckSucceeded(Singletons.DXGIFactory->EnumAdapterByGpuPreference(0,
+        DXGI_GPU_PREFERENCE::DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
+        IID_PPV_ARGS(&Singletons.DXGIAdaptor)));
 
     CheckSucceeded(
         D3D12CreateDevice(Singletons.DXGIAdaptor, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&Singletons.D3DDevice)));
@@ -110,22 +109,19 @@ void DX12GlobalState::Initialize()
         D3D12_COMMAND_QUEUE_DESC queueDesc = {};
         queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
         queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-        CheckSucceeded(Singletons.D3DDevice->CreateCommandQueue(
-            &queueDesc,
+        CheckSucceeded(Singletons.D3DDevice->CreateCommandQueue(&queueDesc,
             IID_PPV_ARGS(&Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue])));
         Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue]->SetName(L"OmniGraphicsQueue");
 
         queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
         queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
-        CheckSucceeded(Singletons.D3DDevice->CreateCommandQueue(
-            &queueDesc,
+        CheckSucceeded(Singletons.D3DDevice->CreateCommandQueue(&queueDesc,
             IID_PPV_ARGS(&Singletons.D3DQueues[(u32)GfxApiQueueType::ComputeQueue])));
         Singletons.D3DQueues[(u32)GfxApiQueueType::ComputeQueue]->SetName(L"OmniComputeQueue");
 
         queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
         queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COPY;
-        CheckSucceeded(Singletons.D3DDevice->CreateCommandQueue(
-            &queueDesc,
+        CheckSucceeded(Singletons.D3DDevice->CreateCommandQueue(&queueDesc,
             IID_PPV_ARGS(&Singletons.D3DQueues[(u32)GfxApiQueueType::CopyQueue])));
         Singletons.D3DQueues[(u32)GfxApiQueueType::CopyQueue]->SetName(L"OmniCopyQueue");
     }
@@ -137,12 +133,10 @@ void DX12GlobalState::Initialize()
     for (u32 iQueueType = (u32)GfxApiQueueType::GraphicsQueue; iQueueType < (u32)GfxApiQueueType::Count; ++iQueueType)
     {
         D3D12_COMMAND_LIST_TYPE cmdType = QueueTypeToCmdType((GfxApiQueueType)iQueueType);
-        CommandListCache[iQueueType].Initialize(
-            gfxApiAllocator,
+        CommandListCache[iQueueType].Initialize(gfxApiAllocator,
             new ID3D12GraphicsCommandList4CacheFactory(Singletons.D3DDevice, cmdType),
             4);
-        CommandAllocatorCache[iQueueType].Initialize(
-            gfxApiAllocator,
+        CommandAllocatorCache[iQueueType].Initialize(gfxApiAllocator,
             new ID3D12CommandAllocatorCacheFactory(Singletons.D3DDevice, cmdType),
             4);
     }
@@ -176,18 +170,25 @@ void DX12GlobalState::Initialize()
 
 void DX12GlobalState::Finalize()
 {
-    DeleteManager->Flush();
-    WaitGPUIdle();
+#define DESTROY_MANAGER(Manager)                                                                                       \
+    Manager->Destroy();                                                                                                \
+    Manager = nullptr
 
     /**
      * managers
      */
-    DXCInstance->Destroy();
-    BufferManager->Destroy();
-    DeleteManager->Destroy();
-    TimelineManager->Destroy();
-    PSOManager->Destroy();
+    // PSOManager rely on Finalize to cleanup, must be done before DeleteManager::Destroy()
+    DESTROY_MANAGER(PSOManager);
+    DESTROY_MANAGER(DXCInstance);
 
+    DeleteManager->Flush();
+    WaitGPUIdle();
+
+    DESTROY_MANAGER(DeleteManager);
+    DESTROY_MANAGER(TimelineManager);
+    DESTROY_MANAGER(BufferManager);
+
+#undef DESTROY_MANAGER
     /**
      * object cache
      */
@@ -231,8 +232,7 @@ void DX12GlobalState::WaitGPUIdle()
         {
             auto queueType = (GfxApiQueueType)iQueueType;
             u64  batchId;
-            bool newBatchClosed = gDX12GlobalState.TimelineManager->CloseBatchAndSignalOnGPU(
-                queueType,
+            bool newBatchClosed = gDX12GlobalState.TimelineManager->CloseBatchAndSignalOnGPU(queueType,
                 gDX12GlobalState.Singletons.D3DQueues[iQueueType],
                 batchId,
                 false);
@@ -243,8 +243,7 @@ void DX12GlobalState::WaitGPUIdle()
                 continue;
             }
             // this make sure all in flight command finishes
-            gDX12GlobalState.TimelineManager->CloseBatchAndSignalOnGPU(
-                queueType,
+            gDX12GlobalState.TimelineManager->CloseBatchAndSignalOnGPU(queueType,
                 gDX12GlobalState.Singletons.D3DQueues[(u32)iQueueType],
                 batchId,
                 true);
@@ -258,8 +257,8 @@ void CheckSupportedFeatures(ID3D12Device* device)
     // https://docs.microsoft.com/en-us/windows/win32/api/d3d12/ne-d3d12-d3d12_resource_heap_tier
     D3D12_FEATURE_DATA_D3D12_OPTIONS featureOptions{};
     CheckSucceeded(device->CheckFeatureSupport(D3D12_FEATURE::D3D12_FEATURE_D3D12_OPTIONS,
-                                               &featureOptions,
-                                               sizeof(featureOptions)));
+        &featureOptions,
+        sizeof(featureOptions)));
 
     // check SM6.0 support
     D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = {D3D_SHADER_MODEL_6_0};

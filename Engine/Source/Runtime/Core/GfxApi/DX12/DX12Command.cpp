@@ -7,6 +7,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12Command.h"
 #include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
+#include "Runtime/Core/GfxApi/DX12/DX12PSOManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12CommandUtils.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Descriptor.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Texture.h"
@@ -133,11 +134,31 @@ static void CloseCommandListForPass(const GfxApiRenderPass* renderPass, ID3D12Gr
     CheckDX12(cmdList->Close());
 }
 
-static void EncodeDrawcalls(GfxApiDrawcall drawcalls[], u32 drawcallCount, ID3D12GraphicsCommandList4* gCmdList)
+static void EncodeDrawcalls(const GfxApiRenderPass& renderPass,
+    const GfxApiDrawcall                            drawcalls[],
+    u32                                             drawcallCount,
+    ID3D12GraphicsCommandList4*                     gCmdList)
 {
+    DX12PSOKey psoKey;
+    memset(&psoKey, 0, sizeof(DX12PSOKey));
+    u8        rtCount;
+    for (rtCount = 0; renderPass.RenderTargets[rtCount].Texture != GfxApiTextureRef::Null() && rtCount < kMaxMRTCount; ++rtCount)
+    {
+        DX12Texture* tex = gDX12GlobalState.DX12TexturePool.ToPtr(renderPass.RenderTargets[rtCount].Texture);
+        psoKey.RTFormats[rtCount] = tex->GetDesc().Format;
+    }
+    psoKey.RTCount = rtCount;
+    if (renderPass.Depth.Texture != GfxApiTextureRef::Null())
+    {
+        DX12Texture* tex = gDX12GlobalState.DX12TexturePool.ToPtr(renderPass.Depth.Texture);
+        psoKey.DSFormat = tex->GetDesc().Format;
+        if (renderPass.Stencil.Texture != GfxApiTextureRef::Null())
+            NotImplemented();
+    }
+
     for (u32 idc = 0; idc < drawcallCount; ++idc)
     {
-        GfxApiDrawcall& dc = drawcalls[idc];
+        const GfxApiDrawcall& dc = drawcalls[idc];
         // IA
         {
             if (dc.IndexBuffer != GfxApiBufferRef::Null())
@@ -155,19 +176,46 @@ static void EncodeDrawcalls(GfxApiDrawcall drawcalls[], u32 drawcallCount, ID3D1
         }
         // PSO
         {
-            DX12PSOSignature* rootSig = gDX12GlobalState.DX12PSOSignaturePool.ToPtr(dc.PSOSignature);
+            DX12PSOSignature* rootSig = gDX12GlobalState.DX12PSOSignaturePool.ToPtr(dc.PSOParams.Signature);
             gCmdList->SetGraphicsRootSignature(rootSig->GetRootSignature());
-
-            // PSOManager::GetPSO()
+            psoKey.Params = dc.PSOParams;
+            ID3D12PipelineState* pso = gDX12GlobalState.PSOManager->GetOrCreatePSO(psoKey);
+            gCmdList->SetPipelineState(pso);
         }
         // Binding
-        {} // call draw
         {
+            for (u32 iSlot = 0; iSlot < (u32)GfxApiBindingGroupSlot::Count; ++iSlot)
+            {
+                if (dc.BindingGroups[0] != nullptr)
+                    NotImplemented();
+            }
+            gCmdList->OMSetStencilRef(dc.StencilRef);
+        }
+        // call draw
+        if (dc.IsIndirect)
+        {
+            NotImplemented();
+        }
+        else
+        {
+            if (dc.IndexBuffer != GfxApiBufferRef::Null())
+            {
+                auto& dda = dc.DrawArgs.DirectDrawArgs;
+                gCmdList->DrawIndexedInstanced(dda.IndexCount,
+                    dda.InstanceCount,
+                    dda.FirstIndex,
+                    dda.BaseVertex,
+                    dda.BaseInstance);
+            }
+            else
+            {
+                NotImplemented();
+            }
         }
     }
 }
 
-void DX12DrawRenderPass(GfxApiRenderPass* renderPass)
+void DX12DrawRenderPass(const GfxApiRenderPass* renderPass)
 {
     u32                 stageCount = renderPass->GetStageCount();
     auto&               stk = MemoryModule::Get().GetThreadScratchStack();
@@ -188,7 +236,7 @@ void DX12DrawRenderPass(GfxApiRenderPass* renderPass)
         {
             ID3D12GraphicsCommandList4* cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
             SetupCommandListForPass(renderPass, cmdList, true, true);
-            EncodeDrawcalls(stage->Drawcalls, stage->DrawcallCount, cmdList);
+            EncodeDrawcalls(*renderPass, stage->Drawcalls, stage->DrawcallCount, cmdList);
             CloseCommandListForPass(renderPass, cmdList);
             cmdLists[listCount++] = (ID3D12CommandList*)cmdList;
         }
@@ -208,7 +256,7 @@ void DX12DrawRenderPass(GfxApiRenderPass* renderPass)
     }
 }
 
-void DX12CopyBlitPass(GfxApiBlitPass* blitPass)
+void DX12CopyBlitPass(const GfxApiBlitPass* blitPass)
 {
     ID3D12GraphicsCommandList4* cmdListPrelude = SetupCommandList(GfxApiQueueType::CopyQueue);
     ID3D12GraphicsCommandList4* cmdListCopy = SetupCommandList(GfxApiQueueType::CopyQueue);

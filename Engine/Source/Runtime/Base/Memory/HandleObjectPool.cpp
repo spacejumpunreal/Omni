@@ -10,8 +10,9 @@ namespace Omni
     */
     bool IndexHandlePoolBase::IsValid(IndexHandle handle)
     {
-        u32 pageIdx = handle.Index >> mPageObjCountPow;
-        u32 inPageIdx = handle.Index & ((1u << mPageObjCountPow) - 1u);
+        u32 realIndex = handle.Index - 1;
+        u32 pageIdx = realIndex >> mPageObjCountPow;
+        u32 inPageIdx = realIndex & ((1u << mPageObjCountPow) - 1u);
         if (pageIdx >= mPageTable.size())
             return false;
         u8* page = mPageTable[pageIdx];
@@ -31,8 +32,9 @@ namespace Omni
     }
     void IndexHandlePoolBase::Free(IndexHandle handle)
     {
-        u32 pageIdx = handle.Index >> mPageObjCountPow;
-        u32 inPageIdx = handle.Index & ((1u << mPageObjCountPow) - 1u);
+        u32 realIndex = handle.Index - 1;
+        u32 pageIdx = realIndex >> mPageObjCountPow;
+        u32 inPageIdx = realIndex & ((1u << mPageObjCountPow) - 1u);
         CheckDebug(pageIdx < mPageTable.size());
         u8* page = mPageTable[pageIdx];
         u8* genPtr = page + mObjectSize * inPageIdx + mGenOffset;
@@ -62,15 +64,16 @@ namespace Omni
         u8* genPtr = objPtr + mGenOffset;
         IndexHandle newHandle;
         newHandle.Gen = ++(*(THandleGen*)genPtr);
-        newHandle.Index = mFreeIndex;
+        newHandle.Index = mFreeIndex + 1;
         mFreeIndex = *(THandleIndex*)objPtr;
         ++mUsedCount;
         return std::tie(newHandle, objPtr);
     }
     u8* IndexHandlePoolBase::_ToPtr(IndexHandle handle)
     {
-        u32 pageIdx = handle.Index >> mPageObjCountPow;
-        u32 inPageIdx = handle.Index & ((1u << mPageObjCountPow) - 1u);
+        u32 realIndex = handle.Index - 1;
+        u32 pageIdx = realIndex >> mPageObjCountPow;
+        u32 inPageIdx = realIndex & ((1u << mPageObjCountPow) - 1u);
         CheckDebug(pageIdx < mPageTable.size(), "invalid handle");
         u8* page = mPageTable[pageIdx];
         u8* objPtr = page + mObjectSize * inPageIdx;
@@ -93,13 +96,6 @@ namespace Omni
         mPageTable.push_back(newPage);
         mFreeIndex = last;
     }
-    FORCEINLINE std::tuple<u32, u32> IndexHandlePoolBase::DecodeIndex(THandleIndex idx)
-    {
-        u32 pageIdx = idx >> mPageObjCountPow;
-        u32 inPageIdx = idx & ((1u << mPageObjCountPow) - 1u);
-        return std::tie(pageIdx, inPageIdx);
-    }
-
 
     /**
     * RawPtrHandle

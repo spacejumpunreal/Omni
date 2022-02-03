@@ -5,8 +5,8 @@
 #include "Runtime/Core/GfxApi/GfxApiBlitPass.h"
 namespace Omni
 {
-void DX12DrawRenderPass(GfxApiRenderPass* pass);
-void DX12CopyBlitPass(GfxApiBlitPass* pass);
+void DX12DrawRenderPass(const GfxApiRenderPass* pass);
+void DX12CopyBlitPass(const GfxApiBlitPass* pass);
 } // namespace Omni
 
 #endif // OMNI_WINDOWS

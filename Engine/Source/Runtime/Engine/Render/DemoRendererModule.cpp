@@ -216,7 +216,7 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
         GfxApiDepthStencilStateDesc desc;
         memset(&desc, 0, sizeof(desc));
         desc.DepthFunc = GfxApiTestFunc::Greater;
-        desc.EnableDepth = true;
+        desc.EnableDepth = false;
         desc.EnableStencil = false;
         self.TestDepthStencilState = gfxApi.CreateDepthStencilState(desc);
     }
@@ -319,12 +319,12 @@ void DemoRendererModulePrivateImpl::Tick()
             .BaseVertex = 0,
             .BaseInstance = 0,
         };
-        dc.Shaders[(u32)GfxApiShaderStage::Vertex] = self.TestShaders[(u32)GfxApiShaderStage::Vertex];
-        dc.Shaders[(u32)GfxApiShaderStage::Fragment] = self.TestShaders[(u32)GfxApiShaderStage::Fragment];
-        dc.PSOSignature = self.TestPSOSignature;
-        dc.BlendState = self.TestBlendState;
-        dc.RasterizerState = self.TestRasterizerState;
-        dc.DepthStencilState = self.TestDepthStencilState;
+        dc.PSOParams.Shaders[(u32)GfxApiShaderStage::Vertex] = self.TestShaders[(u32)GfxApiShaderStage::Vertex];
+        dc.PSOParams.Shaders[(u32)GfxApiShaderStage::Fragment] = self.TestShaders[(u32)GfxApiShaderStage::Fragment];
+        dc.PSOParams.Signature = self.TestPSOSignature;
+        dc.PSOParams.BlendState = self.TestBlendState;
+        dc.PSOParams.RasterizerState = self.TestRasterizerState;
+        dc.PSOParams.DepthStencilState = self.TestDepthStencilState;
     }
     
 

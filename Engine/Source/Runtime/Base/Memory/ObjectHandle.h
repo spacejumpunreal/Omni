@@ -26,7 +26,7 @@ public:
     }
 };
 
-constexpr IndexHandle   NullIndexHandle = IndexHandle{(u32)-1, (u32)-1};
+constexpr IndexHandle   NullIndexHandle = IndexHandle{(u32)0, (u32)0};
 FORCEINLINE IndexHandle IndexHandle::Null()
 {
     return NullIndexHandle;
@@ -52,8 +52,8 @@ public:
 };
 
 constexpr RawPtrHandle NullPtrHandle = RawPtrHandle{
-    .Addr = (1ull << 48) - 1,
-    .Gen = 0xffff,
+    .Addr = 0,
+    .Gen = 0,
 };
 static_assert(sizeof(RawPtrHandle) == sizeof(u64));
 

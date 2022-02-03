@@ -92,7 +92,9 @@ DX12PSOManager* DX12PSOManager::Create()
 
 void DX12PSOManager::Destroy()
 {
-    auto* self = DX12PSOManagerImpl::GetCombinePtr(this);
+    auto*                 self = DX12PSOManagerImpl::GetCombinePtr(this);
+    GfxApiPurgePSOOptions options;
+    PurgePSO(options);
     OMNI_DELETE(self, MemoryKind::GfxApi);
 }
 
@@ -103,24 +105,28 @@ static ID3D12PipelineState* CreatePSOFromKey(const DX12PSOKey& key)
     D3D12_GRAPHICS_PIPELINE_STATE_DESC gDesc;
     memset(&gDesc, 0, sizeof(gDesc));
 
-    gDesc.pRootSignature = gDX12GlobalState.DX12PSOSignaturePool.ToPtr(key.Signature)->GetRootSignature();
+    gDesc.pRootSignature = gDX12GlobalState.DX12PSOSignaturePool.ToPtr(key.Params.Signature)->GetRootSignature();
 
     ID3DBlob* shaderCode;
-    shaderCode = shaderPool.ToPtr(key.Shaders[(u32)GfxApiShaderStage::Vertex])->GetCompiledBinary();
+    shaderCode = shaderPool.ToPtr(key.Params.Shaders[(u32)GfxApiShaderStage::Vertex])->GetCompiledBinary();
     gDesc.VS.pShaderBytecode = shaderCode->GetBufferPointer();
     gDesc.VS.BytecodeLength = shaderCode->GetBufferSize();
 
-    shaderCode = shaderPool.ToPtr(key.Shaders[(u32)GfxApiShaderStage::Fragment])->GetCompiledBinary();
+    shaderCode = shaderPool.ToPtr(key.Params.Shaders[(u32)GfxApiShaderStage::Fragment])->GetCompiledBinary();
     gDesc.PS.pShaderBytecode = shaderCode->GetBufferPointer();
     gDesc.PS.BytecodeLength = shaderCode->GetBufferSize();
 
-    gDesc.BlendState = *static_cast<D3D12_BLEND_DESC*>(gDX12GlobalState.DX12BlendStatePool.ToPtr(key.BlendState));
-    gDesc.RasterizerState =
-        *static_cast<D3D12_RASTERIZER_DESC*>(gDX12GlobalState.DX12RasterizerStatePool.ToPtr(key.RSState));
-    gDesc.DepthStencilState =
-        *static_cast<D3D12_DEPTH_STENCIL_DESC*>(gDX12GlobalState.DX12DepthStencilStatePool.ToPtr(key.DSState));
+    gDesc.BlendState =
+        *static_cast<D3D12_BLEND_DESC*>(gDX12GlobalState.DX12BlendStatePool.ToPtr(key.Params.BlendState));
+    gDesc.RasterizerState = *static_cast<D3D12_RASTERIZER_DESC*>(
+        gDX12GlobalState.DX12RasterizerStatePool.ToPtr(key.Params.RasterizerState));
+    gDesc.DepthStencilState = *static_cast<D3D12_DEPTH_STENCIL_DESC*>(
+        gDX12GlobalState.DX12DepthStencilStatePool.ToPtr(key.Params.DepthStencilState));
     gDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 
+    gDesc.SampleDesc.Count = 1;
+    gDesc.SampleDesc.Quality = 0;
+    gDesc.NumRenderTargets = key.RTCount;
     for (u32 iRT = 0; iRT < key.RTCount; ++iRT)
     {
         gDesc.RTVFormats[iRT] = ToDXGIFormat(key.RTFormats[iRT]);
@@ -131,11 +137,11 @@ static ID3D12PipelineState* CreatePSOFromKey(const DX12PSOKey& key)
     return ret;
 }
 
-ID3D12PipelineState* DX12PSOManager::Get(const DX12PSOKey& key)
+ID3D12PipelineState* DX12PSOManager::GetOrCreatePSO(const DX12PSOKey& key)
 {
-    auto* self = DX12PSOManagerImpl::GetCombinePtr(this);
-    ID3D12PipelineState* pso; 
-    auto it = self->Cache.find(key);
+    auto*                self = DX12PSOManagerImpl::GetCombinePtr(this);
+    ID3D12PipelineState* pso;
+    auto                 it = self->Cache.find(key);
     if (it == self->Cache.end())
     {
         pso = CreatePSOFromKey(key);
@@ -148,16 +154,18 @@ ID3D12PipelineState* DX12PSOManager::Get(const DX12PSOKey& key)
     }
 }
 
-void DX12PSOManager::Perge()
+void DX12PSOManager::PurgePSO(const GfxApiPurgePSOOptions& options)
 {
-    auto* self = DX12PSOManagerImpl::GetCombinePtr(this);
+    (void)options;
+    auto*            self = DX12PSOManagerImpl::GetCombinePtr(this);
     DX12PSOPurgeReq* req = new DX12PSOPurgeReq((u32)self->Cache.size());
-    u32   cnt = 0;
+    u32              cnt = 0;
     for (auto& pair : self->Cache)
     {
         req->PSOs[cnt++] = pair.second;
     }
     self->Cache.clear();
+    gDX12GlobalState.DeleteManager->AddForDelete(req, kAllQueueMask);
 }
 
 } // namespace Omni

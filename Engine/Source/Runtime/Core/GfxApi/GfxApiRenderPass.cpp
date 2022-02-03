@@ -10,10 +10,12 @@ GfxApiRenderPassStage::GfxApiRenderPassStage(PageSubAllocator* alloc, u32 capaci
     Drawcalls = alloc->AllocArray<GfxApiDrawcall>(capacity);
 }
 
-GfxApiRenderPass::GfxApiRenderPass(PageSubAllocator* alloc, u32 PhaseCount) : PhaseCount(PhaseCount)
+GfxApiRenderPass::GfxApiRenderPass(PageSubAllocator* alloc, u32 phaseCount) : PhaseCount(phaseCount)
 {
-    PhaseArray = alloc->AllocArray<GfxApiRenderPassStage*>(PhaseCount);
-    memset(PhaseArray, 0, sizeof(GfxApiRenderPassStage*) * PhaseCount);
+    memset(this, 0, sizeof(GfxApiRenderPass));
+    PhaseCount = phaseCount;
+    PhaseArray = alloc->AllocArray<GfxApiRenderPassStage*>(phaseCount);
+    memset(PhaseArray, 0, sizeof(GfxApiRenderPassStage*) * phaseCount);
 }
 
 void GfxApiRenderPass::AddStage(u32 stageIndex, GfxApiRenderPassStage* stage)
@@ -24,7 +26,7 @@ void GfxApiRenderPass::AddStage(u32 stageIndex, GfxApiRenderPassStage* stage)
     PhaseArray[stageIndex] = stage;
 }
 
-u32 GfxApiRenderPass::GetStageCount()
+u32 GfxApiRenderPass::GetStageCount() const
 {
     u32 acc = 0;
     for (u32 iPhase = 0; iPhase < PhaseCount; ++iPhase)

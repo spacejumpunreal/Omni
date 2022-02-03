@@ -2,9 +2,9 @@
 #include "Runtime/Prelude/Omni.h"
 #if OMNI_WINDOWS
 #include "Runtime/Core/GfxApi/GfxApiDefs.h"
-#include "Runtime/Core/GfxApi/GfxApiGraphicState.h"
 #include "Runtime/Core/GfxApi/GfxApiBinding.h"
 #include "Runtime/Core/GfxApi/DX12/DX12ForwardDecl.h"
+#include "Runtime/Core/GfxApi/GfxApiRenderPass.h"
 
 namespace Omni
 {
@@ -20,11 +20,7 @@ class DX12DepthStencilState;
  */
 struct DX12PSOKey
 {
-    GfxApiPSOSignatureRef      Signature;
-    GfxApiBlendStateRef        BlendState;
-    GfxApiRasterizerStateRef   RSState;
-    GfxApiDepthStencilStateRef DSState;
-    GfxApiShaderRef            Shaders[(u32)GfxApiShaderStage::GraphicsCount];
+    GfxApiPSOParams            Params;
     GfxApiFormat               RTFormats[kMaxMRTCount];
     GfxApiFormat               DSFormat;
     u8                         RTCount;
@@ -35,8 +31,8 @@ class DX12PSOManager
 public:
     static DX12PSOManager* Create();
     void                   Destroy();
-    ID3D12PipelineState*   Get(const DX12PSOKey& key);
-    void                   Perge();
+    ID3D12PipelineState*   GetOrCreatePSO(const DX12PSOKey& key);
+    void                   PurgePSO(const GfxApiPurgePSOOptions& options);
 };
 
 } // namespace Omni

@@ -20,6 +20,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12DeleteManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12BufferManager.h"
+#include "Runtime/Core/GfxApi/DX12/DX12PSOManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Command.h"
 
 #include <d3d12.h>
@@ -299,7 +300,7 @@ void DX12Module::CheckGpuEvents(GfxApiQueueMask queueMask)
 
 void DX12Module::PurgePSOCache(const GfxApiPurgePSOOptions& options)
 {
-    (void)options;
+    gDX12GlobalState.PSOManager->PurgePSO(options);
 }
 
 // Private functions

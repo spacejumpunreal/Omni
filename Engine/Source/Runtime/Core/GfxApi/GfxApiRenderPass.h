@@ -56,6 +56,15 @@ struct GfxApiIndirectDrawParams
     u32             ArgOffset; // in bytes
 };
 
+struct GfxApiPSOParams
+{
+    GfxApiPSOSignatureRef      Signature;
+    GfxApiShaderRef            Shaders[(u32)GfxApiShaderStage::GraphicsCount];
+    GfxApiBlendStateRef        BlendState;
+    GfxApiRasterizerStateRef   RasterizerState;
+    GfxApiDepthStencilStateRef DepthStencilState;
+};
+
 struct GfxApiDrawcall
 {
     // Drawcall Api
@@ -66,18 +75,11 @@ struct GfxApiDrawcall
         GfxApiDirectDrawParams IndirectDrawArgs;
     } DrawArgs;
 
-    // PSO params
-    GfxApiShaderRef       Shaders[(u32)GfxApiShaderStage::GraphicsCount];
-    GfxApiPSOSignatureRef PSOSignature;
+    GfxApiPSOParams PSOParams;
 
     // Binding/Arguments
     GfxApiBindingGroup* BindingGroups[(u8)GfxApiBindingGroupSlot::Count];
-
-    // RenderState
-    GfxApiBlendStateRef        BlendState;
-    GfxApiRasterizerStateRef   RasterizerState;
-    GfxApiDepthStencilStateRef DepthStencilState;
-    u8                         StencilRef;
+    u8                  StencilRef;
 
     // flags
     bool IsIndirect;
@@ -97,7 +99,7 @@ public:
 
 struct GfxApiRTConfig
 {
-    GfxApiTextureRef       Texture = (GfxApiTextureRef)NullPtrHandle;
+    GfxApiTextureRef       Texture = {};
     TClearValue            ClearValue;
     GfxApiLoadStoreActions Action = GfxApiLoadStoreActions::Clear | GfxApiLoadStoreActions::Store;
 };
@@ -108,7 +110,7 @@ public:
     CORE_API GfxApiRenderPass(PageSubAllocator* alloc, u32 PhaseCount);
     ~GfxApiRenderPass() = delete;
     CORE_API void AddStage(u32 stageIndex, GfxApiRenderPassStage* passStage);
-    CORE_API u32  GetStageCount();
+    CORE_API u32  GetStageCount() const;
 
 public:
     GfxApiRTConfig RenderTargets[kMaxMRTCount];
