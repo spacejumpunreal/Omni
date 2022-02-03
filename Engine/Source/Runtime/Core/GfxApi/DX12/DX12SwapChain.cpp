@@ -142,7 +142,13 @@ namespace Omni
             ID3D12Resource* res;
             CheckDX12(mDX12SwapChain->GetBuffer(iBuffer, IID_PPV_ARGS(&res)));
             res->SetName(BackBufferNames[iBuffer]);
-            gDX12GlobalState.Singletons.D3DDevice->CreateRenderTargetView(res, nullptr, rtvHandle);
+
+            D3D12_RENDER_TARGET_VIEW_DESC vDesc;
+            memset(&vDesc, 0, sizeof(D3D12_RENDER_TARGET_VIEW_DESC));
+            vDesc.Format = ToDXGIFormat(mDesc.Format);
+            vDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+
+            gDX12GlobalState.Singletons.D3DDevice->CreateRenderTargetView(res, &vDesc, rtvHandle);
             std::tie((GfxApiTextureRef::UnderlyingHandle&)mTextureRefs[iBuffer], mBackbuffers[iBuffer]) = gDX12GlobalState.DX12TexturePool.Alloc();
             new(mBackbuffers[iBuffer])DX12Texture(texDesc, res, D3D12_RESOURCE_STATE_COMMON, rtvHandle.ptr, true);
             rtvHandle.Offset(stride);

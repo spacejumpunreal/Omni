@@ -16,7 +16,7 @@ namespace Omni
 
 struct GfxApiRTBlendConfig
 {
-    u8                WriteMask; // rgba = bit3210
+    u8                WriteMask; // alpha=1, blue=2, green=4, red=8, Metal definition
     GfxApiBlendOps    ColorOp;
     GfxApiBlendFactor SrcColorFactor;
     GfxApiBlendFactor DstColorFactor;

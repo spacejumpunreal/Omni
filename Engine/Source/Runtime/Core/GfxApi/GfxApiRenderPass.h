@@ -18,6 +18,7 @@ namespace Omni
  * forward decls
  */
 struct GfxApiBindingGroup;
+struct GfxApiViewport;
 
 /**
  * typedefs
@@ -75,11 +76,12 @@ struct GfxApiDrawcall
         GfxApiDirectDrawParams IndirectDrawArgs;
     } DrawArgs;
 
-    GfxApiPSOParams PSOParams;
-
     // Binding/Arguments
     GfxApiBindingGroup* BindingGroups[(u8)GfxApiBindingGroupSlot::Count];
-    u8                  StencilRef;
+
+    GfxApiPSOParams PSOParams;
+    GfxApiViewport* Viewports;
+    u8              StencilRef;
 
     // flags
     bool IsIndirect;
@@ -120,6 +122,16 @@ public:
 public:
     GfxApiRenderPassStage** PhaseArray;
     u32                     PhaseCount;
+};
+
+struct GfxApiViewport
+{
+    float TopLeftX;
+    float TopLeftY;
+    float Width;
+    float Height;
+    float MinDepth;
+    float MaxDepth;
 };
 
 } // namespace Omni

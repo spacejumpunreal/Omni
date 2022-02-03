@@ -65,8 +65,15 @@ void PlayGroundCodeEmpty()
 }
 } // namespace Omni
 
+volatile bool WaitForDebugger = false;
+
 int main(int, const char**)
 {
+    while (WaitForDebugger)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
     Omni::CreateEngineSystem();
     Omni::System& system = Omni::System::GetSystem();
 #if true

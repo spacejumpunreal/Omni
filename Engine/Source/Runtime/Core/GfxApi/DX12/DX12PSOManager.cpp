@@ -118,6 +118,9 @@ static ID3D12PipelineState* CreatePSOFromKey(const DX12PSOKey& key)
 
     gDesc.BlendState =
         *static_cast<D3D12_BLEND_DESC*>(gDX12GlobalState.DX12BlendStatePool.ToPtr(key.Params.BlendState));
+    // took me half a day to figure out why there's nothing on rendertarget
+    // https://docs.microsoft.com/en-us/windows/win32/direct3d11/d3d10-graphics-programming-guide-output-merger-stage
+    gDesc.SampleMask = UINT_MAX;
     gDesc.RasterizerState = *static_cast<D3D12_RASTERIZER_DESC*>(
         gDX12GlobalState.DX12RasterizerStatePool.ToPtr(key.Params.RasterizerState));
     gDesc.DepthStencilState = *static_cast<D3D12_DEPTH_STENCIL_DESC*>(
@@ -140,18 +143,9 @@ static ID3D12PipelineState* CreatePSOFromKey(const DX12PSOKey& key)
 ID3D12PipelineState* DX12PSOManager::GetOrCreatePSO(const DX12PSOKey& key)
 {
     auto*                self = DX12PSOManagerImpl::GetCombinePtr(this);
-    ID3D12PipelineState* pso;
-    auto                 it = self->Cache.find(key);
-    if (it == self->Cache.end())
-    {
-        pso = CreatePSOFromKey(key);
-        self->Cache.insert(std::make_pair(key, pso));
-        return pso;
-    }
-    else
-    {
-        return it->second;
-    }
+    ID3D12PipelineState*& value = self->Cache[key];
+    value = value == nullptr ? CreatePSOFromKey(key) : value;
+    return value;
 }
 
 void DX12PSOManager::PurgePSO(const GfxApiPurgePSOOptions& options)

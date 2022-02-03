@@ -13,13 +13,30 @@ namespace Omni
  * definitions
  */
 
+static u8 ToDX12WriteMask(u8 mask)
+{
+    u8 acc = 0;
+    if (mask & 0x1)
+        acc |= D3D12_COLOR_WRITE_ENABLE_ALPHA;
+    if (mask & 0x2)
+        acc |= D3D12_COLOR_WRITE_ENABLE_BLUE;
+    if (mask & 0x4)
+        acc |= D3D12_COLOR_WRITE_ENABLE_GREEN;
+    if (mask & 0x8)
+        acc |= D3D12_COLOR_WRITE_ENABLE_RED;
+    return acc;
+}
+
 DX12BlendState::DX12BlendState(const GfxApiBlendStateDesc& desc)
 {
     memset(this, 0, sizeof(*this));
     for (u32 iRT = 0; iRT < kMaxMRTCount; ++iRT)
     {
         D3D12_RENDER_TARGET_BLEND_DESC& rtDesc = RenderTarget[iRT];
+        const GfxApiRTBlendConfig&            rtConfig = desc.Configs[iRT];
         rtDesc.BlendEnable = desc.Configs[iRT].EnableBlend ? TRUE : FALSE;
+        rtDesc.LogicOpEnable = FALSE;
+        rtDesc.RenderTargetWriteMask = ToDX12WriteMask(rtConfig.WriteMask);
         if (desc.Configs[iRT].EnableBlend)
             NotImplemented();
     }

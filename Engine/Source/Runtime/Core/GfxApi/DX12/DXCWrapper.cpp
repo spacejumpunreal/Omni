@@ -63,6 +63,7 @@ ID3DBlob* DXCWrapper::CompileShaderSource(std::string_view                  sour
     {
         args.push_back(L"-Zi");
         args.push_back(L"-O0");
+        args.push_back(L"-Qembed_debug");
     }
     else
     {

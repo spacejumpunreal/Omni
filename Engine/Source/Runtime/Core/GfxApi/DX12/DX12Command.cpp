@@ -17,9 +17,28 @@
 
 namespace Omni
 {
+/*
+ * definitions
+ */
 
-static void SetupCommandListForPass(
-    const GfxApiRenderPass* renderPass, ID3D12GraphicsCommandList4* cmdList, bool suspend, bool resume)
+struct DX12RenderStageCommon
+{
+public:
+    DX12RenderStageCommon(const GfxApiRenderPass* renderPass);
+
+public:
+    D3D12_CPU_DESCRIPTOR_HANDLE RTDescriptions[kMaxMRTCount];
+    D3D12_CPU_DESCRIPTOR_HANDLE DSDescriptor;
+    u8                          RTCount;
+
+    D3D12_RECT     DefaultScissors[kMaxMRTCount];
+    D3D12_VIEWPORT DefaultViewports[kMaxMRTCount];
+    GfxApiFormat   RTFormats[kMaxMRTCount];
+};
+
+#if false
+static bool SetupCommandListForPass(
+    const GfxApiRenderPass* renderPass, ID3D12GraphicsCommandList4* cmdList, bool suspend, bool resume, i32 idx)
 {
 
     D3D12_RENDER_PASS_RENDER_TARGET_DESC  rtDescs[kMaxMRTCount] = {};
@@ -45,11 +64,12 @@ static void SetupCommandListForPass(
         DX12Texture* tex = gDX12GlobalState.DX12TexturePool.ToPtr(renderPass->RenderTargets[iMRT].Texture);
 
         rtDesc.cpuDescriptor = ToCPUDescriptorHandle(tex->GetCPUDescriptor());
-        rtDesc.BeginningAccess.Type = Any(renderPass->RenderTargets[iMRT].Action & GfxApiLoadStoreActions::Load)
-                                          ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE
-                                      : Any(renderPass->RenderTargets[iMRT].Action & GfxApiLoadStoreActions::Clear)
-                                          ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR
-                                          : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS;
+        rtDesc.BeginningAccess.Type =
+            Any(renderPass->RenderTargets[iMRT].Action & GfxApiLoadStoreActions::Load) || idx != 0
+                ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE
+            : Any(renderPass->RenderTargets[iMRT].Action & GfxApiLoadStoreActions::Clear)
+                ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR
+                : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS;
 
         if (Any(renderPass->RenderTargets[iMRT].Action & GfxApiLoadStoreActions::Clear))
         {
@@ -125,6 +145,7 @@ static void SetupCommandListForPass(
     if (resume)
         renderPassFlags |= D3D12_RENDER_PASS_FLAG_RESUMING_PASS;
     cmdList->BeginRenderPass(mrtCount, pRTDescs, pDSDesc, renderPassFlags);
+    return barrierCount != 0;
 }
 
 static void CloseCommandListForPass(const GfxApiRenderPass* renderPass, ID3D12GraphicsCommandList4* cmdList)
@@ -134,27 +155,99 @@ static void CloseCommandListForPass(const GfxApiRenderPass* renderPass, ID3D12Gr
     CheckDX12(cmdList->Close());
 }
 
-static void EncodeDrawcalls(const GfxApiRenderPass& renderPass,
-    const GfxApiDrawcall                            drawcalls[],
-    u32                                             drawcallCount,
-    ID3D12GraphicsCommandList4*                     gCmdList)
+
+void NotUsedDX12DrawRenderPass(const GfxApiRenderPass* renderPass)
+{
+    u32                 stageCount = renderPass->GetStageCount();
+    auto&               stk = MemoryModule::Get().GetThreadScratchStack();
+    auto                stkScope = stk.PushScope();
+    ID3D12CommandList** cmdLists = stk.AllocArray<ID3D12CommandList*>(stageCount + 2);
+    u32                 listCount = 0;
+
+    { // use first command list to do RT transition
+        ID3D12GraphicsCommandList4* cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
+        SetupCommandListForPass(renderPass, cmdList, true, false, 0);
+        CloseCommandListForPass(renderPass, cmdList);
+        cmdLists[listCount++] = (ID3D12CommandList*)cmdList;
+    }
+    for (u32 iStage = 0; iStage < renderPass->PhaseCount; ++iStage)
+    {
+        for (auto* stage = renderPass->PhaseArray[iStage]; stage != nullptr;
+             stage = (GfxApiRenderPassStage*)stage->Next)
+        {
+            ID3D12GraphicsCommandList4* cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
+            SetupCommandListForPass(renderPass, cmdList, true, true, 1);
+            EncodeDrawcalls(*renderPass, stage->Drawcalls, stage->DrawcallCount, cmdList);
+            CloseCommandListForPass(renderPass, cmdList);
+            cmdLists[listCount++] = (ID3D12CommandList*)cmdList;
+        }
+    }
+    { // empty last to make sure resume with no suspend
+        ID3D12GraphicsCommandList4* cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
+        SetupCommandListForPass(renderPass, cmdList, false, true, -1);
+        CloseCommandListForPass(renderPass, cmdList);
+        cmdLists[listCount++] = (ID3D12CommandList*)cmdList;
+    }
+    gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue]->ExecuteCommandLists(listCount,
+        cmdLists);
+    for (u32 iCmdList = 0; iCmdList < listCount; ++iCmdList)
+    {
+        auto glist = (ID3D12GraphicsCommandList4*)cmdLists[iCmdList];
+        gDX12GlobalState.CommandListCache[(u32)GfxApiQueueType::GraphicsQueue].Free(glist);
+    }
+}
+
+#endif
+
+static void ToDX12Viewports(const GfxApiViewport viewports[], D3D12_VIEWPORT dx12Viewports[], u32 count)
+{
+    static_assert(sizeof(GfxApiViewport) == sizeof(D3D12_VIEWPORT));
+    memcpy(dx12Viewports, viewports, sizeof(D3D12_VIEWPORT) * count);
+}
+
+DX12RenderStageCommon::DX12RenderStageCommon(const GfxApiRenderPass* renderPass)
+{
+    memset(this, 0, sizeof(DX12RenderStageCommon));
+    for (RTCount = 0;; ++RTCount)
+    {
+        auto texHandle = renderPass->RenderTargets[RTCount].Texture;
+        if (texHandle == GfxApiTextureRef::Null())
+            break;
+        DX12Texture* tex = gDX12GlobalState.DX12TexturePool.ToPtr(texHandle);
+        RTDescriptions[RTCount] =
+            ToCPUDescriptorHandle(gDX12GlobalState.DX12TexturePool.ToPtr(texHandle)->GetCPUDescriptor());
+        RTFormats[RTCount] = tex->GetDesc().Format;
+
+        DefaultScissors[RTCount].left = DefaultScissors[RTCount].top = 0;
+        DefaultScissors[RTCount].right = tex->GetDesc().Width;
+        DefaultScissors[RTCount].bottom = tex->GetDesc().Height;
+
+        DefaultViewports[RTCount].TopLeftX = DefaultViewports[RTCount].TopLeftY = 0;
+        DefaultViewports[RTCount].Width = (float)tex->GetDesc().Width;
+        DefaultViewports[RTCount].Height = (float)tex->GetDesc().Height;
+        DefaultViewports[RTCount].MinDepth = 0;
+        DefaultViewports[RTCount].MaxDepth = 1;
+    }
+    if (renderPass->Depth.Texture != GfxApiTextureRef::Null())
+        NotImplemented();
+}
+
+static bool EncodeDrawcalls(const DX12RenderStageCommon& stageCommon,
+    const GfxApiDrawcall                                 drawcalls[],
+    u32                                                  drawcallCount,
+    ID3D12GraphicsCommandList4*                          gCmdList)
 {
     DX12PSOKey psoKey;
     memset(&psoKey, 0, sizeof(DX12PSOKey));
-    u8        rtCount;
-    for (rtCount = 0; renderPass.RenderTargets[rtCount].Texture != GfxApiTextureRef::Null() && rtCount < kMaxMRTCount; ++rtCount)
-    {
-        DX12Texture* tex = gDX12GlobalState.DX12TexturePool.ToPtr(renderPass.RenderTargets[rtCount].Texture);
-        psoKey.RTFormats[rtCount] = tex->GetDesc().Format;
-    }
-    psoKey.RTCount = rtCount;
-    if (renderPass.Depth.Texture != GfxApiTextureRef::Null())
-    {
-        DX12Texture* tex = gDX12GlobalState.DX12TexturePool.ToPtr(renderPass.Depth.Texture);
-        psoKey.DSFormat = tex->GetDesc().Format;
-        if (renderPass.Stencil.Texture != GfxApiTextureRef::Null())
-            NotImplemented();
-    }
+    auto& stk = MemoryModule::Get().GetThreadScratchStack();
+    auto  stkScope = stk.PushScope();
+    bool  valid = false;
+
+    memcpy(psoKey.RTFormats, stageCommon.RTFormats, sizeof(stageCommon.RTFormats));
+    psoKey.RTCount = stageCommon.RTCount;
+
+    gCmdList->RSSetScissorRects(stageCommon.RTCount, stageCommon.DefaultScissors);
+    gCmdList->OMSetRenderTargets(stageCommon.RTCount, stageCommon.RTDescriptions, FALSE, nullptr);
 
     for (u32 idc = 0; idc < drawcallCount; ++idc)
     {
@@ -191,6 +284,17 @@ static void EncodeDrawcalls(const GfxApiRenderPass& renderPass,
             }
             gCmdList->OMSetStencilRef(dc.StencilRef);
         }
+        // draw states
+        {
+            const D3D12_VIEWPORT* vps = stageCommon.DefaultViewports;
+            D3D12_VIEWPORT        tmpViewports[kMaxMRTCount];
+            if (dc.Viewports)
+            {
+                ToDX12Viewports(dc.Viewports, tmpViewports, stageCommon.RTCount);
+                vps = tmpViewports;
+            }
+            gCmdList->RSSetViewports(stageCommon.RTCount, vps);
+        }
         // call draw
         if (dc.IsIndirect)
         {
@@ -206,6 +310,7 @@ static void EncodeDrawcalls(const GfxApiRenderPass& renderPass,
                     dda.FirstIndex,
                     dda.BaseVertex,
                     dda.BaseInstance);
+                valid = true;
             }
             else
             {
@@ -213,6 +318,54 @@ static void EncodeDrawcalls(const GfxApiRenderPass& renderPass,
             }
         }
     }
+    return valid;
+}
+
+static bool EncodePassPrelude(const GfxApiRenderPass* renderPass, ID3D12GraphicsCommandList4* cmdList)
+{
+    CD3DX12_RESOURCE_BARRIER    barriers[kMaxMRTCount + 2]; // plus depth and stencil
+    D3D12_CPU_DESCRIPTOR_HANDLE rtToClear[kMaxMRTCount];
+    Vector4                     rtClearColors[kMaxMRTCount];
+
+    bool valid = false;
+    u32  barrierCount = 0;
+    u32  clearCount = 0;
+
+    for (u32 iRT = 0; iRT < kMaxMRTCount; ++iRT)
+    {
+        auto& cfg = renderPass->RenderTargets[iRT];
+        if (cfg.Texture == GfxApiTextureRef::Null())
+            break;
+        DX12Texture* tex = gDX12GlobalState.DX12TexturePool.ToPtr(renderPass->RenderTargets[iRT].Texture);
+        if (tex->EmitBarrier(D3D12_RESOURCE_STATE_RENDER_TARGET, barriers + barrierCount))
+            ++barrierCount;
+        if (Any(cfg.Action & (GfxApiLoadStoreActions::Clear | GfxApiLoadStoreActions::Discard)))
+        {
+            rtToClear[clearCount] = ToCPUDescriptorHandle(tex->GetCPUDescriptor());
+            rtClearColors[clearCount] = std::get<Vector4>(cfg.ClearValue);
+            ++clearCount;
+        }
+    }
+
+    if (renderPass->Depth.Texture != GfxApiTextureRef::Null() ||
+        renderPass->Stencil.Texture != GfxApiTextureRef::Null())
+    {
+        NotImplemented();
+        // TODO: cmdList->ClearDepthStencilView()
+    }
+
+    if (barrierCount > 0)
+    {
+        valid = true;
+        cmdList->ResourceBarrier(barrierCount, barriers);
+    }
+
+    for (u32 iMRT = 0; iMRT < clearCount; ++iMRT)
+    {
+        cmdList->ClearRenderTargetView(rtToClear[iMRT], (float*)&rtClearColors[iMRT], 0, nullptr);
+        valid = true;
+    }
+    return valid;
 }
 
 void DX12DrawRenderPass(const GfxApiRenderPass* renderPass)
@@ -220,38 +373,47 @@ void DX12DrawRenderPass(const GfxApiRenderPass* renderPass)
     u32                 stageCount = renderPass->GetStageCount();
     auto&               stk = MemoryModule::Get().GetThreadScratchStack();
     auto                stkScope = stk.PushScope();
-    ID3D12CommandList** cmdLists = stk.AllocArray<ID3D12CommandList*>(stageCount + 2);
-    u32                 listCount = 0;
+    ID3D12CommandList** allCmdLists = stk.AllocArray<ID3D12CommandList*>(stageCount);
+    ID3D12CommandList** validCmdLists = stk.AllocArray<ID3D12CommandList*>(stageCount);
+    u32                 allListCount = 0;
+    u32                 validListCount = 0;
+    bool                valid;
 
-    { // use first command list to do RT transition
-        ID3D12GraphicsCommandList4* cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
-        SetupCommandListForPass(renderPass, cmdList, true, false);
-        CloseCommandListForPass(renderPass, cmdList);
-        cmdLists[listCount++] = (ID3D12CommandList*)cmdList;
+    ID3D12GraphicsCommandList4* cmdList;
+    ID3D12CommandQueue*         gQueue = gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue];
+
+    { // barrier and clear
+        cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
+        valid = EncodePassPrelude(renderPass, cmdList);
+        CheckDX12(cmdList->Close());
+        if (valid)
+        {
+            ID3D12CommandList* cl = cmdList;
+            gQueue->ExecuteCommandLists(1, &cl);
+        }
+        gDX12GlobalState.CommandListCache[(u32)GfxApiQueueType::GraphicsQueue].Free(cmdList);
     }
+
+    DX12RenderStageCommon stageCommon(renderPass);
     for (u32 iStage = 0; iStage < renderPass->PhaseCount; ++iStage)
     {
         for (auto* stage = renderPass->PhaseArray[iStage]; stage != nullptr;
-             stage = (GfxApiRenderPassStage*)stage->Next)
+                stage = (GfxApiRenderPassStage*)stage->Next)
         {
-            ID3D12GraphicsCommandList4* cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
-            SetupCommandListForPass(renderPass, cmdList, true, true);
-            EncodeDrawcalls(*renderPass, stage->Drawcalls, stage->DrawcallCount, cmdList);
-            CloseCommandListForPass(renderPass, cmdList);
-            cmdLists[listCount++] = (ID3D12CommandList*)cmdList;
+            cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
+            allCmdLists[allListCount++] = cmdList;
+            valid = EncodeDrawcalls(stageCommon, stage->Drawcalls, stage->DrawcallCount, cmdList);
+            CheckDX12(cmdList->Close());
+            if (valid)
+                validCmdLists[validListCount++] = (ID3D12CommandList*)cmdList;
         }
     }
-    { // empty last to make sure resume with no suspend
-        ID3D12GraphicsCommandList4* cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
-        SetupCommandListForPass(renderPass, cmdList, false, true);
-        CloseCommandListForPass(renderPass, cmdList);
-        cmdLists[listCount++] = (ID3D12CommandList*)cmdList;
-    }
-    gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue]->ExecuteCommandLists(listCount,
-        cmdLists);
-    for (u32 iCmdList = 0; iCmdList < listCount; ++iCmdList)
+    if (validListCount > 0)
+        gQueue->ExecuteCommandLists(validListCount, validCmdLists);
+    
+    for (u32 iCmdList = 0; iCmdList < allListCount; ++iCmdList)
     {
-        auto glist = (ID3D12GraphicsCommandList4*)cmdLists[iCmdList];
+        auto glist = (ID3D12GraphicsCommandList4*)allCmdLists[iCmdList];
         gDX12GlobalState.CommandListCache[(u32)GfxApiQueueType::GraphicsQueue].Free(glist);
     }
 }

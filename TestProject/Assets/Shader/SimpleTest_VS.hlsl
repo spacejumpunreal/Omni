@@ -12,6 +12,6 @@ VSOut VSMain(uint vid : SV_VertexID)
 	uint y = vid / 2;
 	float2 xy = float2(x, y) * 2 - 1;
 	o.hpos = float4(xy * 0.5f, 0.5f, 1);
-	o.color = float4(xy, 1 - xy.x - xy.y, 1);
+	o.color = float4(x, y, saturate(1.0f - x - y), 1);
 	return o;
 }

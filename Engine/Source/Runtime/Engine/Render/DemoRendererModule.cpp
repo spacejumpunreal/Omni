@@ -202,6 +202,7 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     {
         GfxApiBlendStateDesc desc;
         memset(&desc, 0, sizeof(desc));
+        desc.Configs[0].WriteMask = 0xf;
         self.TestBlendState = gfxApi.CreateBlendState(desc);
     }
     {
@@ -303,7 +304,7 @@ void DemoRendererModulePrivateImpl::Tick()
     u32               currentBuffer = gfxApi.GetCurrentBackbufferIndex(self.SwapChain);
     GfxApiRenderPass* renderPass = new GfxApiRenderPass(psa, 1);
     renderPass->RenderTargets[0].Texture = self.Backbuffers[currentBuffer];
-    renderPass->RenderTargets[0].ClearValue = Vector4(1, 0, 0, 0);
+    renderPass->RenderTargets[0].ClearValue = Vector4(0, 0, 0, 0);
     renderPass->RenderTargets[0].Action = GfxApiLoadStoreActions::Clear | GfxApiLoadStoreActions::Store;
 
     GfxApiRenderPassStage* passStage = new GfxApiRenderPassStage(psa, 1);
@@ -326,8 +327,6 @@ void DemoRendererModulePrivateImpl::Tick()
         dc.PSOParams.RasterizerState = self.TestRasterizerState;
         dc.PSOParams.DepthStencilState = self.TestDepthStencilState;
     }
-    
-
 
     gfxApi.DrawRenderPass(renderPass);
     gfxApi.Present(self.SwapChain, true);
