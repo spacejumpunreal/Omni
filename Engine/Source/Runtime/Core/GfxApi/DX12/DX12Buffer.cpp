@@ -39,7 +39,7 @@ void* DX12Buffer::Map(u32 beginOffset, u32 mapSize)
     range.Begin = beginOffset;
     range.End = beginOffset + mapSize;
     void* ptr;
-    CheckDX12(mDX12Resource->Map(0, &range, &ptr));
+    CheckDX12(mDX12Resource->Map(0, mapSize == 0 ? nullptr : &range, &ptr));
     return ptr;
 }
 

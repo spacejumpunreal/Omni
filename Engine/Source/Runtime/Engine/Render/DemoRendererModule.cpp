@@ -331,11 +331,11 @@ void DemoRendererModulePrivateImpl::Tick()
     u32 currentBuffer = gfxApi.GetCurrentBackbufferIndex(self.SwapChain);
 
     {//update constant
-        auto v4Ptr = (Vector4*)gfxApi.MapBuffer(self.TestConstantBuffer[currentBuffer], 0, sizeof(Vector4));
+        auto v4Ptr = (Vector4*)(256 + (u8*)gfxApi.MapBuffer(self.TestConstantBuffer[currentBuffer], 0, 0));
         auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - self.StartTime);
         float a = Mathf::Sinf(float(ms.count() / 1000.0));
         *v4Ptr = Vector4(Mathf::Abs(a), 0, 0, 1);
-        gfxApi.UnmapBuffer(self.TestConstantBuffer[currentBuffer], 0, sizeof(Vector4));
+        gfxApi.UnmapBuffer(self.TestConstantBuffer[currentBuffer], 256, sizeof(Vector4));
     }
 
     GfxApiRenderPass* renderPass = new GfxApiRenderPass(psa, 1);
@@ -366,7 +366,7 @@ void DemoRendererModulePrivateImpl::Tick()
         GfxApiBindingGroup* bindingGroup = psa->AllocArray<GfxApiBindingGroup>(1);
         dc.BindingGroups[0] = bindingGroup;
         bindingGroup->ConstantBuffer.Buffer = self.TestConstantBuffer[currentBuffer];
-        bindingGroup->ConstantBuffer.Offset = 0;
+        bindingGroup->ConstantBuffer.Offset = 256;
     }
 
     gfxApi.DrawRenderPass(renderPass);

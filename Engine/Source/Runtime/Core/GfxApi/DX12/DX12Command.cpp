@@ -286,8 +286,7 @@ static bool EncodeDrawcalls(const DX12RenderStageCommon& stageCommon,
                 u32 bindingGroupIdx = params[iParam].FromBindingGroup;
                 auto cbv = dc.BindingGroups[bindingGroupIdx]->ConstantBuffer;
                 auto gpuAddr = gDX12GlobalState.DX12BufferPool.ToPtr(cbv.Buffer)->GetResource()->GetGPUVirtualAddress();
-                CheckDebug(cbv.Offset == 0);
-                gCmdList->SetGraphicsRootConstantBufferView(iParam, gpuAddr);
+                gCmdList->SetGraphicsRootConstantBufferView(iParam, gpuAddr + cbv.Offset);
             }
             gCmdList->OMSetStencilRef(dc.StencilRef);
         }
