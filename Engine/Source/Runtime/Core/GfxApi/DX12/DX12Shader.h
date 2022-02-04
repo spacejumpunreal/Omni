@@ -9,6 +9,7 @@ namespace Omni
 {
 struct GfxApiShaderDesc;
 struct GfxApiPSOSignatureDesc;
+struct GfxApiBindingSlot;
 
 class DX12Shader
 {
@@ -26,10 +27,14 @@ class DX12PSOSignature
 public:
     DX12PSOSignature(const GfxApiPSOSignatureDesc& desc);
     ~DX12PSOSignature();
-    ID3D12RootSignature* GetRootSignature();
+    ID3D12RootSignature*     GetRootSignature();
+    u32                      GetRootParamCount();
+    const GfxApiBindingSlot* GetRootParamDescs();
 
 private:
     ID3D12RootSignature* mRootSignature;
+    GfxApiBindingSlot*   mSlots;
+    u32                  mSlotCount;
 };
 
 } // namespace Omni

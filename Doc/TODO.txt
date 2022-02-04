@@ -1,17 +1,12 @@
 # todo
 - DrawTriangle
-	- first drawcall
-		- DX12RenderPass, handle drawcall
-			- PSOManager
-				- get
-				- purge
-				- xxhash related binary hash function
-			- DrawIndexed
-	- DX12Module
-		- DX12Shader
-		- DX12PSO/DX12PSOManager
-		- DX12TmpBufferManager
-		- DrawPass: DrawIndexed
+	- constant color(e:60m)
+		- constant buffer写
+		- RootSignature, Descriptor heap实际用起来
+	- FreeCamera(e:120m)
+		- 都是逻辑,公式推导回忆
+	- 导入mesh(e:180)
+		- SRV buffer
 	
 - DiffuseShading
 	- drawcall

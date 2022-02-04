@@ -45,6 +45,7 @@ public:
     GfxApiTextureRef    Backbuffers[BackbufferCount];
     GfxApiBufferRef     TestUploadBuffer;
     GfxApiBufferRef     TestGPUBuffer;
+    GfxApiBufferRef     TestConstantBuffer[BackbufferCount];
 
     std::array<GfxApiShaderRef, 2> TestShaders;
     GfxApiPSOSignatureRef          TestPSOSignature;
@@ -54,6 +55,8 @@ public:
     GfxApiDepthStencilStateRef TestDepthStencilState;
 
     GfxApiGpuEventRef GpuEvent;
+
+    TimePoint StartTime;
 
     u32 ClientAreaSizeX = 0;
     u32 ClientAreaSizeY = 0;
@@ -196,7 +199,15 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     }
     { // PSO
         GfxApiPSOSignatureDesc desc;
-        desc.SlotCount = 0;
+        GfxApiBindingSlot      slots[1];
+        slots[0].Type = GfxApiBindingType::ConstantBuffer;
+        slots[0].Space = 0;
+        slots[0].BaseRegister = 0;
+        slots[0].Range = 1;
+        slots[0].VisibleStageMask = 1 << (u32)GfxApiShaderStage::Fragment;
+        slots[0].FromBindingGroup = 0;
+        desc.Slots = slots;
+        desc.SlotCount = 1;
         self.TestPSOSignature = gfxApi.CreatePSOSignature(desc);
     }
     {
@@ -221,15 +232,30 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
         desc.EnableStencil = false;
         self.TestDepthStencilState = gfxApi.CreateDepthStencilState(desc);
     }
+    {//binding declaration
+
+    }
+    {//constant buffer
+        for (u32 iBuffer = 0; iBuffer < BackbufferCount; ++iBuffer)
+        {
+            GfxApiBufferDesc desc;
+            desc.Size = 64 * 1024;
+            desc.Align = 64 * 1024;
+            desc.AccessFlags = GfxApiAccessFlags::Upload;
+            self.TestConstantBuffer[iBuffer] = gfxApi.CreateBuffer(desc);
+        }
+    }
 
     tm.RegisterFrameTick_OnAnyThread(EngineFrameType::Render,
         DemoRendererTickPriority,
         DemoRendererImpl::GetData(this),
         QueueKind::Main);
     tm.SetFrameRate_OnMainThread(EngineFrameType::Render, 30);
-    
+
     Action1<void, void*> cb(PageSubAllocator::Destroy, psa);
     gfxApi.ScheduleCompleteHandler(cb, kAllQueueMask);
+
+    self.StartTime = std::chrono::steady_clock::now();
 
     Module::Initialize(args);
 }
@@ -264,6 +290,7 @@ void DemoRendererModule::Finalize()
     for (u32 iBuffer = 0; iBuffer < BackbufferCount; ++iBuffer)
     {
         self.Backbuffers[iBuffer] = (GfxApiTextureRef)GfxApiTextureRef::Null();
+        gfxApi.DestroyBuffer(self.TestConstantBuffer[iBuffer]);
     }
     tm.UnregisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority);
 
@@ -301,7 +328,16 @@ void DemoRendererModulePrivateImpl::Tick()
         }
     }
 
-    u32               currentBuffer = gfxApi.GetCurrentBackbufferIndex(self.SwapChain);
+    u32 currentBuffer = gfxApi.GetCurrentBackbufferIndex(self.SwapChain);
+
+    {//update constant
+        auto v4Ptr = (Vector4*)gfxApi.MapBuffer(self.TestConstantBuffer[currentBuffer], 0, sizeof(Vector4));
+        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - self.StartTime);
+        float a = Mathf::Sinf(float(ms.count() / 1000.0));
+        *v4Ptr = Vector4(Mathf::Abs(a), 0, 0, 1);
+        gfxApi.UnmapBuffer(self.TestConstantBuffer[currentBuffer], 0, sizeof(Vector4));
+    }
+
     GfxApiRenderPass* renderPass = new GfxApiRenderPass(psa, 1);
     renderPass->RenderTargets[0].Texture = self.Backbuffers[currentBuffer];
     renderPass->RenderTargets[0].ClearValue = Vector4(0, 0, 0, 0);
@@ -326,6 +362,11 @@ void DemoRendererModulePrivateImpl::Tick()
         dc.PSOParams.BlendState = self.TestBlendState;
         dc.PSOParams.RasterizerState = self.TestRasterizerState;
         dc.PSOParams.DepthStencilState = self.TestDepthStencilState;
+
+        GfxApiBindingGroup* bindingGroup = psa->AllocArray<GfxApiBindingGroup>(1);
+        dc.BindingGroups[0] = bindingGroup;
+        bindingGroup->ConstantBuffer.Buffer = self.TestConstantBuffer[currentBuffer];
+        bindingGroup->ConstantBuffer.Offset = 0;
     }
 
     gfxApi.DrawRenderPass(renderPass);

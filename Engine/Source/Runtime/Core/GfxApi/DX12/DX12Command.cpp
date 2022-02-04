@@ -243,6 +243,8 @@ static bool EncodeDrawcalls(const DX12RenderStageCommon& stageCommon,
     auto  stkScope = stk.PushScope();
     bool  valid = false;
 
+    DX12PSOSignature* rootSig;
+
     memcpy(psoKey.RTFormats, stageCommon.RTFormats, sizeof(stageCommon.RTFormats));
     psoKey.RTCount = stageCommon.RTCount;
 
@@ -269,7 +271,7 @@ static bool EncodeDrawcalls(const DX12RenderStageCommon& stageCommon,
         }
         // PSO
         {
-            DX12PSOSignature* rootSig = gDX12GlobalState.DX12PSOSignaturePool.ToPtr(dc.PSOParams.Signature);
+            rootSig = gDX12GlobalState.DX12PSOSignaturePool.ToPtr(dc.PSOParams.Signature);
             gCmdList->SetGraphicsRootSignature(rootSig->GetRootSignature());
             psoKey.Params = dc.PSOParams;
             ID3D12PipelineState* pso = gDX12GlobalState.PSOManager->GetOrCreatePSO(psoKey);
@@ -277,10 +279,15 @@ static bool EncodeDrawcalls(const DX12RenderStageCommon& stageCommon,
         }
         // Binding
         {
-            for (u32 iSlot = 0; iSlot < (u32)GfxApiBindingGroupSlot::Count; ++iSlot)
+            u32 paramCount = rootSig->GetRootParamCount();
+            const GfxApiBindingSlot* params = rootSig->GetRootParamDescs();
+            for (u32 iParam = 0; iParam < paramCount; ++iParam)
             {
-                if (dc.BindingGroups[0] != nullptr)
-                    NotImplemented();
+                u32 bindingGroupIdx = params[iParam].FromBindingGroup;
+                auto cbv = dc.BindingGroups[bindingGroupIdx]->ConstantBuffer;
+                auto gpuAddr = gDX12GlobalState.DX12BufferPool.ToPtr(cbv.Buffer)->GetResource()->GetGPUVirtualAddress();
+                CheckDebug(cbv.Offset == 0);
+                gCmdList->SetGraphicsRootConstantBufferView(iParam, gpuAddr);
             }
             gCmdList->OMSetStencilRef(dc.StencilRef);
         }

@@ -95,7 +95,7 @@ struct GfxApiBindingSlot
     u32               BaseRegister;
     u32               Range;
     u32               VisibleStageMask;
-    u32               FromBindingGroup;
+    u32               FromBindingGroup; //see also GfxApiBindingGroup
 };
 
 struct GfxApiPSOSignatureDesc // RootSignature in dx12, DescriptorSet in Vulkan, ArgumentBuffer in Metal

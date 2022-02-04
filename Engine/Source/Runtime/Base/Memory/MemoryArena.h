@@ -80,6 +80,7 @@ T* ScratchStack::AllocArray(u32 count)
 }
 u8* ScratchStack::Allocate(u32 size)
 {
+    CheckDebug(mDepth > 0);
     u8* ret = mPtr + mUsedBytes;
     mUsedBytes += AlignUpSize(size, Alignment);
     CheckDebug(mUsedBytes <= mTotalBytes);
@@ -88,6 +89,7 @@ u8* ScratchStack::Allocate(u32 size)
 template<typename T>
 T* ScratchStack::AllocateAndInitWith(u32 count, const T* src)
 {
+    CheckDebug(mDepth > 0);
     auto ptr = (T*)Allocate(count * sizeof(T));
     std::memcpy(ptr, src, count * sizeof(T));
     return ptr;

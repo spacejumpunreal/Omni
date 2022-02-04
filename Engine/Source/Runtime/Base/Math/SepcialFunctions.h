@@ -28,17 +28,10 @@ struct Mathf
     {
         return std::isnan(f);
     }
-    FORCEINLINE static float Abs(float f)
+    template<typename T>
+    FORCEINLINE static T Abs(T f)
     {
         return std::abs(f);
-    }
-    FORCEINLINE static i32 Abs(i32 i)
-    {
-        return std::abs(i);
-    }
-    FORCEINLINE static i64 Abs(i64 ll)
-    {
-        return std::abs(ll);
     }
     FORCEINLINE static u32 Lzcnt64(u64 bits)
     {
@@ -58,6 +51,10 @@ struct Mathf
             return false;
         i32 pos = FindMostSignificant1Bit(bits);
         return bits == (1uLL << pos);
+    }
+    FORCEINLINE static float Sinf(float f)
+    {
+        return std::sinf(f);
     }
 };
 } // namespace Omni

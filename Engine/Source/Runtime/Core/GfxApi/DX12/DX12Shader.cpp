@@ -24,6 +24,11 @@ static const wchar_t* kDefaultBuildTarget[(u32)GfxApiShaderStage::TotalCount] = 
 };
 static constexpr u32 kMaxShaderEntryLength = 64;
 
+/*
+ * definitions
+ */
+
+// DX12Shader
 DX12Shader::DX12Shader(const GfxApiShaderDesc& desc) : mCompiledBinary(nullptr)
 {
     if (!desc.Source.empty())
@@ -56,21 +61,41 @@ ID3DBlob* DX12Shader::GetCompiledBinary()
 {
     return mCompiledBinary;
 }
-DX12PSOSignature::DX12PSOSignature(const GfxApiPSOSignatureDesc& desc)
+
+// DX12PSOSignature
+static D3D12_SHADER_VISIBILITY CalcShaderVisibility(u32 mask)
+{
+    u32 acc = 0;
+    if (mask & (1 << u32(GfxApiShaderStage::Vertex)))
+    {
+        acc |= D3D12_SHADER_VISIBILITY_VERTEX;
+    }
+    if (mask & (1 << u32(GfxApiShaderStage::Fragment)))
+    {
+        acc |= D3D12_SHADER_VISIBILITY_PIXEL;
+    }
+    return D3D12_SHADER_VISIBILITY(acc);
+}
+
+DX12PSOSignature::DX12PSOSignature(const GfxApiPSOSignatureDesc& desc) : mSlotCount(desc.SlotCount)
 {
     CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootDesc;
     D3D12_ROOT_SIGNATURE_FLAGS            flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
     flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
     auto&                    stk = MemoryModule::Get().GetThreadScratchStack();
+    auto scope = stk.PushScope();
     CD3DX12_ROOT_PARAMETER1* params = stk.AllocArray<CD3DX12_ROOT_PARAMETER1>(desc.SlotCount);
-    CheckAlways(desc.SlotCount == 0);
     for (u32 iSlot = 0; iSlot < desc.SlotCount; ++iSlot)
     {
+        GfxApiBindingSlot& slotDef = desc.Slots[iSlot];
         switch (desc.Slots[iSlot].Type)
         {
         default:
         case GfxApiBindingType::ConstantBuffer:
-            NotImplemented();
+            params[iSlot].InitAsConstantBufferView(slotDef.BaseRegister,
+                slotDef.Space,
+                D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC,
+                CalcShaderVisibility(slotDef.VisibleStageMask));
             break;
         case GfxApiBindingType::Buffers:
             NotImplemented();
@@ -100,14 +125,25 @@ DX12PSOSignature::DX12PSOSignature(const GfxApiPSOSignatureDesc& desc)
         IID_PPV_ARGS(&mRootSignature));
     if (blob)
         blob->Release();
+    mSlots = MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi).allocate_object<GfxApiBindingSlot>(mSlotCount);
+    memcpy(mSlots, desc.Slots, sizeof(GfxApiBindingSlot) * mSlotCount);
 }
 DX12PSOSignature::~DX12PSOSignature()
 {
     SafeRelease(mRootSignature);
+    MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi).deallocate_object<GfxApiBindingSlot>(mSlots, mSlotCount);
 }
 ID3D12RootSignature* DX12PSOSignature::GetRootSignature()
 {
     return mRootSignature;
+}
+u32 DX12PSOSignature::GetRootParamCount()
+{
+    return mSlotCount;
+}
+const GfxApiBindingSlot* DX12PSOSignature::GetRootParamDescs()
+{
+    return mSlots;
 }
 } // namespace Omni
 
