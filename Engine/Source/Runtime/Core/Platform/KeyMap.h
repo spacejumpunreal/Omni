@@ -14,5 +14,8 @@ namespace Omni
         using KeyCode = u32;
         static constexpr KeyCode MouseLeft = KeyMapInternal::OmniExtension + 0x0001;
         static constexpr KeyCode MouseRight = KeyMapInternal::OmniExtension + 0x0002;
+
+        static constexpr KeyCode Key_A = 'A';
+        static constexpr KeyCode Key_0 = '0';
     }
 }

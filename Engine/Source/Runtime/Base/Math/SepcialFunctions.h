@@ -10,6 +10,8 @@ namespace Omni
 {
 struct Mathf
 {
+    static constexpr float PI = 3.141592f;
+
     template<typename T>
     FORCEINLINE static T Max(T a, T b)
     {
@@ -52,9 +54,25 @@ struct Mathf
         i32 pos = FindMostSignificant1Bit(bits);
         return bits == (1uLL << pos);
     }
-    FORCEINLINE static float Sinf(float f)
+    FORCEINLINE static float Sinf(float a)
     {
-        return std::sinf(f);
+        return std::sinf(a);
+    }
+    FORCEINLINE static float Cosf(float a)
+    {
+        return std::cosf(a);
+    }
+    FORCEINLINE static float Tanf(float a)
+    {
+        return std::tanf(a);
+    }
+    FORCEINLINE static float Cotf(float a)
+    {
+        return 1.0f / std::tanf(a);
+    }
+    FORCEINLINE static float ToRad(float degree)
+    {
+        return degree * (Mathf::PI / 180.0f);
     }
 };
 } // namespace Omni

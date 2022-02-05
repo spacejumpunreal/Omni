@@ -1,5 +1,6 @@
 #include "Runtime/Engine/EnginePCH.h"
 #include "Runtime/Engine/Render/DemoRendererModule.h"
+#include "Runtime/Base/Math/Camera.h"
 #include "Runtime/Base/Misc/PImplUtils.h"
 #include "Runtime/Base/Memory/MemoryArena.h"
 #include "Runtime/Base/Memory/PageSubAllocator.h"
@@ -13,6 +14,8 @@
 #include "Runtime/Core/GfxApi/GfxApiBlitPass.h"
 #include "Runtime/Core/GfxApi/GfxApiGraphicState.h"
 #include "Runtime/Core/Platform/WindowModule.h"
+#include "Runtime/Core/Platform/InputModule.h"
+#include "Runtime/Core/Platform/KeyMap.h"
 #include "Runtime/Engine/Timing/TimingModule.h"
 
 #define DEMO_MODULE 1
@@ -28,10 +31,11 @@ constexpr u32 BackbufferCount = 3;
  * Declarations
  */
 
-struct DemoRendererModulePrivateImpl : public ICallback
+struct DemoRendererModulePrivateImpl : public ICallback, public KeyStateListener
 {
 public:
     DemoRendererModulePrivateImpl();
+    void OnKeyEvent(KeyCode key, bool pressedf) override;
     void Tick();
     void operator()() override
     {
@@ -57,10 +61,25 @@ public:
     GfxApiGpuEventRef GpuEvent;
 
     TimePoint StartTime;
+    Camera    Camera;
+    MousePos  LastMousePos;
+    bool      Moving = false;
+    Vector3   TranslationDir = {};
+
+    float RotateMouseSpeed;
+    float TranslationSpeed;
 
     u32 ClientAreaSizeX = 0;
     u32 ClientAreaSizeY = 0;
     u32 FrameIndex = 0;
+
+    static constexpr u32 TestCBOffset = 256;
+    static constexpr u32 TestCBSize = 256;
+};
+
+struct TestShaderCB
+{
+    Matrix4x4 VPMatrix;
 };
 
 using DemoRendererImpl = PImplCombine<DemoRendererModule, DemoRendererModulePrivateImpl>;
@@ -73,6 +92,35 @@ static constexpr u32 DemoRendererTickPriority = 100;
 /**
  * definitions
  */
+
+void DemoRendererModulePrivateImpl::OnKeyEvent(KeyCode key, bool pressed)
+{
+    if (key == KeyMap::MouseRight)
+        Moving = pressed;
+
+    float dir = pressed ? 1.0f : -1.0f;
+    switch (key)
+    {
+    case KeyCode('A'):
+        TranslationDir.X += -1.0f * dir;
+        break;
+    case KeyCode('D'):
+        TranslationDir.X += +1.0f * dir;
+        break;
+    case KeyCode('Q'):
+        TranslationDir.Y += -1.0f * dir;
+        break;
+    case KeyCode('E'):
+        TranslationDir.Y += +1.0f * dir;
+        break;
+    case KeyCode('S'):
+        TranslationDir.Z += -1.0f * dir;
+        break;
+    case KeyCode('W'):
+        TranslationDir.Z += +1.0f * dir;
+        break;
+    }
+}
 
 DemoRendererModulePrivateImpl::DemoRendererModulePrivateImpl()
 {
@@ -121,6 +169,8 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     gfxApi.Retain();
     FileModule& fm = FileModule::Get();
     fm.Retain();
+    InputModule& im = InputModule::Get();
+    im.Retain();
 
     PMRAllocator gfxApiAlloc = mm.GetPMRAllocator(MemoryKind::GfxApiTmp);
 
@@ -204,7 +254,7 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
         slots[0].Space = 0;
         slots[0].BaseRegister = 0;
         slots[0].Range = 1;
-        slots[0].VisibleStageMask = 1 << (u32)GfxApiShaderStage::Fragment;
+        slots[0].VisibleStageMask = 1 << (u32)GfxApiShaderStage::Vertex;
         slots[0].FromBindingGroup = 0;
         desc.Slots = slots;
         desc.SlotCount = 1;
@@ -232,10 +282,10 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
         desc.EnableStencil = false;
         self.TestDepthStencilState = gfxApi.CreateDepthStencilState(desc);
     }
-    {//binding declaration
+    {
+        // binding declaration
 
-    }
-    {//constant buffer
+    } { // constant buffer
         for (u32 iBuffer = 0; iBuffer < BackbufferCount; ++iBuffer)
         {
             GfxApiBufferDesc desc;
@@ -244,6 +294,21 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
             desc.AccessFlags = GfxApiAccessFlags::Upload;
             self.TestConstantBuffer[iBuffer] = gfxApi.CreateBuffer(desc);
         }
+    }
+    { // Camera
+        im.RegisterListener(KeyMap::MouseRight, &self);
+        im.RegisterListener(KeyCode('A'), &self);
+        im.RegisterListener(KeyCode('D'), &self);
+        im.RegisterListener(KeyCode('W'), &self);
+        im.RegisterListener(KeyCode('S'), &self);
+        im.RegisterListener(KeyCode('Q'), &self);
+        im.RegisterListener(KeyCode('E'), &self);
+
+        float   aspect = float(self.ClientAreaSizeX) / self.ClientAreaSizeY;
+        Vector3 eyePos(5, 0, -5);
+        self.Camera = Camera(aspect, Mathf::ToRad(90), eyePos, 0, 0, 0.05f, 50.0f);
+        self.RotateMouseSpeed = Mathf::PI / self.ClientAreaSizeX;
+        self.TranslationSpeed = 2.0f / 30.0f;
     }
 
     tm.RegisterFrameTick_OnAnyThread(EngineFrameType::Render,
@@ -271,6 +336,7 @@ void DemoRendererModule::Finalize()
     WindowModule& wm = WindowModule::Get();
     MemoryModule& mm = MemoryModule::Get();
     FileModule&   fm = FileModule::Get();
+    InputModule&  im = InputModule::Get();
 
     DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
     gfxApi.DestroySwapChain(self.SwapChain);
@@ -294,21 +360,47 @@ void DemoRendererModule::Finalize()
     }
     tm.UnregisterFrameTick_OnAnyThread(EngineFrameType::Render, DemoRendererTickPriority);
 
+    im.UnRegisterlistener(KeyMap::MouseRight, &self);
+    im.UnRegisterlistener(KeyCode('A'), &self);
+    im.UnRegisterlistener(KeyCode('D'), &self);
+    im.UnRegisterlistener(KeyCode('W'), &self);
+    im.UnRegisterlistener(KeyCode('S'), &self);
+    im.UnRegisterlistener(KeyCode('Q'), &self);
+    im.UnRegisterlistener(KeyCode('E'), &self);
+
     Module::Finalize();
     gfxApi.Release();
     tm.Release();
     wm.Release();
     mm.Release();
     fm.Release();
+    im.Release();
 }
 
 void DemoRendererModulePrivateImpl::Tick()
 {
     GfxApiModule&     gfxApi = GfxApiModule::Get();
     MemoryModule&     mm = MemoryModule::Get();
+    InputModule&      im = InputModule::Get();
     PMRAllocator      gfxApiAlloc = mm.GetPMRAllocator(MemoryKind::GfxApiTmp);
     DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
     PageSubAllocator* psa = PageSubAllocator::Create(1 << 20, gfxApiAlloc, gfxApiAlloc);
+
+    { // Camera logic
+        // float    mouseSpeed = 1.0f;
+        MousePos mousePos;
+        im.GetMousePos(mousePos);
+        i32 mouseDX = 0, mouseDY = 0;
+        if (FrameIndex != 0 && Moving)
+        {
+            mouseDX = mousePos.X - self.LastMousePos.X;
+            mouseDY = mousePos.Y - self.LastMousePos.Y;
+            self.Camera.LocalMove(self.TranslationDir * self.TranslationSpeed);
+            self.Camera.LocalRotate(mouseDY * self.RotateMouseSpeed, mouseDX * self.RotateMouseSpeed);
+        }
+        
+        self.LastMousePos = mousePos;
+    }
 
     gfxApi.CheckGpuEvents(kAllQueueMask);
 
@@ -330,12 +422,15 @@ void DemoRendererModulePrivateImpl::Tick()
 
     u32 currentBuffer = gfxApi.GetCurrentBackbufferIndex(self.SwapChain);
 
-    {//update constant
-        auto v4Ptr = (Vector4*)(256 + (u8*)gfxApi.MapBuffer(self.TestConstantBuffer[currentBuffer], 0, 0));
-        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - self.StartTime);
-        float a = Mathf::Sinf(float(ms.count() / 1000.0));
-        *v4Ptr = Vector4(Mathf::Abs(a), 0, 0, 1);
-        gfxApi.UnmapBuffer(self.TestConstantBuffer[currentBuffer], 256, sizeof(Vector4));
+    { // update constant
+        
+        TestShaderCB cb;
+        self.Camera.GetViewProjectionMatrix(cb.VPMatrix);
+
+        auto cbPtr =
+            (TestShaderCB*)(TestCBOffset + (u8*)gfxApi.MapBuffer(self.TestConstantBuffer[currentBuffer], 0, 0));
+        memcpy(cbPtr, &cb, sizeof(TestShaderCB));
+        gfxApi.UnmapBuffer(self.TestConstantBuffer[currentBuffer], TestCBOffset, sizeof(TestShaderCB));
     }
 
     GfxApiRenderPass* renderPass = new GfxApiRenderPass(psa, 1);
@@ -366,7 +461,7 @@ void DemoRendererModulePrivateImpl::Tick()
         GfxApiBindingGroup* bindingGroup = psa->AllocArray<GfxApiBindingGroup>(1);
         dc.BindingGroups[0] = bindingGroup;
         bindingGroup->ConstantBuffer.Buffer = self.TestConstantBuffer[currentBuffer];
-        bindingGroup->ConstantBuffer.Offset = 256;
+        bindingGroup->ConstantBuffer.Offset = TestCBOffset;
     }
 
     gfxApi.DrawRenderPass(renderPass);
@@ -375,6 +470,8 @@ void DemoRendererModulePrivateImpl::Tick()
     gfxApi.DestroyEvent(gpuEvent);
     Action1<void, void*> cb(PageSubAllocator::Destroy, psa);
     gfxApi.ScheduleCompleteHandler(cb, kAllQueueMask);
+
+    ++self.FrameIndex;
 }
 
 static Module* DemoRendererModuleCtor(const EngineInitArgMap&)

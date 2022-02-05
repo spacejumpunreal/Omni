@@ -17,6 +17,7 @@
 #define OMNI_SUPPRESS_WARNING_NEW_RETURN_NULL() _Pragma("clang diagnostic ignored \"-Wnew-returns-null\"")
 #define OMNI_SUPPRESS_WARNING_PADDED_DUE_TO_ALIGNMENT()
 #define OMNI_SUPPRESS_WARNING_COND_EXPR_IS_CONSTANT()
+#define OMNI_SUPPRESS_WARNING_NAMELESS_UNION_STRUCT()
 
 #elif _MSC_VER
 #define OMNI_PUSH_WARNING() __pragma(warning(push))
@@ -31,7 +32,7 @@
 #define OMNI_SUPPRESS_WARNING_NEW_RETURN_NULL()
 #define OMNI_SUPPRESS_WARNING_PADDED_DUE_TO_ALIGNMENT() __pragma(warning(disable: 4324))
 #define OMNI_SUPPRESS_WARNING_COND_EXPR_IS_CONSTANT() __pragma(warning(disable: 4127))
-#define OMNI_SUPPRESS_WARNING_DEPRECATED_CODECVT() __pragma(warning(disable : 4996))
+#define OMNI_SUPPRESS_WARNING_NAMELESS_UNION_STRUCT() __pragma(warning(disable : 4201))
 
 #endif
 

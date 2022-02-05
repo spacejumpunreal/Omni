@@ -46,17 +46,9 @@ struct KeyStateLogger : public KeyStateListener
 
 void PlayGroundReady()
 {
-    pleft = new KeyStateLogger();
-    InputModule::Get().RegisterListener(KeyMap::MouseLeft, pleft);
 }
 void PlayGroundWillQuit()
 {
-    if (pleft != nullptr)
-    {
-        InputModule::Get().UnRegisterlistener(KeyMap::MouseLeft, pleft);
-        delete pleft;
-        pleft = nullptr;
-    }
 }
 
 void PlayGroundCodeEmpty()
@@ -81,7 +73,7 @@ int main(int, const char**)
         "LoadModule=Window",
         "LoadModule=DX12",
         "LoadModule=DemoRenderer",
-        "--window-size=800x600",
+        "--window-size=800x800",
         "--file-project-root=C:/checkout/Omni/TestProject",
     };
     system.InitializeAndJoin(ARRAY_LENGTH(engineArgv), engineArgv, Omni::PlayGroundReady, Omni::PlayGroundWillQuit);

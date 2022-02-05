@@ -1,9 +1,8 @@
 # todo
 - DrawTriangle
-	- constant color(e:60m)
-		- constant buffer写
-		- RootSignature, Descriptor heap实际用起来
 	- FreeCamera(e:120m)
+		- Input, Key处理
+		- MoveCamera
 		- 都是逻辑,公式推导回忆
 	- 导入mesh(e:180)
 		- SRV buffer
