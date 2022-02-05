@@ -1,9 +1,11 @@
 #pragma once
 #include "Runtime/Prelude/Omni.h"
 #if OMNI_WINDOWS
+#include "Runtime/Base/Memory/ExternalAllocation.h"
 #include "Runtime/Core/GfxApi/GfxApiConstants.h"
 #include "Runtime/Core/GfxApi/GfxApiNewDelete.h"
 #include "Runtime/Core/GfxApi/GfxApiObject.h"
+#include "Runtime/Core/GfxApi/DX12/DX12Basics.h"
 
 //forward decl
 struct IDXGISwapChain3;
@@ -16,8 +18,6 @@ namespace Omni
 
 	class DX12SwapChain
 	{
-	public:
-		static const u32 MaxBackbuffers = 3;
 	public:
 		DX12SwapChain(const GfxApiSwapChainDesc& desc);
 		~DX12SwapChain();
@@ -32,9 +32,10 @@ namespace Omni
 	private:
 		GfxApiSwapChainDesc         mDesc;
 		IDXGISwapChain3*            mDX12SwapChain;
-        ID3D12DescriptorHeap*       mTmpDescriptorHeap;
-		DX12Texture*                mBackbuffers[MaxBackbuffers];
-        GfxApiTextureRef            mTextureRefs[MaxBackbuffers];
+        ExternalAllocationHandle    mDescAllocHandle;
+        DX12Descriptor              mCPUDescStart;
+        DX12Texture*                mBackbuffers[kBackbufferCount];
+        GfxApiTextureRef            mTextureRefs[kBackbufferCount];
 	};
 }
 

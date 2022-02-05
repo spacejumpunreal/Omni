@@ -64,11 +64,12 @@ public: // state flags
     bool Initialized;
 
 public: // managers
-    class DX12TimelineManager* TimelineManager;
-    class DX12DeleteManager*   DeleteManager;
-    class DX12BufferManager*   BufferManager;
-    class DXCWrapper*          DXCInstance;
-    class DX12PSOManager*      PSOManager;
+    class DX12TimelineManager*   TimelineManager;
+    class DX12DeleteManager*     DeleteManager;
+    class DX12BufferManager*     BufferManager;
+    class DXCWrapper*            DXCInstance;
+    class DX12PSOManager*        PSOManager;
+    class DX12DescriptorManager* DescriptorManager;
 };
 
 extern DX12GlobalState gDX12GlobalState;

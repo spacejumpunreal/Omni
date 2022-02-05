@@ -8,6 +8,7 @@ namespace Omni
  * Constants
  */
 constexpr u32 kMaxMRTCount = 8;
+constexpr u32 kBackbufferCount = 3;
 
 /**
  * Enums

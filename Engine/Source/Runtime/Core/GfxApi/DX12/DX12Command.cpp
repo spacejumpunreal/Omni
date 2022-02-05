@@ -36,168 +36,6 @@ public:
     GfxApiFormat   RTFormats[kMaxMRTCount];
 };
 
-#if false
-static bool SetupCommandListForPass(
-    const GfxApiRenderPass* renderPass, ID3D12GraphicsCommandList4* cmdList, bool suspend, bool resume, i32 idx)
-{
-
-    D3D12_RENDER_PASS_RENDER_TARGET_DESC  rtDescs[kMaxMRTCount] = {};
-    D3D12_RENDER_PASS_DEPTH_STENCIL_DESC  dsDesc = {};
-    D3D12_RENDER_PASS_RENDER_TARGET_DESC* pRTDescs = rtDescs;
-    D3D12_RENDER_PASS_DEPTH_STENCIL_DESC* pDSDesc = &dsDesc;
-    D3D12_RENDER_PASS_FLAGS               renderPassFlags = D3D12_RENDER_PASS_FLAG_NONE | D3D12_RENDER_PASS_FLAG_NONE;
-
-    CD3DX12_RESOURCE_BARRIER barriers[kMaxMRTCount + 1]; // plus depth and stencil
-    // RenderTarget
-    u32                      mrtCount = 0;
-    u32                      barrierCount = 0;
-    for (u32 iMRT = 0; iMRT < kMaxMRTCount; ++iMRT)
-    {
-        D3D12_RENDER_PASS_RENDER_TARGET_DESC& rtDesc = rtDescs[iMRT];
-        if (renderPass->RenderTargets[iMRT].Texture == GfxApiTextureRef::Null())
-        {
-            rtDesc.BeginningAccess.Type = D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS;
-            rtDesc.cpuDescriptor = NullCPUDescriptorHandle;
-            rtDesc.EndingAccess.Type = D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS;
-            continue;
-        }
-        DX12Texture* tex = gDX12GlobalState.DX12TexturePool.ToPtr(renderPass->RenderTargets[iMRT].Texture);
-
-        rtDesc.cpuDescriptor = ToCPUDescriptorHandle(tex->GetCPUDescriptor());
-        rtDesc.BeginningAccess.Type =
-            Any(renderPass->RenderTargets[iMRT].Action & GfxApiLoadStoreActions::Load) || idx != 0
-                ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE
-            : Any(renderPass->RenderTargets[iMRT].Action & GfxApiLoadStoreActions::Clear)
-                ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR
-                : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS;
-
-        if (Any(renderPass->RenderTargets[iMRT].Action & GfxApiLoadStoreActions::Clear))
-        {
-            rtDesc.BeginningAccess.Clear.ClearValue.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-            Vector4* pv4 = (Vector4*)rtDesc.BeginningAccess.Clear.ClearValue.Color;
-            *pv4 = std::get<Vector4>(renderPass->RenderTargets[iMRT].ClearValue);
-        }
-        rtDesc.EndingAccess.Type = Any(renderPass->RenderTargets[iMRT].Action & GfxApiLoadStoreActions::Store)
-                                       ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE
-                                   : Any(renderPass->RenderTargets[iMRT].Action & GfxApiLoadStoreActions::Discard)
-                                       ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD
-                                       : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS;
-        if (tex->EmitBarrier(D3D12_RESOURCE_STATE_RENDER_TARGET, barriers + barrierCount))
-            ++barrierCount;
-
-        mrtCount = iMRT + 1;
-    }
-    if (mrtCount == 0)
-    {
-        pRTDescs = nullptr;
-    }
-    // Depth & stencil
-    if (renderPass->Depth.Texture == GfxApiTextureRef::Null())
-    {
-        pDSDesc = nullptr;
-    }
-    else
-    {
-        NotImplemented("Barrier logic");
-        dsDesc.cpuDescriptor = ToCPUDescriptorHandle(
-            gDX12GlobalState.DX12TexturePool.ToPtr(renderPass->Depth.Texture)->GetCPUDescriptor());
-        dsDesc.DepthBeginningAccess.Type = Any(renderPass->Depth.Action & GfxApiLoadStoreActions::Load)
-                                               ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE
-                                           : Any(renderPass->Depth.Action & GfxApiLoadStoreActions::Clear)
-                                               ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR
-                                               : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_DISCARD;
-        if (Any(renderPass->Depth.Action & GfxApiLoadStoreActions::Clear))
-        {
-            dsDesc.DepthBeginningAccess.Clear.ClearValue.Format = DXGI_FORMAT_R32_FLOAT;
-            dsDesc.DepthBeginningAccess.Clear.ClearValue.DepthStencil.Depth =
-                std::get<float>(renderPass->Depth.ClearValue);
-        }
-        dsDesc.DepthEndingAccess.Type = Any(renderPass->Depth.Action & GfxApiLoadStoreActions::Store)
-                                            ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE
-                                        : Any(renderPass->Depth.Action & GfxApiLoadStoreActions::Discard)
-                                            ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD
-                                            : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS;
-
-        dsDesc.StencilBeginningAccess.Type = Any(renderPass->Stencil.Action & GfxApiLoadStoreActions::Load)
-                                                 ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE
-                                             : Any(renderPass->Stencil.Action & GfxApiLoadStoreActions::Clear)
-                                                 ? D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR
-                                                 : D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_DISCARD;
-        if (Any(renderPass->Stencil.Action & GfxApiLoadStoreActions::Clear))
-        {
-            dsDesc.DepthBeginningAccess.Clear.ClearValue.Format = DXGI_FORMAT_R8_UINT;
-            dsDesc.DepthBeginningAccess.Clear.ClearValue.DepthStencil.Depth =
-                std::get<byte>(renderPass->Stencil.ClearValue);
-        }
-        dsDesc.DepthEndingAccess.Type = Any(renderPass->Stencil.Action & GfxApiLoadStoreActions::Store)
-                                            ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE
-                                        : Any(renderPass->Stencil.Action & GfxApiLoadStoreActions::Discard)
-                                            ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD
-                                            : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS;
-    }
-    if (barrierCount != 0)
-    {
-        cmdList->ResourceBarrier(barrierCount, barriers);
-    }
-
-    if (suspend)
-        renderPassFlags |= D3D12_RENDER_PASS_FLAG_SUSPENDING_PASS;
-    if (resume)
-        renderPassFlags |= D3D12_RENDER_PASS_FLAG_RESUMING_PASS;
-    cmdList->BeginRenderPass(mrtCount, pRTDescs, pDSDesc, renderPassFlags);
-    return barrierCount != 0;
-}
-
-static void CloseCommandListForPass(const GfxApiRenderPass* renderPass, ID3D12GraphicsCommandList4* cmdList)
-{
-    (void)renderPass;
-    cmdList->EndRenderPass();
-    CheckDX12(cmdList->Close());
-}
-
-
-void NotUsedDX12DrawRenderPass(const GfxApiRenderPass* renderPass)
-{
-    u32                 stageCount = renderPass->GetStageCount();
-    auto&               stk = MemoryModule::Get().GetThreadScratchStack();
-    auto                stkScope = stk.PushScope();
-    ID3D12CommandList** cmdLists = stk.AllocArray<ID3D12CommandList*>(stageCount + 2);
-    u32                 listCount = 0;
-
-    { // use first command list to do RT transition
-        ID3D12GraphicsCommandList4* cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
-        SetupCommandListForPass(renderPass, cmdList, true, false, 0);
-        CloseCommandListForPass(renderPass, cmdList);
-        cmdLists[listCount++] = (ID3D12CommandList*)cmdList;
-    }
-    for (u32 iStage = 0; iStage < renderPass->PhaseCount; ++iStage)
-    {
-        for (auto* stage = renderPass->PhaseArray[iStage]; stage != nullptr;
-             stage = (GfxApiRenderPassStage*)stage->Next)
-        {
-            ID3D12GraphicsCommandList4* cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
-            SetupCommandListForPass(renderPass, cmdList, true, true, 1);
-            EncodeDrawcalls(*renderPass, stage->Drawcalls, stage->DrawcallCount, cmdList);
-            CloseCommandListForPass(renderPass, cmdList);
-            cmdLists[listCount++] = (ID3D12CommandList*)cmdList;
-        }
-    }
-    { // empty last to make sure resume with no suspend
-        ID3D12GraphicsCommandList4* cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
-        SetupCommandListForPass(renderPass, cmdList, false, true, -1);
-        CloseCommandListForPass(renderPass, cmdList);
-        cmdLists[listCount++] = (ID3D12CommandList*)cmdList;
-    }
-    gDX12GlobalState.Singletons.D3DQueues[(u32)GfxApiQueueType::GraphicsQueue]->ExecuteCommandLists(listCount,
-        cmdLists);
-    for (u32 iCmdList = 0; iCmdList < listCount; ++iCmdList)
-    {
-        auto glist = (ID3D12GraphicsCommandList4*)cmdLists[iCmdList];
-        gDX12GlobalState.CommandListCache[(u32)GfxApiQueueType::GraphicsQueue].Free(glist);
-    }
-}
-
-#endif
 
 static void ToDX12Viewports(const GfxApiViewport viewports[], D3D12_VIEWPORT dx12Viewports[], u32 count)
 {
@@ -285,8 +123,12 @@ static bool EncodeDrawcalls(const DX12RenderStageCommon& stageCommon,
             {
                 u32 bindingGroupIdx = params[iParam].FromBindingGroup;
                 auto cbv = dc.BindingGroups[bindingGroupIdx]->ConstantBuffer;
-                auto gpuAddr = gDX12GlobalState.DX12BufferPool.ToPtr(cbv.Buffer)->GetResource()->GetGPUVirtualAddress();
-                gCmdList->SetGraphicsRootConstantBufferView(iParam, gpuAddr + cbv.Offset);
+                if (cbv.Buffer != GfxApiBufferRef::Null())
+                {
+                    auto gpuAddr =
+                        gDX12GlobalState.DX12BufferPool.ToPtr(cbv.Buffer)->GetResource()->GetGPUVirtualAddress();
+                    gCmdList->SetGraphicsRootConstantBufferView(iParam, gpuAddr + cbv.Offset);
+                }
             }
             gCmdList->OMSetStencilRef(dc.StencilRef);
         }

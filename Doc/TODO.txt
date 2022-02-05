@@ -1,19 +1,25 @@
 # todo
 - DrawTriangle
-	- FreeCamera(e:120m)
-		- Input, Key处理
-		- MoveCamera
-		- 都是逻辑,公式推导回忆
+	- SRV VertexBuffer(e:240m, c:)
+		- DX12DescriptorManager
+			- PersistentAllocation
+			- TmpAllocation
+			- ExternalAllocation, DescriptorHeapRange
+			- Buffer SRV, Desc加Usage Flag, CreateSRV
+		- Drawcall
+			- TmpAllocation
+			- Copy Descriptor
+			- SetDescriptorTable
+			- 改测试shader
+			- CPU上生成测试Buffer数据
+		- Debug
 	- 导入mesh(e:180)
 		- SRV buffer
 	
 - DiffuseShading
+	- depth buffer, depth test
 	- drawcall
-		- Buffer
-		- ConstantBuffer
 		- Texture
-		- Shader
-		- PSO
 
 - ShadowMap
 - ComputeShader

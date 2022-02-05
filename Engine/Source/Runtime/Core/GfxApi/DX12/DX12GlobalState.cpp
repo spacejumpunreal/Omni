@@ -19,6 +19,7 @@
 #include "Runtime/Core/GfxApi/DX12/DX12BufferManager.h"
 #include "Runtime/Core/GfxApi/DX12/DXCWrapper.h"
 #include "Runtime/Core/GfxApi/DX12/DX12PSOManager.h"
+#include "Runtime/Core/GfxApi/DX12/DX12DescriptorManager.h"
 #include <d3d12.h>
 
 #include <dxgidebug.h>
@@ -162,6 +163,7 @@ void DX12GlobalState::Initialize()
     BufferManager = DX12BufferManager::Create();
     DXCInstance = DXCWrapper::Create();
     PSOManager = DX12PSOManager::Create();
+    DescriptorManager = DX12DescriptorManager::Create();
 
     CheckSupportedFeatures(Singletons.D3DDevice);
 
@@ -186,7 +188,9 @@ void DX12GlobalState::Finalize()
 
     DESTROY_MANAGER(DeleteManager);
     DESTROY_MANAGER(TimelineManager);
+    DESTROY_MANAGER(DescriptorManager);
     DESTROY_MANAGER(BufferManager);
+    
 
 #undef DESTROY_MANAGER
     /**
