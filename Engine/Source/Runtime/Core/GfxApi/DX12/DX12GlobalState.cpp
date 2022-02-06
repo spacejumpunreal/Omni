@@ -32,14 +32,15 @@ namespace Omni
 // decls
 void CheckSupportedFeatures(ID3D12Device* device);
 
-static constexpr bool EnableDebugLayer = OMNI_DEBUG;
+//static constexpr bool EnableDebugLayer = OMNI_DEBUG;
+static constexpr bool EnableDebugLayer = false;
 
 // global variable
 DX12GlobalState gDX12GlobalState;
 
 DX12Singletons::DX12Singletons()
 {
-    memset(this, 0, sizeof(*this));
+    ZeroFill(*this);
 }
 void DX12Singletons::Finalize()
 {
@@ -98,13 +99,16 @@ void DX12GlobalState::Initialize()
         D3D12CreateDevice(Singletons.DXGIAdaptor, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&Singletons.D3DDevice)));
     CheckDX12(Singletons.D3DDevice->SetName(L"OmniDX12Device"));
 
-    ID3D12InfoQueue* d3d12InfoQueue;
-    CheckSucceeded(Singletons.D3DDevice->QueryInterface(IID_PPV_ARGS(&d3d12InfoQueue)));
-    for (u32 iLevel = D3D12_MESSAGE_SEVERITY_CORRUPTION; iLevel < D3D12_MESSAGE_SEVERITY_MESSAGE; ++iLevel)
+    if constexpr (EnableDebugLayer)
     {
-        CheckSucceeded(d3d12InfoQueue->SetBreakOnSeverity((D3D12_MESSAGE_SEVERITY)iLevel, TRUE));
+        ID3D12InfoQueue* d3d12InfoQueue;
+        CheckSucceeded(Singletons.D3DDevice->QueryInterface(IID_PPV_ARGS(&d3d12InfoQueue)));
+        for (u32 iLevel = D3D12_MESSAGE_SEVERITY_CORRUPTION; iLevel < D3D12_MESSAGE_SEVERITY_MESSAGE; ++iLevel)
+        {
+            CheckSucceeded(d3d12InfoQueue->SetBreakOnSeverity((D3D12_MESSAGE_SEVERITY)iLevel, TRUE));
+        }
+        SafeRelease(d3d12InfoQueue);
     }
-    SafeRelease(d3d12InfoQueue);
 
     { // Queues
         D3D12_COMMAND_QUEUE_DESC queueDesc = {};

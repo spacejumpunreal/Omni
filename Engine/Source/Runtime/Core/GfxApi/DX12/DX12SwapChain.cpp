@@ -142,7 +142,7 @@ void DX12SwapChain::SetupBackbufferTextures()
         res->SetName(BackBufferNames[iBuffer]);
 
         D3D12_RENDER_TARGET_VIEW_DESC vDesc;
-        memset(&vDesc, 0, sizeof(D3D12_RENDER_TARGET_VIEW_DESC));
+        ZeroFill(vDesc);
         vDesc.Format = ToDXGIFormat(mDesc.Format);
         vDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 

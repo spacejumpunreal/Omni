@@ -1,6 +1,7 @@
 #include "Runtime/Core/CorePCH.h"
 #include "Runtime/Core/GfxApi/DX12/DX12PSOManager.h"
 #include "Runtime/Base/Misc/PImplUtils.h"
+#include "Runtime/Base/Misc/ArrayUtils.h"
 #include "Runtime/Base/Misc/HashUtils.h"
 #include "Runtime/Base/Container/PMRContainers.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
@@ -103,7 +104,7 @@ static ID3D12PipelineState* CreatePSOFromKey(const DX12PSOKey& key)
     auto& shaderPool = gDX12GlobalState.DX12ShaderPool;
 
     D3D12_GRAPHICS_PIPELINE_STATE_DESC gDesc;
-    memset(&gDesc, 0, sizeof(gDesc));
+    ZeroFill(gDesc);
 
     gDesc.pRootSignature = gDX12GlobalState.DX12PSOSignaturePool.ToPtr(key.Params.Signature)->GetRootSignature();
 

@@ -63,6 +63,7 @@ public:
     u32               Size = 0;
     u32               Align = 0;
     GfxApiAccessFlags AccessFlags;
+    GfxApiResUsage    UsageFlags;
 
 public:
     GfxApiBufferDesc() : GfxApiObjectDesc(GfxApiObjectType::Buffer)

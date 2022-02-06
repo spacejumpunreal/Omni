@@ -1,6 +1,7 @@
 #include "Runtime/Core/CorePCH.h"
 #if OMNI_WINDOWS
 #include "Runtime/Core/GfxApi/DX12/DX12GraphicsState.h"
+#include "Runtime/Base/Misc/ArrayUtils.h"
 #include "Runtime/Base/Misc/AssertUtils.h"
 
 namespace Omni
@@ -29,7 +30,7 @@ static u8 ToDX12WriteMask(u8 mask)
 
 DX12BlendState::DX12BlendState(const GfxApiBlendStateDesc& desc)
 {
-    memset(this, 0, sizeof(*this));
+    ZeroFill(*this);
     for (u32 iRT = 0; iRT < kMaxMRTCount; ++iRT)
     {
         D3D12_RENDER_TARGET_BLEND_DESC& rtDesc = RenderTarget[iRT];
@@ -44,7 +45,7 @@ DX12BlendState::DX12BlendState(const GfxApiBlendStateDesc& desc)
 
 DX12RasterizerState::DX12RasterizerState(const GfxApiRasterizerStateDesc& desc)
 {
-    memset(this, 0, sizeof(*this));
+    ZeroFill(*this);
     FillMode = desc.FillMode == GfxApiFillMode::Solid ? D3D12_FILL_MODE_SOLID : D3D12_FILL_MODE_WIREFRAME;
     CullMode = (D3D12_CULL_MODE)(D3D12_CULL_MODE_NONE + (u8)desc.CullMode);
     DepthBias = desc.DepthBias;
@@ -58,7 +59,7 @@ DX12RasterizerState::DX12RasterizerState(const GfxApiRasterizerStateDesc& desc)
 
 DX12DepthStencilState::DX12DepthStencilState(const GfxApiDepthStencilStateDesc& desc)
 {
-    memset(this, 0, sizeof(*this));
+    ZeroFill(*this);
     DepthEnable = desc.EnableDepth ? TRUE : FALSE;
     DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
     DepthFunc = (D3D12_COMPARISON_FUNC)(u8(desc.DepthFunc) + 1);

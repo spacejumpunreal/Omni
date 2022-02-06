@@ -40,6 +40,16 @@ enum class GfxApiAccessFlags : u8
 };
 DEFINE_BITMASK_ENUM_OPS(GfxApiAccessFlags);
 
+enum class GfxApiResUsage : u8
+{
+    None = 0,
+    SRV = 1 << 0,
+    UAV = 1 << 1,
+    RTV = 1 << 2,
+    DSV = 1 << 3,
+};
+DEFINE_BITMASK_ENUM_OPS(GfxApiResUsage);
+
 enum class GfxApiQueueType : u8
 {
     GraphicsQueue,

@@ -212,8 +212,8 @@ void DX12DescriptorTmpAllocator::Alloc(
     CheckAlways(mUsed + count <= mBatchSize);
     cpuHandle.ptr = mCurCPUPtr;
     gpuHandle.ptr = mCurGPUPtr;
-    mCurCPUPtr += mBatchSize;
-    mCurGPUPtr += mBatchSize;
+    mCurCPUPtr += mStep;
+    mCurGPUPtr += mStep;
 }
 } // namespace Omni
 

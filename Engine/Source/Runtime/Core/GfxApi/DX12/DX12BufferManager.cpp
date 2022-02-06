@@ -139,7 +139,10 @@ void DX12BufferManager::AllocBuffer(const GfxApiBufferDesc&   desc,
     DX12BufferManagerImpl* self = DX12BufferManagerImpl::GetCombinePtr(this);
     ExternalAllocation     ealloc = self->mAllocator[(u8)desc.AccessFlags].Alloc(desc.Size, desc.Align);
     CD3DX12_RESOURCE_DESC  rDesc;
-    rDesc = CD3DX12_RESOURCE_DESC::Buffer(desc.Size, D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE, 0);
+    D3D12_RESOURCE_FLAGS   resFlags = D3D12_RESOURCE_FLAG_NONE;
+    if (!Any(desc.UsageFlags & GfxApiResUsage::SRV))
+        resFlags |= D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE;
+    rDesc = CD3DX12_RESOURCE_DESC::Buffer(desc.Size, resFlags, 0);
     // about initstate: https://docs.microsoft.com/en-us/windows/win32/direct3d12/using-resource-barriers-to-synchronize-resource-states-in-direct3d-12
 
 

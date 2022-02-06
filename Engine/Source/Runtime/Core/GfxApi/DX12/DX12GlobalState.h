@@ -24,7 +24,7 @@ class DX12DepthStencilState;
 struct DX12Singletons
 {
 public:
-    IDXGIFactory7*      DXGIFactory;
+    IDXGIFactory6*      DXGIFactory;
     IDXGIAdapter1*      DXGIAdaptor;
     ID3D12Device*       D3DDevice;
     ID3D12CommandQueue* D3DQueues[(u32)GfxApiQueueType::Count];

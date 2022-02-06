@@ -46,7 +46,7 @@ static void ToDX12Viewports(const GfxApiViewport viewports[], D3D12_VIEWPORT dx1
 
 DX12RenderStageCommon::DX12RenderStageCommon(const GfxApiRenderPass* renderPass)
 {
-    memset(this, 0, sizeof(DX12RenderStageCommon));
+    ZeroFill(*this);
     for (RTCount = 0;; ++RTCount)
     {
         auto texHandle = renderPass->RenderTargets[RTCount].Texture;
@@ -77,7 +77,7 @@ static bool EncodeDrawcalls(const DX12RenderStageCommon& stageCommon,
     ID3D12GraphicsCommandList4*                          gCmdList)
 {
     DX12PSOKey psoKey;
-    memset(&psoKey, 0, sizeof(DX12PSOKey));
+    ZeroFill(psoKey);
     auto& stk = MemoryModule::Get().GetThreadScratchStack();
     auto  stkScope = stk.PushScope();
     bool  valid = false;
@@ -121,7 +121,7 @@ static bool EncodeDrawcalls(const DX12RenderStageCommon& stageCommon,
         }
         // Binding
         {
-            ID3D12DescriptorHeap* srvHeap = srvDescPool->EnsureSpace(64);//this is the limit that I can think of
+            ID3D12DescriptorHeap* srvHeap = srvDescPool->EnsureSpace(64); // this is the limit that I can think of
             gCmdList->SetDescriptorHeaps(1, &srvHeap);
             u32                      paramCount = rootSig->GetRootParamCount();
             const GfxApiBindingSlot* params = rootSig->GetRootParamDescs();
@@ -141,8 +141,8 @@ static bool EncodeDrawcalls(const DX12RenderStageCommon& stageCommon,
                 }
                 case GfxApiBindingType::Buffers:
                 {
-                    auto bufferCnt = dc.BindingGroups[bindingGroupIdx]->BufferCount;
-                    auto buffers = dc.BindingGroups[bindingGroupIdx]->Buffers;
+                    auto  bufferCnt = dc.BindingGroups[bindingGroupIdx]->BufferCount;
+                    auto  buffers = dc.BindingGroups[bindingGroupIdx]->Buffers;
                     auto& bufferPool = gDX12GlobalState.DX12BufferPool;
                     CheckDebug(bufferCnt != 0);
 
@@ -150,9 +150,9 @@ static bool EncodeDrawcalls(const DX12RenderStageCommon& stageCommon,
                     D3D12_GPU_DESCRIPTOR_HANDLE gpuStart;
                     srvDescPool->Alloc(bufferCnt, cpuStart, gpuStart);
 
-                    auto scope = stk.PushScope();
+                    auto                         scope = stk.PushScope();
                     D3D12_CPU_DESCRIPTOR_HANDLE* srcHandles = stk.AllocArray<D3D12_CPU_DESCRIPTOR_HANDLE>(bufferCnt);
-                    u32* srcRangeLengths = stk.AllocArray<u32>(bufferCnt);
+                    u32*                         srcRangeLengths = stk.AllocArray<u32>(bufferCnt);
                     memset(srcRangeLengths, 1, bufferCnt);
                     for (u32 iBuffer = 0; iBuffer < bufferCnt; ++iBuffer)
                     {
@@ -160,14 +160,15 @@ static bool EncodeDrawcalls(const DX12RenderStageCommon& stageCommon,
                         srcHandles[iBuffer] = ToCPUDescriptorHandle(d);
                     }
                     u32 one = 1;
-                    gDX12GlobalState.Singletons.D3DDevice->CopyDescriptors(bufferCnt,
+                    gDX12GlobalState.Singletons.D3DDevice->CopyDescriptors(1,
                         &cpuStart,
                         &one,
                         bufferCnt,
                         srcHandles,
                         srcRangeLengths,
                         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-                    
+                    gCmdList->SetGraphicsRootDescriptorTable(iParam, gpuStart);
+
                     break;
                 }
 

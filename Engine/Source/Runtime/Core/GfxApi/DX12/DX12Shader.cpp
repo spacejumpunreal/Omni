@@ -83,7 +83,7 @@ DX12PSOSignature::DX12PSOSignature(const GfxApiPSOSignatureDesc& desc) : mSlotCo
     D3D12_ROOT_SIGNATURE_FLAGS            flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
     flags |= D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
     auto&                    stk = MemoryModule::Get().GetThreadScratchStack();
-    auto scope = stk.PushScope();
+    auto                     scope = stk.PushScope();
     CD3DX12_ROOT_PARAMETER1* params = stk.AllocArray<CD3DX12_ROOT_PARAMETER1>(desc.SlotCount);
     for (u32 iSlot = 0; iSlot < desc.SlotCount; ++iSlot)
     {
@@ -98,7 +98,16 @@ DX12PSOSignature::DX12PSOSignature(const GfxApiPSOSignatureDesc& desc) : mSlotCo
                 CalcShaderVisibility(slotDef.VisibleStageMask));
             break;
         case GfxApiBindingType::Buffers:
-            NotImplemented();
+            D3D12_DESCRIPTOR_RANGE1 range;
+            range.BaseShaderRegister = slotDef.BaseRegister;
+            // range.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_VOLATILE;
+            range.Flags = D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC |
+                          D3D12_DESCRIPTOR_RANGE_FLAG_DESCRIPTORS_STATIC_KEEPING_BUFFER_BOUNDS_CHECKS;
+            range.NumDescriptors = slotDef.Range;
+            range.OffsetInDescriptorsFromTableStart = 0;
+            range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+            range.RegisterSpace = slotDef.Space;
+            params[iSlot].InitAsDescriptorTable(1, &range, CalcShaderVisibility(slotDef.VisibleStageMask));
             break;
         case GfxApiBindingType::Textures:
             NotImplemented();

@@ -1,6 +1,7 @@
 #include "Runtime/Core/CorePCH.h"
 #include "Runtime/Core/GfxApi/GfxApiRenderPass.h"
 #include "Runtime/Base/Misc/AssertUtils.h"
+#include "Runtime/Base/Misc/ArrayUtils.h"
 #include "Runtime/Core/Allocator/MemoryModule.h"
 
 namespace Omni
@@ -12,7 +13,7 @@ GfxApiRenderPassStage::GfxApiRenderPassStage(PageSubAllocator* alloc, u32 capaci
 
 GfxApiRenderPass::GfxApiRenderPass(PageSubAllocator* alloc, u32 phaseCount) : PhaseCount(phaseCount)
 {
-    memset(this, 0, sizeof(GfxApiRenderPass));
+    ZeroFill(*this);
     PhaseCount = phaseCount;
     PhaseArray = alloc->AllocArray<GfxApiRenderPassStage*>(phaseCount);
     memset(PhaseArray, 0, sizeof(GfxApiRenderPassStage*) * phaseCount);

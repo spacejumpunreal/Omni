@@ -189,7 +189,8 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     gfxApi.GetBackbufferTextures(self.SwapChain, self.Backbuffers, BackbufferCount);
 
     constexpr u32 tmpIndexBufferSize = 6 * sizeof(u16);
-    //constexpr u32 tmpVertexStreamSize = 4 * sizeof(Vector3);
+    constexpr u32 tmpVertexStreamSize = 4 * sizeof(Vector3);
+    constexpr u32 ubVertexStreamOffset = 1024;
     { // Buffer
         auto& stk = mm.GetThreadScratchStack();
         auto  scope = stk.PushScope();
@@ -201,15 +202,18 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
         tmpIndexBuffer[4] = 3;
         tmpIndexBuffer[5] = 2;
 
+        Vector3* tmpVertexStream0 = (Vector3*)stk.Allocate(tmpVertexStreamSize);
+        tmpVertexStream0[0] = Vector3(0, 0, 0);
+        tmpVertexStream0[1] = Vector3(1, 0, 0);
+        tmpVertexStream0[2] = Vector3(0, 1, 0);
+        tmpVertexStream0[3] = Vector3(1, 1, 0);
+
         GfxApiBufferDesc bufferDesc;
         bufferDesc.Size = 16 * 1024;
         bufferDesc.Align = 64 * 1024;
         bufferDesc.AccessFlags = GfxApiAccessFlags::Upload;
         bufferDesc.Name = "16KUploadBuffer";
         self.TestUploadBuffer = gfxApi.CreateBuffer(bufferDesc);
-        u8* range = (u8*)gfxApi.MapBuffer(self.TestUploadBuffer, 0, 0);
-        memcpy(range, tmpIndexBuffer, tmpIndexBufferSize);
-        gfxApi.UnmapBuffer(self.TestUploadBuffer, 0, tmpIndexBufferSize);
 
         bufferDesc.Size = 16 * 1024;
         bufferDesc.AccessFlags = GfxApiAccessFlags::GPUPrivate;
@@ -219,17 +223,32 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
         bufferDesc.Size = 16 * 1024;
         bufferDesc.AccessFlags = GfxApiAccessFlags::GPUPrivate;
         bufferDesc.Name = "16KVertexStream0";
+        bufferDesc.UsageFlags = GfxApiResUsage::SRV;
         self.TestVertexStream0 = gfxApi.CreateBuffer(bufferDesc);
+
+        u8* ubPtr = (u8*)gfxApi.MapBuffer(self.TestUploadBuffer, 0, tmpIndexBufferSize);
+        gfxApi.MapBuffer(self.TestUploadBuffer, ubVertexStreamOffset, tmpVertexStreamSize);
+        memcpy(ubPtr, tmpIndexBuffer, tmpIndexBufferSize);
+        memcpy(ubPtr + ubVertexStreamOffset, tmpVertexStream0, tmpVertexStreamSize);
+        gfxApi.UnmapBuffer(self.TestUploadBuffer, 0, tmpIndexBufferSize);
+        gfxApi.UnmapBuffer(self.TestUploadBuffer, ubVertexStreamOffset, tmpVertexStreamSize);
     }
 
     { // blitpass
-        GfxApiBlitPass* blitPass = new GfxApiBlitPass(psa, 1);
+        GfxApiBlitPass* blitPass = new GfxApiBlitPass(psa, 2);
         blitPass->CopyBufferCmds[0] = GfxApiCopyBuffer{
             .Src = self.TestUploadBuffer,
             .SrcOffset = 0,
             .Dst = self.TestIndexBuffer,
             .DstOffset = 0,
             .Bytes = tmpIndexBufferSize,
+        };
+        blitPass->CopyBufferCmds[1] = GfxApiCopyBuffer{
+            .Src = self.TestUploadBuffer,
+            .SrcOffset = ubVertexStreamOffset,
+            .Dst = self.TestVertexStream0,
+            .DstOffset = 0,
+            .Bytes = tmpVertexStreamSize,
         };
         gfxApi.CopyBlitPass(blitPass);
         GfxApiGpuEventRef copyDone = gfxApi.ScheduleGpuEvent(GfxApiQueueType::CopyQueue);
@@ -257,26 +276,35 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     }
     { // PSO
         GfxApiPSOSignatureDesc desc;
-        GfxApiBindingSlot      slots[1];
+        GfxApiBindingSlot      slots[2];
+
         slots[0].Type = GfxApiBindingType::ConstantBuffer;
         slots[0].Space = 0;
         slots[0].BaseRegister = 0;
         slots[0].Range = 1;
         slots[0].VisibleStageMask = 1 << (u32)GfxApiShaderStage::Vertex;
         slots[0].FromBindingGroup = 0;
+
+        slots[1].Type = GfxApiBindingType::Buffers;
+        slots[1].Space = 0;
+        slots[1].BaseRegister = 0;
+        slots[1].Range = 1;
+        slots[1].VisibleStageMask = 1 << (u32)GfxApiShaderStage::Vertex;
+        slots[1].FromBindingGroup = 0;
+
         desc.Slots = slots;
-        desc.SlotCount = 1;
+        desc.SlotCount = 2;
         self.TestPSOSignature = gfxApi.CreatePSOSignature(desc);
     }
     {
         GfxApiBlendStateDesc desc;
-        memset(&desc, 0, sizeof(desc));
+        ZeroFill(desc);
         desc.Configs[0].WriteMask = 0xf;
         self.TestBlendState = gfxApi.CreateBlendState(desc);
     }
     {
         GfxApiRasterizerStateDesc desc;
-        memset(&desc, 0, sizeof(desc));
+        ZeroFill(desc);
         desc.FillMode = GfxApiFillMode::Solid;
         desc.CullMode = GfxApiCullMode::CullNone;
         desc.EnableRasterization = true;
@@ -284,7 +312,7 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     }
     {
         GfxApiDepthStencilStateDesc desc;
-        memset(&desc, 0, sizeof(desc));
+        ZeroFill(desc);
         desc.DepthFunc = GfxApiTestFunc::Greater;
         desc.EnableDepth = false;
         desc.EnableStencil = false;
@@ -407,7 +435,7 @@ void DemoRendererModulePrivateImpl::Tick()
             self.Camera.LocalMove(self.TranslationDir * self.TranslationSpeed);
             self.Camera.LocalRotate(mouseDY * self.RotateMouseSpeed, mouseDX * self.RotateMouseSpeed);
         }
-        
+
         self.LastMousePos = mousePos;
     }
 
@@ -432,7 +460,7 @@ void DemoRendererModulePrivateImpl::Tick()
     u32 currentBuffer = gfxApi.GetCurrentBackbufferIndex(self.SwapChain);
 
     { // update constant
-        
+
         TestShaderCB cb;
         self.Camera.GetViewProjectionMatrix(cb.VPMatrix);
 
@@ -451,7 +479,7 @@ void DemoRendererModulePrivateImpl::Tick()
     renderPass->AddStage(0, passStage);
     {
         GfxApiDrawcall& dc = passStage->Drawcalls[0];
-        memset(&dc, 0, sizeof(dc));
+        ZeroFill(dc);
         dc.IndexBuffer = self.TestIndexBuffer;
         dc.DrawArgs.DirectDrawArgs = GfxApiDirectDrawParams{
             .IndexCount = 6,
@@ -471,6 +499,9 @@ void DemoRendererModulePrivateImpl::Tick()
         dc.BindingGroups[0] = bindingGroup;
         bindingGroup->ConstantBuffer.Buffer = self.TestConstantBuffer[currentBuffer];
         bindingGroup->ConstantBuffer.Offset = TestCBOffset;
+        bindingGroup->BufferCount = 1;
+        bindingGroup->Buffers = psa->AllocArray<GfxApiBufferRef>(1);
+        bindingGroup->Buffers[0] = self.TestVertexStream0;
     }
 
     gfxApi.DrawRenderPass(renderPass);
@@ -481,7 +512,7 @@ void DemoRendererModulePrivateImpl::Tick()
         GfxApiGpuEventRef gpuEvent = gfxApi.ScheduleGpuEvent(GfxApiQueueType(iQueue));
         gfxApi.DestroyEvent(gpuEvent);
     }
-    
+
     Action1<void, void*> cb(PageSubAllocator::Destroy, psa);
     gfxApi.ScheduleCompleteHandler(cb, kAllQueueMask);
 
