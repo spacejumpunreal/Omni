@@ -52,6 +52,7 @@ TEST(Base, MemoryArena)
         EXPECT_EQ(stk.GetUsedBytes(), batch * TestSingleSize);
         stk.Pop();
     }
+
     EXPECT_EQ(stk.GetUsedBytes(), 0u);
     stk.Cleanup();
     EXPECT_EQ(stk.IsClean(), true);

@@ -85,6 +85,7 @@ enum class GfxApiBindingType
     ConstantBuffer,
     Buffers,
     Textures,
+    UAVs,
     Samplers,
 };
 

@@ -49,7 +49,7 @@ public:
     DEFINE_GFX_API_TEMP_NEW_DELETE();
     DX12DescriptorTmpAllocator(D3D12_DESCRIPTOR_HEAP_TYPE type, u32 batchSize);
     ~DX12DescriptorTmpAllocator();
-    void EnsureSpace(u32 count);
+    ID3D12DescriptorHeap* EnsureSpace(u32 count);
     void Alloc(u32 count, D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle);
 
 private:

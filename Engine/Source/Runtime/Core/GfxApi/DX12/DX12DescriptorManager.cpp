@@ -191,7 +191,7 @@ DX12DescriptorTmpAllocator::~DX12DescriptorTmpAllocator()
         gDX12GlobalState.DescriptorManager->FreeRange(mType, true, handle);
     }
 }
-void DX12DescriptorTmpAllocator::EnsureSpace(u32 count)
+ID3D12DescriptorHeap* DX12DescriptorTmpAllocator::EnsureSpace(u32 count)
 {
     if (mUsed + count > mBatchSize)
     {
@@ -204,11 +204,12 @@ void DX12DescriptorTmpAllocator::EnsureSpace(u32 count)
         mCurGPUPtr = gpuH.ptr;
         mUsed = 0;
     }
+    return mCurHeap;
 }
 void DX12DescriptorTmpAllocator::Alloc(
     u32 count, D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle)
 {
-    EnsureSpace(count);
+    CheckAlways(mUsed + count <= mBatchSize);
     cpuHandle.ptr = mCurCPUPtr;
     gpuHandle.ptr = mCurGPUPtr;
     mCurCPUPtr += mBatchSize;

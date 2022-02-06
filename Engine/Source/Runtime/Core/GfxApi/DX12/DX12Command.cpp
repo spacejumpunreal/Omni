@@ -38,7 +38,6 @@ public:
     GfxApiFormat   RTFormats[kMaxMRTCount];
 };
 
-
 static void ToDX12Viewports(const GfxApiViewport viewports[], D3D12_VIEWPORT dx12Viewports[], u32 count)
 {
     static_assert(sizeof(GfxApiViewport) == sizeof(D3D12_VIEWPORT));
@@ -91,8 +90,8 @@ static bool EncodeDrawcalls(const DX12RenderStageCommon& stageCommon,
     gCmdList->RSSetScissorRects(stageCommon.RTCount, stageCommon.DefaultScissors);
     gCmdList->OMSetRenderTargets(stageCommon.RTCount, stageCommon.RTDescriptions, FALSE, nullptr);
 
-    DX12DescriptorTmpAllocator* srvDescPool = new DX12DescriptorTmpAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 16 * 1024);
-    srvDescPool->EnsureSpace(1024);
+    DX12DescriptorTmpAllocator* srvDescPool =
+        new DX12DescriptorTmpAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 16 * 1024);
 
     for (u32 idc = 0; idc < drawcallCount; ++idc)
     {
@@ -122,17 +121,62 @@ static bool EncodeDrawcalls(const DX12RenderStageCommon& stageCommon,
         }
         // Binding
         {
-            u32 paramCount = rootSig->GetRootParamCount();
+            ID3D12DescriptorHeap* srvHeap = srvDescPool->EnsureSpace(64);//this is the limit that I can think of
+            gCmdList->SetDescriptorHeaps(1, &srvHeap);
+            u32                      paramCount = rootSig->GetRootParamCount();
             const GfxApiBindingSlot* params = rootSig->GetRootParamDescs();
             for (u32 iParam = 0; iParam < paramCount; ++iParam)
             {
                 u32 bindingGroupIdx = params[iParam].FromBindingGroup;
-                auto cbv = dc.BindingGroups[bindingGroupIdx]->ConstantBuffer;
-                if (cbv.Buffer != GfxApiBufferRef::Null())
+                switch (params[iParam].Type)
                 {
+                case GfxApiBindingType::ConstantBuffer:
+                {
+                    auto cbv = dc.BindingGroups[bindingGroupIdx]->ConstantBuffer;
+                    CheckDebug(cbv.Buffer != GfxApiBufferRef::Null());
                     auto gpuAddr =
                         gDX12GlobalState.DX12BufferPool.ToPtr(cbv.Buffer)->GetResource()->GetGPUVirtualAddress();
                     gCmdList->SetGraphicsRootConstantBufferView(iParam, gpuAddr + cbv.Offset);
+                    break;
+                }
+                case GfxApiBindingType::Buffers:
+                {
+                    auto bufferCnt = dc.BindingGroups[bindingGroupIdx]->BufferCount;
+                    auto buffers = dc.BindingGroups[bindingGroupIdx]->Buffers;
+                    auto& bufferPool = gDX12GlobalState.DX12BufferPool;
+                    CheckDebug(bufferCnt != 0);
+
+                    D3D12_CPU_DESCRIPTOR_HANDLE cpuStart;
+                    D3D12_GPU_DESCRIPTOR_HANDLE gpuStart;
+                    srvDescPool->Alloc(bufferCnt, cpuStart, gpuStart);
+
+                    auto scope = stk.PushScope();
+                    D3D12_CPU_DESCRIPTOR_HANDLE* srcHandles = stk.AllocArray<D3D12_CPU_DESCRIPTOR_HANDLE>(bufferCnt);
+                    u32* srcRangeLengths = stk.AllocArray<u32>(bufferCnt);
+                    memset(srcRangeLengths, 1, bufferCnt);
+                    for (u32 iBuffer = 0; iBuffer < bufferCnt; ++iBuffer)
+                    {
+                        DX12Descriptor d = bufferPool.ToPtr(buffers[iBuffer])->GetSRVDescriptor();
+                        srcHandles[iBuffer] = ToCPUDescriptorHandle(d);
+                    }
+                    u32 one = 1;
+                    gDX12GlobalState.Singletons.D3DDevice->CopyDescriptors(bufferCnt,
+                        &cpuStart,
+                        &one,
+                        bufferCnt,
+                        srcHandles,
+                        srcRangeLengths,
+                        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+                    
+                    break;
+                }
+
+                case GfxApiBindingType::Textures:
+                case GfxApiBindingType::UAVs:
+                case GfxApiBindingType::Samplers:
+                default:
+                    NotImplemented();
+                    break;
                 }
             }
             gCmdList->OMSetStencilRef(dc.StencilRef);
@@ -172,7 +216,6 @@ static bool EncodeDrawcalls(const DX12RenderStageCommon& stageCommon,
         }
     }
     gDX12GlobalState.DeleteManager->AddForDelete(srvDescPool, 1 << u32(GfxApiQueueType::GraphicsQueue));
-    //gDX12GlobalState.DeleteManager->AddForDelete(srvDescPool, kAllQueueMask);
 
     return valid;
 }
@@ -254,7 +297,7 @@ void DX12DrawRenderPass(const GfxApiRenderPass* renderPass)
     for (u32 iStage = 0; iStage < renderPass->PhaseCount; ++iStage)
     {
         for (auto* stage = renderPass->PhaseArray[iStage]; stage != nullptr;
-                stage = (GfxApiRenderPassStage*)stage->Next)
+             stage = (GfxApiRenderPassStage*)stage->Next)
         {
             cmdList = SetupCommandList(GfxApiQueueType::GraphicsQueue);
             allCmdLists[allListCount++] = cmdList;
@@ -266,7 +309,7 @@ void DX12DrawRenderPass(const GfxApiRenderPass* renderPass)
     }
     if (validListCount > 0)
         gQueue->ExecuteCommandLists(validListCount, validCmdLists);
-    
+
     for (u32 iCmdList = 0; iCmdList < allListCount; ++iCmdList)
     {
         auto glist = (ID3D12GraphicsCommandList4*)allCmdLists[iCmdList];

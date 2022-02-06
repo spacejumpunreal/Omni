@@ -45,6 +45,8 @@ public:
     FORCEINLINE void Push();
     FORCEINLINE void Pop();
 
+    // must be nodiscard, otherwise the scope variable will be destroyed immediately after return, not what I want(at
+    // the end of scope)
     [[nodiscard]] FORCEINLINE MemoryArenaScope PushScope();
 
     FORCEINLINE u32 GetUsedBytes()
