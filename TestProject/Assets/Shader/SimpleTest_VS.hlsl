@@ -1,3 +1,8 @@
+struct VertexStream0
+{
+	float3 Position;
+};
+
 
 struct VSOut
 {

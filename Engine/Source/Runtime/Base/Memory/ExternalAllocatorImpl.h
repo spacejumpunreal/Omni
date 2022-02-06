@@ -24,6 +24,7 @@ BestFitAllocator<Provider>::~BestFitAllocator()
 template <IsIExternalMemProvider Provider>
 ExternalAllocation BestFitAllocator<Provider>::Alloc(u64 size, u64 align)
 {
+    align = align == 0 ? 1 : align; //guard aginst zero aglin
     auto       it = mFreeMap.lower_bound(size);
     MemNodePtr availNodePtr = NullMemNodePtr;
     while (it != mFreeMap.end())

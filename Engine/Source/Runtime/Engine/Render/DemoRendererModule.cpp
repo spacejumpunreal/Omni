@@ -48,7 +48,8 @@ public:
     GfxApiSwapChainRef  SwapChain = {};
     GfxApiTextureRef    Backbuffers[BackbufferCount];
     GfxApiBufferRef     TestUploadBuffer;
-    GfxApiBufferRef     TestGPUBuffer;
+    GfxApiBufferRef     TestIndexBuffer;
+    GfxApiBufferRef     TestVertexStream0;
     GfxApiBufferRef     TestConstantBuffer[BackbufferCount];
 
     std::array<GfxApiShaderRef, 2> TestShaders;
@@ -187,31 +188,38 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
     self.SwapChain = gfxApi.CreateSwapChain(self.DescSwapChain);
     gfxApi.GetBackbufferTextures(self.SwapChain, self.Backbuffers, BackbufferCount);
 
-    constexpr u32 tmpBufferSize = 6 * sizeof(u16);
+    constexpr u32 tmpIndexBufferSize = 6 * sizeof(u16);
+    //constexpr u32 tmpVertexStreamSize = 4 * sizeof(Vector3);
     { // Buffer
         auto& stk = mm.GetThreadScratchStack();
         auto  scope = stk.PushScope();
-        u16*  tmpBuffer = (u16*)stk.Allocate(tmpBufferSize);
-        tmpBuffer[0] = 0;
-        tmpBuffer[1] = 1;
-        tmpBuffer[2] = 2;
-        tmpBuffer[3] = 1;
-        tmpBuffer[4] = 3;
-        tmpBuffer[5] = 2;
+        u16*  tmpIndexBuffer = (u16*)stk.Allocate(tmpIndexBufferSize);
+        tmpIndexBuffer[0] = 0;
+        tmpIndexBuffer[1] = 1;
+        tmpIndexBuffer[2] = 2;
+        tmpIndexBuffer[3] = 1;
+        tmpIndexBuffer[4] = 3;
+        tmpIndexBuffer[5] = 2;
 
         GfxApiBufferDesc bufferDesc;
         bufferDesc.Size = 16 * 1024;
+        bufferDesc.Align = 64 * 1024;
         bufferDesc.AccessFlags = GfxApiAccessFlags::Upload;
         bufferDesc.Name = "16KUploadBuffer";
         self.TestUploadBuffer = gfxApi.CreateBuffer(bufferDesc);
-        u8* range = (u8*)gfxApi.MapBuffer(self.TestUploadBuffer, 0, tmpBufferSize);
-        memcpy(range, tmpBuffer, tmpBufferSize);
-        gfxApi.UnmapBuffer(self.TestUploadBuffer, 0, tmpBufferSize);
+        u8* range = (u8*)gfxApi.MapBuffer(self.TestUploadBuffer, 0, 0);
+        memcpy(range, tmpIndexBuffer, tmpIndexBufferSize);
+        gfxApi.UnmapBuffer(self.TestUploadBuffer, 0, tmpIndexBufferSize);
 
-        bufferDesc.Size = 32 * 1024;
+        bufferDesc.Size = 16 * 1024;
         bufferDesc.AccessFlags = GfxApiAccessFlags::GPUPrivate;
-        bufferDesc.Name = "32KGPUBuffer";
-        self.TestGPUBuffer = gfxApi.CreateBuffer(bufferDesc);
+        bufferDesc.Name = "16KIndexBuffer";
+        self.TestIndexBuffer = gfxApi.CreateBuffer(bufferDesc);
+
+        bufferDesc.Size = 16 * 1024;
+        bufferDesc.AccessFlags = GfxApiAccessFlags::GPUPrivate;
+        bufferDesc.Name = "16KVertexStream0";
+        self.TestVertexStream0 = gfxApi.CreateBuffer(bufferDesc);
     }
 
     { // blitpass
@@ -219,9 +227,9 @@ void DemoRendererModule::Initialize(const EngineInitArgMap& args)
         blitPass->CopyBufferCmds[0] = GfxApiCopyBuffer{
             .Src = self.TestUploadBuffer,
             .SrcOffset = 0,
-            .Dst = self.TestGPUBuffer,
+            .Dst = self.TestIndexBuffer,
             .DstOffset = 0,
-            .Bytes = tmpBufferSize,
+            .Bytes = tmpIndexBufferSize,
         };
         gfxApi.CopyBlitPass(blitPass);
         GfxApiGpuEventRef copyDone = gfxApi.ScheduleGpuEvent(GfxApiQueueType::CopyQueue);
@@ -341,7 +349,8 @@ void DemoRendererModule::Finalize()
     DemoRendererImpl& self = *DemoRendererImpl::GetCombinePtr(this);
     gfxApi.DestroySwapChain(self.SwapChain);
     gfxApi.DestroyBuffer(self.TestUploadBuffer);
-    gfxApi.DestroyBuffer(self.TestGPUBuffer);
+    gfxApi.DestroyBuffer(self.TestIndexBuffer);
+    gfxApi.DestroyBuffer(self.TestVertexStream0);
     for (u32 iShader = 0; iShader < self.TestShaders.size(); ++iShader)
     {
         gfxApi.DestroyShader(self.TestShaders[iShader]);
@@ -443,7 +452,7 @@ void DemoRendererModulePrivateImpl::Tick()
     {
         GfxApiDrawcall& dc = passStage->Drawcalls[0];
         memset(&dc, 0, sizeof(dc));
-        dc.IndexBuffer = self.TestGPUBuffer;
+        dc.IndexBuffer = self.TestIndexBuffer;
         dc.DrawArgs.DirectDrawArgs = GfxApiDirectDrawParams{
             .IndexCount = 6,
             .InstanceCount = 1,
