@@ -74,8 +74,12 @@ void DX12DeleteManager::Flush()
     DX12TimelineManager* tm = gDX12GlobalState.TimelineManager;
     for (auto& kvp : self.mKey2Batch)
     {
+        GfxApiQueueMask mask = kvp.first;
+        if (kvp.second == nullptr)
+        {
+            continue;
+        }
         ++self.mInFlightBatches;
-        GfxApiQueueMask                  mask = kvp.first;
         DX12TimelineManager::DX12BatchCB cb = TimelineHelpers::CreateBatchCB(RunBatchDelete, kvp.second);
         kvp.second = nullptr;
         if (Mathf::IsSingleBitSet(mask))

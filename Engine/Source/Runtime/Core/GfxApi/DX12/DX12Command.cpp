@@ -8,6 +8,8 @@
 #include "Runtime/Core/GfxApi/DX12/DX12GlobalState.h"
 #include "Runtime/Core/GfxApi/DX12/DX12TimelineManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12PSOManager.h"
+#include "Runtime/Core/GfxApi/DX12/DX12DescriptorManager.h"
+#include "Runtime/Core/GfxApi/DX12/DX12DeleteManager.h"
 #include "Runtime/Core/GfxApi/DX12/DX12CommandUtils.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Descriptor.h"
 #include "Runtime/Core/GfxApi/DX12/DX12Texture.h"
@@ -89,6 +91,9 @@ static bool EncodeDrawcalls(const DX12RenderStageCommon& stageCommon,
     gCmdList->RSSetScissorRects(stageCommon.RTCount, stageCommon.DefaultScissors);
     gCmdList->OMSetRenderTargets(stageCommon.RTCount, stageCommon.RTDescriptions, FALSE, nullptr);
 
+    DX12DescriptorTmpAllocator* srvDescPool = new DX12DescriptorTmpAllocator(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 16 * 1024);
+    srvDescPool->EnsureSpace(1024);
+
     for (u32 idc = 0; idc < drawcallCount; ++idc)
     {
         const GfxApiDrawcall& dc = drawcalls[idc];
@@ -166,6 +171,9 @@ static bool EncodeDrawcalls(const DX12RenderStageCommon& stageCommon,
             }
         }
     }
+    gDX12GlobalState.DeleteManager->AddForDelete(srvDescPool, 1 << u32(GfxApiQueueType::GraphicsQueue));
+    //gDX12GlobalState.DeleteManager->AddForDelete(srvDescPool, kAllQueueMask);
+
     return valid;
 }
 

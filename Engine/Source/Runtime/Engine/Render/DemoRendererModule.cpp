@@ -467,8 +467,12 @@ void DemoRendererModulePrivateImpl::Tick()
     gfxApi.DrawRenderPass(renderPass);
     gfxApi.Present(self.SwapChain, true);
     gfxApi.CloseBatchDelete();
-    GfxApiGpuEventRef gpuEvent = gfxApi.ScheduleGpuEvent(GfxApiQueueType::GraphicsQueue);
-    gfxApi.DestroyEvent(gpuEvent);
+    for (u32 iQueue = 0; iQueue < u32(GfxApiQueueType::Count); ++iQueue)
+    {
+        GfxApiGpuEventRef gpuEvent = gfxApi.ScheduleGpuEvent(GfxApiQueueType(iQueue));
+        gfxApi.DestroyEvent(gpuEvent);
+    }
+    
     Action1<void, void*> cb(PageSubAllocator::Destroy, psa);
     gfxApi.ScheduleCompleteHandler(cb, kAllQueueMask);
 

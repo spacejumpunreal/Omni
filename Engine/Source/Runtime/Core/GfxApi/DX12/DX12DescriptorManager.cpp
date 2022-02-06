@@ -98,7 +98,8 @@ void DX12DescriptorManager::AllocRange(D3D12_DESCRIPTOR_HEAP_TYPE type,
     u32                                                           count,
     ExternalAllocationHandle&                                     allocHandle,
     D3D12_CPU_DESCRIPTOR_HANDLE&                                  cpuDescHandle,
-    D3D12_GPU_DESCRIPTOR_HANDLE&                                  gpuDescHandle)
+    D3D12_GPU_DESCRIPTOR_HANDLE&                                  gpuDescHandle,
+    ID3D12DescriptorHeap*&                                        heap)
 {
     DX12DescriptorManagerImpl* self = DX12DescriptorManagerImpl::GetCombinePtr(this);
     ExternalAllocation         ea;
@@ -111,9 +112,9 @@ void DX12DescriptorManager::AllocRange(D3D12_DESCRIPTOR_HEAP_TYPE type,
     {
         ea = self->PersistentAllocs[iType].Alloc(count, 1);
     }
-    auto* heap = (ID3D12DescriptorHeap*)ea.BlockId;
-    cpuDescHandle.ptr = heap->GetCPUDescriptorHandleForHeapStart().ptr + count * mHeapStepSize[(u32)type];
-    gpuDescHandle.ptr = heap->GetGPUDescriptorHandleForHeapStart().ptr + count * mHeapStepSize[(u32)type];
+    heap = (ID3D12DescriptorHeap*)ea.BlockId;
+    cpuDescHandle.ptr = heap->GetCPUDescriptorHandleForHeapStart().ptr + ea.Start * mHeapStepSize[(u32)type];
+    gpuDescHandle.ptr = heap->GetGPUDescriptorHandleForHeapStart().ptr + ea.Start * mHeapStepSize[(u32)type];
     allocHandle = ea.Handle;
 }
 void DX12DescriptorManager::FreeRange(
@@ -163,12 +164,55 @@ void DX12DescriptorMemProvider::Unmap(ExtenralAllocationBlockId blockId)
 }
 u64 DX12DescriptorMemProvider::SuggestNewBlockSize(u64 reqSize)
 {
-    (void)reqSize;
-    return 8 * 1024;
+    u64 allocSize = AlignUpSize<u64>(reqSize, 1024);
+    return allocSize;
 }
 PMRAllocator DX12DescriptorMemProvider::GetCPUAllocator()
 {
     return MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApi);
+}
+
+// DX12DescriptorTmpAllocator
+DX12DescriptorTmpAllocator::DX12DescriptorTmpAllocator(D3D12_DESCRIPTOR_HEAP_TYPE type, u32 batchSize)
+    : mCurHeap(nullptr)
+    , mCurCPUPtr(0)
+    , mCurGPUPtr(0)
+    , mStep(gDX12GlobalState.DescriptorManager->GetHeapIncrementSize(type))
+    , mUsed(batchSize)
+    , mBatchSize(batchSize)
+    , mType(type)
+    , mPages(MemoryModule::Get().GetPMRAllocator(MemoryKind::GfxApiTmp))
+{
+}
+DX12DescriptorTmpAllocator::~DX12DescriptorTmpAllocator()
+{
+    for (ExternalAllocationHandle handle : mPages)
+    {
+        gDX12GlobalState.DescriptorManager->FreeRange(mType, true, handle);
+    }
+}
+void DX12DescriptorTmpAllocator::EnsureSpace(u32 count)
+{
+    if (mUsed + count > mBatchSize)
+    {
+        ExternalAllocationHandle    ah;
+        D3D12_CPU_DESCRIPTOR_HANDLE cpuH;
+        D3D12_GPU_DESCRIPTOR_HANDLE gpuH;
+        gDX12GlobalState.DescriptorManager->AllocRange(mType, true, count, ah, cpuH, gpuH, mCurHeap);
+        mPages.push_back(ah);
+        mCurCPUPtr = cpuH.ptr;
+        mCurGPUPtr = gpuH.ptr;
+        mUsed = 0;
+    }
+}
+void DX12DescriptorTmpAllocator::Alloc(
+    u32 count, D3D12_CPU_DESCRIPTOR_HANDLE& cpuHandle, D3D12_GPU_DESCRIPTOR_HANDLE& gpuHandle)
+{
+    EnsureSpace(count);
+    cpuHandle.ptr = mCurCPUPtr;
+    gpuHandle.ptr = mCurGPUPtr;
+    mCurCPUPtr += mBatchSize;
+    mCurGPUPtr += mBatchSize;
 }
 } // namespace Omni
 

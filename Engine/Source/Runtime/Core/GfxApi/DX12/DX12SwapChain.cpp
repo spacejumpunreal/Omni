@@ -61,8 +61,9 @@ DX12SwapChain::DX12SwapChain(const GfxApiSwapChainDesc& desc) : mDesc(desc), mDX
 
     D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
     D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle;
+    ID3D12DescriptorHeap*       heap;
     gDX12GlobalState.DescriptorManager
-        ->AllocRange(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, false, kBackbufferCount, mDescAllocHandle, cpuHandle, gpuHandle);
+        ->AllocRange(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, false, kBackbufferCount, mDescAllocHandle, cpuHandle, gpuHandle, heap);
     mCPUDescStart = cpuHandle.ptr;
     SetupBackbufferTextures();
 }
