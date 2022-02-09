@@ -1,0 +1,37 @@
+# classes
+## high level
+- class ResourcePack
+	- AllRenderers[]
+		- Transforms
+		- Mesh*
+		- Material*[]
+
+	- AllMeshess[]
+	- AllMaterials[]
+	- AllTextures[]
+	- AllPSOSignatures[]
+- class PSOSignature
+	- BindingSlots[]
+- class Material
+	- PSOSignature
+	- BindingGroup
+		- ConstantBuffer
+		- Buffers
+		- Textures
+- class Mesh
+	- SubMeshRange[]
+	- Index
+	- Vertex0
+	- Vertex1
+
+- struct SubMeshRange
+	- uint Begin
+	- uint Count
+
+## low level
+- Matrix4x4
+- Array
+- Class Ptr
+- Struct Value
+
+## idea

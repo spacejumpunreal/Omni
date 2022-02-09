@@ -1,20 +1,7 @@
 # todo
-- DrawTriangle
-	- SRV VertexBuffer(e:240m, c:)
-		- DX12DescriptorManager
-			- PersistentAllocation
-			- TmpAllocation
-			- ExternalAllocation, DescriptorHeapRange
-			- Buffer SRV, Desc加Usage Flag, CreateSRV
-		- Drawcall
-			- TmpAllocation
-			- Copy Descriptor
-			- SetDescriptorTable
-			- 改测试shader
-			- CPU上生成测试Buffer数据
-		- Debug
-	- 导入mesh(e:180)
-		- SRV buffer
+- 导入mesh
+	- 定义序列化数据格式
+	- unity工程导出
 	
 - DiffuseShading
 	- depth buffer, depth test
