@@ -1,37 +1,57 @@
 # classes
 ## high level
 - class ResourcePack
-	- AllRenderers[]
-		- Transforms
-		- Mesh*
-		- Material*[]
+	- PSOSignature[] PSOSignatures;
+	- Texture2D[] Texture2Ds;
+	- Material[] Materials;
+	- Mesh[] Meshess;
+	- Renderer[] Renderers;
+	
+- class Renderer
+	- Matrix4x4 LocalToWorld;
+	- Ref[] Materials;
+	- Ref Mesh;
 
-	- AllMeshess[]
-	- AllMaterials[]
-	- AllTextures[]
-	- AllPSOSignatures[]
 - class PSOSignature
-	- BindingSlots[]
+	- BindingSlot[] Slots;
+
 - class Material
-	- PSOSignature
-	- BindingGroup
-		- ConstantBuffer
-		- Buffers
-		- Textures
+	- Shader
+	- BindingGroup[] BindingGroups;
+		
 - class Mesh
 	- SubMeshRange[]
-	- Index
-	- Vertex0
-	- Vertex1
+	- u8[] Indices;
+	- u8[] Vertex0
+	- u8[] Vertex1
 
 - struct SubMeshRange
 	- uint Begin
 	- uint Count
+	
+- struct BindingGroup
+	- Ref[] Textures;
 
 ## low level
 - Matrix4x4
 - Array
 - Class Ptr
 - Struct Value
+
+# Binary
+## FileContent
+- struct HeaderSection
+- BlobEntry[] BlobTalbe;
+- u8[] BlobPool;
+## HeaderSection
+- BlobTableOffset
+- BlobTableLength
+- BlobPoolOffset
+## BlobTableEntry
+- OffsetInBlobPool
+- SizeInBytes
+## FieldRecord
+- VariableName
+- Content
 
 ## idea
