@@ -13,6 +13,7 @@ Omni.xcworkspace
 *.pyo
 /Build
 Omni.tar
+Temp
 /Engine/Binaries
 .idea
 contents.xcworkspacedata
