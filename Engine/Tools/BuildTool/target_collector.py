@@ -13,7 +13,7 @@ class TargetCollector(object):
         if not file_path.endswith(build_target.BUILD_RULE_SUFFIX):
             raise BadBuildRuleFilePathError(file_path)
         gd = {}
-        execfile(file_path, gd)
+        exec(open(file_path).read(), gd)
         build_rules = gd.get(build_target.BUILD_RULES_NAME)
         if build_rules is None:
             module_name = os.path.split(file_path)[1][:-len(build_target.BUILD_RULE_SUFFIX)]
@@ -40,7 +40,7 @@ class TargetCollector(object):
         self._handle_build_file(top_file)
 
         # check all dependencies exists for every BuildTarget
-        for k, v in self.targets.iteritems():
+        for k, v in self.targets.items():
             for d in v.dependencies:
                 if d not in self.targets:
                     raise DependencyMissingError(k, d)

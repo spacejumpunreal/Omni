@@ -1,12 +1,12 @@
 # -*- encoding: utf-8 -*-
 import os
 import uuid
-import shutil
-import _winreg
+import winreg
 import base_generator
 from xml_utils import XmlNode
 import global_states
 import build_target
+import functools
 
 
 VCXPROJ_TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
@@ -89,22 +89,22 @@ def get_latest_windows_sdk_version():
         b = b.split('.')
         la, lb = len(a), len(b)
         cmp_length = min(la, lb)
-        for c in xrange(cmp_length):
+        for c in range(cmp_length):
             if a[c] < b[c]:
                 return -1
             elif a[c] > b[c]:
                 return 1
         return -1
-    root = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows Kits\Installed Roots")
+    root = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows Kits\Installed Roots")
     idx = 0
     subs = []
     while True:
         try:
-            subs.append(_winreg.EnumKey(root, idx))
+            subs.append(winreg.EnumKey(root, idx))
             idx += 1
         except EnvironmentError:
             break
-    return sorted(subs, cmp=cmp_version)[-1]
+    return sorted(subs, key=functools.cmp_to_key(cmp_version))[-1]
 
 
 class VS2022Generator(base_generator.BaseGenerator):
@@ -115,7 +115,7 @@ class VS2022Generator(base_generator.BaseGenerator):
 
     def run(self):
         generated_vcxproj_files = []
-        for _, target in self._targets.iteritems():
+        for _, target in self._targets.items():
             vcxproj_file = os.path.join(global_states.build_root, self._get_vcxproj_file_name(target))
             generated_vcxproj_files.append((target, vcxproj_file))
             self._generate_vcxproj_file(target, vcxproj_file)
@@ -269,7 +269,7 @@ class VS2022Generator(base_generator.BaseGenerator):
             ItemGroupNone=item_group_none.format(Indent, 1),
         )
         with open(vcxproj_file_path, "wb") as wf:
-            wf.write(content)
+            wf.write(content.encode('utf8'))
 
     def _generate_filter_file(self, target):
         used_filters = set()
@@ -314,7 +314,7 @@ class VS2022Generator(base_generator.BaseGenerator):
         )
         filter_file = os.path.join(global_states.build_root, self._get_filter_file_name(target))
         with open(filter_file, "wb") as wf:
-            wf.write(content)
+            wf.write(content.encode('utf8'))
 
     def _generate_user_file(self, target):
         def create_item_group_users():
@@ -338,7 +338,7 @@ class VS2022Generator(base_generator.BaseGenerator):
         )
         user_file_name = os.path.join(global_states.build_root, self.get_user_file_name(target))
         with open(user_file_name, "wb") as wf:
-            wf.write(content)
+            wf.write(content.encode('utf8'))
 
     def _generate_sln(self, generated_projects):
         # SolutionConfigurationPlatforms
@@ -351,7 +351,7 @@ class VS2022Generator(base_generator.BaseGenerator):
 
         # ProjectConfigurationPlatforms
         frags = []
-        for t in self._targets.itervalues():
+        for t in self._targets.values():
             for c in Configurations:
                 for p in Platforms:
                     line = "\t\t{%s}.%s|%s.ActiveCfg = %s|%s\n" % (str(t.guid).upper(), c, p, c, p)
@@ -363,7 +363,7 @@ class VS2022Generator(base_generator.BaseGenerator):
         # NestedProjects
         path2guid = {}
         nested_projects = []
-        for t in self._targets.itervalues():
+        for t in self._targets.values():
             if t.group == "":
                 t.group = os.path.relpath(os.path.dirname(t.base_dir), global_states.source_root)
                 t.group = t.group.replace('/', '\\')
@@ -379,19 +379,19 @@ class VS2022Generator(base_generator.BaseGenerator):
                     break
                 target_dir_rp = splits[0]
 
-        for path, guid in path2guid.iteritems():
+        for path, guid in path2guid.items():
             splits = path.rsplit('\\', 1)
             if len(splits) == 1:
                 continue
             parent_guid = path2guid[splits[0]]
             nested_projects.append("\t\t{%s} = {%s}\n" % (str(guid).upper(), str(parent_guid).upper()))
 
-        for t in self._targets.itervalues():
+        for t in self._targets.values():
             parent_guid = path2guid[t.group]
             nested_projects.append("\t\t{%s} = {%s}\n" % (str(t.guid).upper(), str(parent_guid).upper()))
 
         frags = []
-        for path, guid in path2guid.iteritems():
+        for path, guid in path2guid.items():
             base_name = path.rsplit('\\')[-1]
             s = 'Project("{%s}") = "%s", "%s", "{%s}"\nEndProject\n' % (
                 "2150E333-8FDC-42A3-9474-1A3956D46DE8", base_name, base_name, str(guid).upper())
@@ -415,7 +415,7 @@ class VS2022Generator(base_generator.BaseGenerator):
             SolutionGUID="{%s}" % uuid.uuid5(uuid.NAMESPACE_URL, global_states.project_name),
         )
         with open(self._solution_path, "wb") as wf:
-            wf.write(content)
+            wf.write(content.encode('utf8'))
 
 
 

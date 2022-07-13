@@ -359,7 +359,7 @@ def do_dump(ctx, record):
     if record_type == collections.OrderedDict:
         ctx.frags.append('{\n')
         nctx = ctx.next()
-        for key, value in record.iteritems():
+        for key, value in record.items():
             indent_str = nctx.indent_str
             nctx.frags.append(indent_str)
             do_dump(ctx, key)
@@ -416,7 +416,7 @@ def get_build_setting(is_debug, is_app, is_project, update_kvs=None):
     else:
         ret = DEFAULT_TARGET_BUILD_SETTING.copy()
         update_dict = APP_EXTRA_BUILD_SETTING if is_app else LIBRARY_EXTRA_BUILD_SETTING
-    for k, v in update_dict.iteritems():
+    for k, v in update_dict.items():
         ret[k] = v
     if update_kvs is not None:
         for k, v in update_kvs:

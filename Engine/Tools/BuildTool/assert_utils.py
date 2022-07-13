@@ -4,7 +4,7 @@ import os
 
 
 def die(msg):
-    print msg
+    print(msg)
     sys.exit(-1)
 
 

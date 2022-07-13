@@ -1,11 +1,20 @@
 # -*- encoding: utf-8 -*-
 import os
 import build_target
+import functools
 
 
 class BaseGenerator(object):
     def __init__(self, collector):
         self._targets = collector.targets
+
+    @staticmethod
+    def cmp_targets(a, b):
+        an = type(a).__name__
+        bn = type(b).__name__
+        if an != bn:
+            return an < bn
+        return id(a) - id(b)
 
     def get_all_dependencies(self, target):
         q = [target]
@@ -20,7 +29,7 @@ class BaseGenerator(object):
                 if dd not in all_deps:
                     q.append(dd)
         ret = list(all_deps)
-        ret.sort()
+        ret.sort(key=functools.cmp_to_key(self.cmp_targets))
         return ret
 
     path_properties = {"includes", "prebuilt_libs"}

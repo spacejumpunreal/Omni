@@ -6,7 +6,7 @@ class XmlNode(object):
     def __init__(self, tag, content=(), attrib=None):
         self.tag = tag
         self.content = content
-        if type(content) not in {str, unicode}:
+        if type(content) not in {str, bytes}:
             self.content = list(content)
         self.attrib = attrib if attrib else {}
 
@@ -26,7 +26,7 @@ class XmlNode(object):
 
         frags.append(indent_char * level)
         frags.append("<%s" % self.tag)
-        for k, v in self.attrib.iteritems():
+        for k, v in self.attrib.items():
             frags.append(' %s="%s"' % (k, v))
         frags.append(">")
 
@@ -53,6 +53,6 @@ if __name__ == "__main__":
             XmlNode("b2", "b2text"),
     ), {"attr0": 1, "attr2": 2})
     body = t.format(indent_char=" ", indent_level=2)
-    print body
+    print(body)
 
 

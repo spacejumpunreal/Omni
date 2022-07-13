@@ -21,7 +21,7 @@ class XcodeGenerator(base_generator.BaseGenerator):
             shutil.rmtree(self._build_dir)
         os.makedirs(self._build_dir)
         generated_target_pbxproj_pairs = []
-        for _, target in self._targets.iteritems():
+        for _, target in self._targets.items():
             pbxproj_file = self._get_pbxproj_file_path(target)
             self._ensure_parents_exists(pbxproj_file)
             generated_target_pbxproj_pairs.append((target, pbxproj_file))
